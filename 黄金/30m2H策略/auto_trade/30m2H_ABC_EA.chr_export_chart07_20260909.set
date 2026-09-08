@@ -1,0 +1,48 @@
+; 30m2H_ABC_EA | 终端实参反向导出（真相源＝chart07.chr）
+; 导出时间: 2026-09-09 02:24（本地）｜脚本: _tmp_export_chr_sets_20260909.py（R4 归档于 scripts\_archive\2026-09\）
+; 下单闸: InpSimMode=false + InpAllowRealTrading=true → **双闸放开＝在 DEMO 真实下单**
+; magic: 352036  ⚠ 该 magic 与其他实例撞号（双挂），见 00_README T13
+;
+; 参数完整性：已核实 .chr 的 <expert><inputs> 块记录的是**完整 EA 参数集**
+;   （乖离反转 chart09：源码 23 个 input 声明 = 导出 23 个参数，逐个吻合；
+;   解析只取 <expert> 块，故不含图表指标 Custom Moving Average 的 InpMA* 参数）。
+;   本文件是**导出时刻**的快照：EA 升级新增 input 后需重新导出。
+; 依据: 00_文档中心/问题记录.md §二十三①（配置漂移 P0）与 00_README T12。
+;
+InpAllowRealTrading=true
+InpBias55Threshold=3.0
+InpBias5MinPct=0.2
+InpEventCheckEvery=300
+InpEventFilterHrs=2
+InpEventFilterOn=false
+InpExportCSV=true
+InpExportLedger=true
+InpH2SMA5=5
+InpH2SMA55=55
+InpHistoryBars=600
+InpLossCdHours=120
+InpLossCdLoss=0
+InpM30SMA13=13
+InpM30SMA5=5
+InpMagic=352036
+InpMaxLots=10.0
+InpMaxOpenVirtual=10
+InpMergedMinLen=8
+InpMinLots=0.01
+InpPostNMax=6
+InpPostNMin=2
+InpPreCrossGapPct=0.300
+InpRiskPct=1.0
+InpSameDirCdBars=0
+InpSimMode=false
+InpSimStartBalance=500.0
+InpStage1R=2.0
+InpStage1Units=0.5
+InpStage2ForceR=4.0
+InpStage2TrailR=1.5
+InpStage2Units=1.0
+InpStage3Units=1.5
+InpStopHiPt=35.0
+InpStopLoPt=5.0
+InpSymbol=XAUUSDm
+InpVerboseDiag=true

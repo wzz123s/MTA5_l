@@ -1,6 +1,6 @@
 # scripts/ 共享脚本库
 
-> 更新：2026-08-15
+> 更新：2026-09-09
 
 本目录只保留**跨策略共享**内容；各策略的研究/验证/信号/部署脚本已迁移到对应策略目录
 （2026-08-15 起黄金策略按交易品种归入 `黄金\` 子文件夹）：
@@ -16,9 +16,19 @@
 
 - `mt5/`：MT5 连接、历史、实时、EA 对齐信号基础设施
 - `strategy_research_common.py`、`replay_raw_signals_with_stops.py`：共享回放/研究库
+- `live_attribution.py`：**DEMO 实挂成交的血缘归因 + 终端 `chart*.chr` 实参读取 + 台账可读性体检**
+  （2026-09-09 新增；被 `monitor_all_strategies.py` 与 `monitor_cycle.py` 调用。口径铁律见模块头与
+  `00_文档中心\问题记录.md` §二十三：盈亏按 `position_id` 血缘记到**开仓方 magic**，
+  禁用平仓侧 `deal.magic`（15/59 持仓开平错配）与 `deal.reason`（实测不可靠）；时间统一为服务器时间）
+- `monitor_all_strategies.py`：九策略横向监控 + 仪表盘（`observation_dashboard\dashboard.csv` / `dashboard_report.md`）
+- `monitor_cycle.py`：30 分钟监测循环（DSH harness tool-jobs 驱动，产出 `observation_dashboard\监测报告\`）
+- `qq_snapshot.py`、`qq_digest_push.py`、`watch_signal_alerts.py`、`notify_qq.mjs`、`event_calendar_push.py`：QQ 推送与事件门
+- `check_project_rules.py`：工程卫生机检（R1~R9 可判定断言，只读扫描；2026-09-08 上线）
 - `inspect_tester_panel.py`：MT5 Tester 面板诊断工具
-- `monitor_all_strategies.py`：三策略横向监控 + 仪表盘（每日纸面监控入口）
-- `_reorg_scripts_20260815.py`：2026-08-15 脚本迁移工具（可归档）
+- `_archive/<年-月>/`：一次性脚本沉底处（R4：`_tmp_` 前缀，用完当周移入，移前 grep 确认无引用）
+
+> 已失效引用清理（2026-09-09）：原列的 `_reorg_scripts_20260815.py`（2026-08-15 迁移工具）已不在本目录，删除该条。
+> 2026-09-08 目录整理 Phase 2 已将乖离反转策略根目录的 21 个脚本归位本目录（见 `00_README.md` §7 该条）。
 
 ## 重要说明
 

@@ -211,22 +211,48 @@ def read_real_positions() -> dict | None:
         mt5.shutdown()
 
 
-def read_ea_input(input_name: str, chart_file: str = "chart10.chr") -> str | None:
-    """读运行中终端的图表 EA 输入参数（chart*.chr UTF-16，<inputs> 块）。"""
+_CHART_PARAMS: dict | None = None
+
+
+def read_ea_input(input_name: str, ea_name: str) -> str | None:
+    """读运行中终端里**指定 EA** 的输入参数（含 bool 型）。
+
+    旧版硬编码 chart_file="chart10.chr" 且只解析数字，实测后果（00_README T18）：
+    chart10 是 Gold_DataEvent_EA，而 ea_inputs 只给 BiasReversal 配了 InpLongMode
+    → 在别人的图表里找乖离反转参数、恒返回 None → dashboard「EA模式」列从来没有内容；
+    且 chart 编号会随图表增删重排（chart05/08/11 已空），硬编号本质不可靠（T20）。
+    现按 EA 名扫全部 chart*.chr，委托 live_attribution（该模块亦供台账/血缘归因）。
+    """
+    global _CHART_PARAMS
+    if _CHART_PARAMS is None:
+        try:
+            import live_attribution as _la
+            _CHART_PARAMS = _la.read_chart_params()
+        except Exception as e:
+            print(f"[ea_input] chart 实参不可用（EA模式列将为 N/A）: {e}")
+            _CHART_PARAMS = {}
+    rec = _CHART_PARAMS.get(ea_name)
+    if not rec:
+        return None
+    return rec.get("inputs", {}).get(input_name)
+
+
+def ea_names_for(name: str) -> list[str]:
+    """策略行 -> 其挂载的 EA 名列表（用 STRATEGY_CONFIGS.magics 反查权威映射表）。
+
+    一个策略行可能对应多个 EA（如 30m2H = 主线 Strategy_EA + ABC_EA），
+    映射表见 live_attribution.EA_MAGIC_MAP（依据 问题记录 §二十三②）。
+    """
     try:
-        p = TERMINAL_DATA / "MQL5" / "Profiles" / "Charts" / "Default" / chart_file
-        txt = p.read_text(encoding="utf-16")
+        import live_attribution as _la
     except Exception:
-        return None
-    marker = input_name + "="
-    i = txt.find(marker)
-    if i < 0:
-        return None
-    j = i + len(marker)
-    k = j
-    while k < len(txt) and (txt[k].isdigit() or txt[k] in ".-+"):
-        k += 1
-    return txt[j:k]
+        return []
+    out: list[str] = []
+    for m in STRATEGY_CONFIGS[name].get("magics", []):
+        hit = _la.EA_MAGIC_MAP.get(m)
+        if hit and hit[0] not in out:
+            out.append(hit[0])
+    return out
 
 
 def build_strategy_oil():
@@ -438,6 +464,27 @@ def main() -> None:
     else:
         print("[positions] MT5 实时持仓读取成功:", {k: len(v) for k, v in real.items()})
 
+    # 真实成交血缘归因（00_README T11/T17/T19）：已实现盈亏只能按 position_id 血缘算——
+    # 不能按平仓侧 deal.magic（15/59 持仓开平错配，EA 主动平仓曾落 magic=0），
+    # 也不能按 deal.reason（实测不可靠：comment='[sl …]' 被记 TP、人工平仓被记 SL）。
+    try:
+        import live_attribution as la
+        live_attr = la.snapshot()
+        live_attr["ledger_files"] = la.LEDGER_FILES
+    except Exception as e:
+        la = None
+        live_attr = {"error": f"live_attribution 不可用: {e}", "per_ea": {}, "per_magic": {},
+                     "totals": {}, "gates": [], "ledgers": {}, "charts": {}, "ledger_files": {}}
+    if live_attr.get("error"):
+        print("[attribution] 降级（已实现盈亏/下单闸/台账列将为 N/A）:", live_attr["error"])
+    else:
+        _t = live_attr["totals"]
+        _live = [g for g in live_attr["gates"] if g["live_trading"]]
+        print(f"[attribution] 成交 {_t['deals']} 笔 / 持仓 {_t['positions']} 个 ｜ 已实现 "
+              f"${_t['realized']:+,.2f}（另入金等账务 ${_t['deposits']:+,.2f}）｜ 开平 magic 错配 "
+              f"{_t['mismatched_positions']} 个持仓 ｜ 终端 {len(live_attr['gates'])} 个实例中 "
+              f"{len(_live)} 个双闸放开在真下单")
+
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
     if not args.no_refresh:
         for name in names:
@@ -529,14 +576,53 @@ def main() -> None:
         monthly_df.to_csv(out_dir / "monthly_last6.csv", index=False, encoding="utf-8-sig")
 
         total_pnl = per["weighted_pts"].sum()
+        ea_names = ea_names_for(name)
         ea_mode = ""
         ea_labels = STRATEGY_CONFIGS[name].get("ea_inputs", {})
         if ea_labels:
             parts = []
             for inp, labelmap in ea_labels.items():
-                v = read_ea_input(inp)
+                v = None
+                for e in ea_names:                      # 按 EA 名找对图表（旧版恒读 chart10）
+                    v = read_ea_input(inp, e)
+                    if v is not None:
+                        break
                 parts.append(labelmap.get(v, f"{inp}={v}") if v is not None else "N/A")
             ea_mode = " / ".join(parts)
+
+        # --- 真实成交（血缘口径）与终端下单闸，依据 问题记录 §二十三 ---
+        m_rows = [m for m in live_attr.get("per_magic", {}).values() if m["strategy"] == name]
+        realized = round(sum(m["realized"] for m in m_rows), 2)
+        mismatch = sum(m["mismatched"] for m in m_rows)
+        live_positions = sum(m["positions"] for m in m_rows)
+        g_rows = [g for g in live_attr.get("gates", []) if g["ea"] in ea_names]
+        live_n = sum(1 for g in g_rows if g["live_trading"])
+        if not g_rows:
+            gate_txt = "无挂载"
+        elif live_n:
+            gate_txt = f"{live_n}/{len(g_rows)} 实例真下单"
+        else:
+            gate_txt = f"0/{len(g_rows)} 实例(SimMode)"
+        if any(g["duplicate"] for g in g_rows):
+            gate_txt += "；双挂"
+        led_bad = [f"{fn}={live_attr.get('ledgers', {}).get(fn, 'missing')}"
+                   for fn, eaname in live_attr.get("ledger_files", {}).items()
+                   if eaname in ea_names
+                   and not str(live_attr.get("ledgers", {}).get(fn, "")).startswith("ok")]
+
+        warns = list(state["warnings"])
+        if live_attr.get("error"):
+            warns.append("血缘归因不可用：" + str(live_attr["error"]))
+        else:
+            if led_bad:
+                warns.append("成交台账不可读→真实成交在报表不可见：" + "；".join(led_bad))
+            if live_n and not m_rows:
+                warns.append("下单闸已放开但窗口内无成交（一旦出信号即真下单，非只读监控）")
+            if mismatch:
+                warns.append(f"开平 magic 错配 {mismatch} 笔（本表已实现盈亏按血缘归因，勿按 deal.magic 统计）")
+            if any(g["duplicate"] for g in g_rows):
+                warns.append("同一 EA 双挂且 magic 相同→台账/信号文件互相覆盖")
+
         dashboard_rows.append(
             {
                 "strategy": name,
@@ -548,11 +634,16 @@ def main() -> None:
                 "open": real_count if real is not None else state["open_positions"],
                 "real_volume": real_vol if real is not None else 0.0,
                 "real_profit": real_profit if real is not None else 0.0,
+                "realized_pnl_usd": realized if not live_attr.get("error") else "N/A",
+                "live_positions": live_positions if not live_attr.get("error") else "N/A",
+                "magic_mismatch": mismatch if not live_attr.get("error") else "N/A",
+                "ea_gate": gate_txt,
+                "ledger_state": "；".join(led_bad) if led_bad else ("ok" if ea_names else "-"),
                 "total_weighted_pts": round(total_pnl, 1),
                 "equity_0_5pct": round(state["equity_0_5pct"], 0),
                 "equity_1pct": round(state["equity_1pct"], 0),
                 "data_last_bar": latest_bar_close.strftime("%Y-%m-%d %H:%M"),
-                "warnings": "；".join(state["warnings"]) if state["warnings"] else "无",
+                "warnings": "；".join(warns) if warns else "无",
             }
         )
         if real is not None:
@@ -605,6 +696,9 @@ def main() -> None:
             except Exception as _e:
                 sections[-1] = sections[-1] + f"\n\n### 模拟盘实时状态\n\n- 快照生成失败: {_e}"
 
+    if la is not None and not live_attr.get("error"):
+        sections.append(la.markdown_section(live_attr, live_attr["gates"], live_attr["ledgers"]))
+
     dash_df = pd.DataFrame(dashboard_rows)
     print("\n" + "=" * 90)
     print(dash_df.to_string(index=False))
@@ -618,17 +712,21 @@ def main() -> None:
             f"> 生成：{datetime.now(timezone.utc).isoformat()}（UTC）",
             "> 口径：黄金三策略 A+B+C 统一逻辑；原油2H 为因果口径 `cross_confirm_causal`（无 lookahead，"
             "与 EA v5 冒烟 53/53 一致）；原油4H门为 4H 三条件门 + 2H cross/pre_cross（72笔基线，"
-            "与 Tester 对照 72/72 一致）；Gold/Oil_DataEvent 行 = 实时模拟盘 ledger 口径（EA Files 导出：signals_export + trade_ledger + gate_state，实时不可用回退回测基线）；「真实持仓」列 = MT5 账户实时读数（MetaTrader5 库，按 EA magic 归类），不可用时回退重放口径；0.5%/1% 复利净值按 $500 起、单笔风险、不复利上限外推；只读监控不下单。",
+            "与 Tester 对照 72/72 一致）；Gold/Oil_DataEvent 行 = 实时模拟盘 ledger 口径（EA Files 导出：signals_export + trade_ledger + gate_state，实时不可用回退回测基线）；「真实持仓」列 = MT5 账户实时读数（MetaTrader5 库，按 EA magic 归类），不可用时回退重放口径；「已实现USD」列 = MT5 账户历史成交按 **position_id 血缘**归因（记到开仓方 magic；不用平仓侧 deal.magic——15/59 持仓开平错配，也不用 deal.reason——实测不可靠，见 问题记录 §二十三）；「下单闸」列 = `chart*.chr` 实参双闸（SimMode=false 且 AllowRealTrading=true 即在 DEMO 真实下单）；0.5%/1% 复利净值按 $500 起、单笔风险、不复利上限外推。**本账户为 DEMO 且 9 个挂载实例中 6 个双闸放开＝真实下单，不是只读监控**（2026-09-09 实测纠偏，原脚注「只读监控不下单」有误，详见 00_README §1）。",
             "",
             "## 总览",
             "",
             markdown_table(
-                dash_df.rename(columns={"open": "真实持仓", "real_volume": "真实手数", "real_profit": "浮盈USD", "ea_mode": "EA模式"})
-                [["strategy", "combo", "EA模式", "total_trades", "new_since_last", "backfill_since_last", "真实持仓", "真实手数", "浮盈USD",
+                dash_df.rename(columns={"open": "真实持仓", "real_volume": "真实手数", "real_profit": "浮盈USD",
+                                        "ea_mode": "EA模式", "realized_pnl_usd": "已实现USD",
+                                        "ea_gate": "下单闸", "magic_mismatch": "magic错配"})
+                [["strategy", "combo", "EA模式", "下单闸", "total_trades", "new_since_last", "backfill_since_last",
+                  "真实持仓", "真实手数", "浮盈USD", "已实现USD", "magic错配",
                   "total_weighted_pts", "equity_0_5pct", "equity_1pct", "data_last_bar", "warnings"]],
-                ["strategy", "combo", "EA模式", "total_trades", "new_since_last", "backfill_since_last", "真实持仓", "真实手数", "浮盈USD",
+                ["strategy", "combo", "EA模式", "下单闸", "total_trades", "new_since_last", "backfill_since_last",
+                 "真实持仓", "真实手数", "浮盈USD", "已实现USD", "magic错配",
                  "total_weighted_pts", "equity_0_5pct", "equity_1pct", "data_last_bar", "warnings"],
-                money_cols={"equity_0_5pct", "equity_1pct", "浮盈USD"},
+                money_cols={"equity_0_5pct", "equity_1pct", "浮盈USD", "已实现USD"},
             ),
             "",
             *sections,

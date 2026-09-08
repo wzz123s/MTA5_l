@@ -1,0 +1,34 @@
+; BiasReversal_Combo_EA | 终端实参反向导出（真相源＝chart09.chr）
+; 导出时间: 2026-09-09 02:24（本地）｜脚本: _tmp_export_chr_sets_20260909.py（R4 归档于 scripts\_archive\2026-09\）
+; 下单闸: InpSimMode=false + InpAllowRealTrading=true → **双闸放开＝在 DEMO 真实下单**
+; magic: 372036
+;
+; 参数完整性：已核实 .chr 的 <expert><inputs> 块记录的是**完整 EA 参数集**
+;   （乖离反转 chart09：源码 23 个 input 声明 = 导出 23 个参数，逐个吻合；
+;   解析只取 <expert> 块，故不含图表指标 Custom Moving Average 的 InpMA* 参数）。
+;   本文件是**导出时刻**的快照：EA 升级新增 input 后需重新导出。
+; 依据: 00_文档中心/问题记录.md §二十三①（配置漂移 P0）与 00_README T12。
+;
+InpAllowRealTrading=true
+InpEnableShort=false
+InpExportLedger=true
+InpHistoryBars=600
+InpLedgerReplay=false
+InpLongGateThr=0.0
+InpLongMode=0
+InpMagicLong=372036
+InpMagicShort=372037
+InpMaxLots=10.0
+InpMinLots=0.01
+InpReplayCostPct=0.05
+InpRiseThr=3.0
+InpRiskPct=1.0
+InpShortCdHours=120
+InpShortCdLoss=2
+InpShortGateThr=3.5
+InpSimMode=false
+InpStopPct=1.2
+InpSymbol=XAUUSDm
+InpTpR=3.0
+InpVerboseDiag=true
+InpWThr=0.5

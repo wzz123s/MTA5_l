@@ -49,6 +49,15 @@ def run_monitor() -> tuple:
     return res2.returncode == 0, False
 
 
+def usd(v) -> str:
+    """金额格式化；容忍 'N/A'（血缘归因降级时该列是字符串而非数值）。"""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return str(v) if v is not None else "-"
+    return ("+$" if f >= 0 else "-$") + format(abs(f), ",.2f")
+
+
 def upcoming_events(hours: int = 12) -> list:
     df = pd.read_csv(EVENTS_CSV, sep="|", dtype={"event_id": "int64", "time": "int64"})
     df["t"] = pd.to_datetime(df["time"], unit="s", utc=True)
@@ -70,7 +79,11 @@ def ea_load_state() -> str:
         loaded = [ln.split("expert ")[1].split(" (")[0] for ln in text.splitlines()
                   if "expert " in ln and "loaded successfully" in ln]
         if loaded:
-            return str(len(set(loaded))) + " 个 EA 加载（" + ",".join(sorted(set(loaded))) + "）"
+            uniq = sorted(set(loaded))
+            dup = [n for n in uniq if loaded.count(n) > 1]
+            note = ("；⚠同一日志内重复加载（双挂或重载，见 00_README T13/T20）："
+                    + ",".join(f"{d}×{loaded.count(d)}" for d in dup)) if dup else ""
+            return f"{len(uniq)} 个 EA / {len(loaded)} 次加载（" + ",".join(uniq) + "）" + note
     return "未找到 EA 加载日志"
 
 
@@ -92,15 +105,24 @@ def main():
 
     lines.append("")
     lines.append("## 总览")
-    lines.append("| 策略 | 交易 | 累计(pts) | 0.5%/1%净值 | 新增 | 回补 | 实盘手数 | 浮盈USD | 数据bar | 警告 |")
-    lines.append("|---|---|---|---|---|---|---|---|---|---|")
+    lines.append("| 策略 | 下单闸 | 交易 | 累计(pts) | 0.5%/1%净值 | 新增 | 回补 | 实盘手数 | 浮盈USD | 已实现USD | magic错配 | 数据bar | 警告 |")
+    lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for _, r in dash.iterrows():
-        lines.append("| " + str(r["strategy"]) + " | " + str(int(r["total_trades"])) + " | " +
+        lines.append("| " + str(r["strategy"]) + " | " + str(r.get("ea_gate", "-")) + " | " +
+                     str(int(r["total_trades"])) + " | " +
                      format(float(r["total_weighted_pts"]), ",.0f") + " | " +
                      "$" + format(float(r["equity_0_5pct"]), ",.0f") + "/" + format(float(r["equity_1pct"]), ",.0f") + " | " +
                      str(int(r["new_since_last"])) + " | " + str(int(r["backfill_since_last"])) + " | " +
                      format(float(r["real_volume"]), ".2f") + " | $" + format(float(r["real_profit"]), ",.2f") + " | " +
+                     usd(r.get("realized_pnl_usd")) + " | " + str(r.get("magic_mismatch", "-")) + " | " +
                      str(r["data_last_bar"]) + " | " + str(r["warnings"]) + " |")
+    if "realized_pnl_usd" in dash.columns:
+        lines.append("")
+        lines.append("> 账户级**已实现盈亏**合计（血缘口径，盈亏记到开仓方 magic）：" +
+                     usd(pd.to_numeric(dash["realized_pnl_usd"], errors="coerce").sum()) +
+                     "。「下单闸」= `chart*.chr` 实参双闸（SimMode=false 且 AllowRealTrading=true 即在 DEMO 真实下单，"
+                     "**本账户不是只读监控**）；「magic错配」= 开平 magic 不一致的平仓笔数，故盈亏不按 deal.magic、"
+                     "也不按 deal.reason 统计（依据 00_文档中心\\问题记录.md §二十三）。")
 
     lines.append("")
     lines.append("## 未来 12h 白名单高影响事件（USD/EUR/GBP/CAD，事件门关注）")

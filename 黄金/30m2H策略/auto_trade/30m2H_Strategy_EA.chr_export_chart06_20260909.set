@@ -1,0 +1,69 @@
+; 30m2H_Strategy_EA | 终端实参反向导出（真相源＝chart06.chr）
+; 导出时间: 2026-09-09 02:24（本地）｜脚本: _tmp_export_chr_sets_20260909.py（R4 归档于 scripts\_archive\2026-09\）
+; 下单闸: InpSimMode=false + InpAllowRealTrading=true → **双闸放开＝在 DEMO 真实下单**
+; magic: 302036
+;
+; 参数完整性：已核实 .chr 的 <expert><inputs> 块记录的是**完整 EA 参数集**
+;   （乖离反转 chart09：源码 23 个 input 声明 = 导出 23 个参数，逐个吻合；
+;   解析只取 <expert> 块，故不含图表指标 Custom Moving Average 的 InpMA* 参数）。
+;   本文件是**导出时刻**的快照：EA 升级新增 input 后需重新导出。
+; 依据: 00_文档中心/问题记录.md §二十三①（配置漂移 P0）与 00_README T12。
+;
+InpAllowRealTrading=true
+InpBias55Threshold=3.0
+InpBias5Lookback=500
+InpBias5TopPct=34.0
+InpCheckSec=1
+InpDebugStages=true
+InpEnableLiveRiskGuards=true
+InpExportCSV=true
+InpExportStagePriceDiag=false
+InpExportTradeLedger=true
+InpFastMA=5
+InpH2CrossBars=3
+InpH2EarlyGateQ=2
+InpH2Period=16386
+InpH2SMA13=13
+InpH2SMA144=144
+InpH2SMA233=233
+InpH2SMA5=5
+InpH2SMA55=55
+InpH2Thresh=0.0
+InpLeverageOverride=0
+InpLiveBalanceCap=2000.0
+InpLiveMaxLotCap=0.10
+InpM15Period=15
+InpM30Period=30
+InpMagic=302036
+InpMarginGuardPct=500.0
+InpMaxDailyLossUSD=120.0
+InpMaxDrawdownUSD=200.0
+InpMaxLots=10.0
+InpMaxNewPositionsPerDay=9
+InpMaxPos=1
+InpMaxSpreadPoints=300
+InpMinLots=0.01
+InpPostNMax=6
+InpPostNMin=2
+InpPreCrossGapPct=0.300
+InpRiskPct=3.0
+InpSimMode=false
+InpSlippage=30
+InpSlowMA=13
+InpStage1Lots=0.01
+InpStage1R=2.0
+InpStage2ForceR=4.0
+InpStage2Lots=0.02
+InpStage2TrailR=1.5
+InpStage3Lots=0.03
+InpStage3On=true
+InpStageCount=3
+InpStopHi=35000.0
+InpStopLo=5000.0
+InpStopLookback=200
+InpSymbol=XAUUSDm
+InpUseDynamicLots=true
+InpUseH2EarlyGateQ2=true
+InpUseLayer1=true
+InpUseLayer3=true
+InpVerboseDecisionDiag=true
