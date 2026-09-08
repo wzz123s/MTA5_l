@@ -72,9 +72,12 @@ MT5 终端(DAD3B8) 挂 8 EA ──Files导出──> signals/ledger/gate CSV
 | T5 | 乖离反转/1H·2H 旧版 CurrentCandidate BUG 审查（低优先级）；H1_M30_H4 研究线微钻 | 策略审查状态.md §S2 |
 | T6 | 目录整理 Phase 2-4（validation 沉底/大对象瘦身/git 重建）| 目录整理方案_20260908.md |
 | T7 | 2H_1H_6H 七个空骨架目录去留、P9 三版规范文档权威裁决 | 整理方案（待用户确认） |
+| T8 | **validation 归档深度**：机检 R6 报 236>20——白名单按"被现役文档引用即保"设计，历史文档名级引用导致只归档了 30/266。两方向：A 接受现状（≤20 只管新增）B 加做"仅被已归档文档引用"批次的二次归档+文档内路径批量改写。**默认 A**，B 需另行点头 | scripts\check_project_rules.py 输出 |
+| T9 | **Phase 3 原件删除**：三个 .zip 压缩副本已生成（214MB→9 / 60MB→14 / V反80MB→35），原件按规矩保留——删需逐项点头 | 黄金\30m2H策略\data\validation\_archive\2026-07\...log.zip 等 |
 
 ## 7. 最近变更日志（滚动 10 条，R7）
 
+- 2026-09-08 23:15 **目录整理 Phase 2/3/4 执行完毕**：乖离反转根 21 脚本归位 scripts\（syspath 精确改写、编译 0 失败）+ 策略 README 建立；H1_M30_H4 根级 20 md 归位说明文档；30m2H validation 30 目录沉 _archive\2026-07（白名单 236 偏保守→T8）；auto_trade .bak 7 个归位；Phase3 三组 .zip 生成（原件保留→T9）；**git 重建**（首提交 2657 文件，.gitignore 扩数据/产物排除）；机检 scripts\check_project_rules.py 上线（首跑 17 违规=R4×4 已修+T8/T9 登记）
 - 2026-09-08 21:30 **目录整理 Phase 0/1 完成**：根级 24 散文件收口入 00_文档中心/各策略；12 空目录+56 pycache 清出；母本《其他策略复用流程》提级；新建 00_README/00_项目规则/AGENTS.md；monitor_cycle 频率文案改"DSH tool-jobs 30 分钟"并核实 v3.37 验收已落盘（→T1）
 - 2026-09-08 21:07 30m2H M15 孤儿句柄修复重编译部署，Tester 全窗重跑成功（零行为回归）
 - 2026-09-08 20:24-20:42 Tester 面板 UI 驱动重跑尝试（ea_alignment_logs\_scratch）

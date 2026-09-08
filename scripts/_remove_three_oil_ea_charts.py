@@ -9,7 +9,7 @@ import os, re, shutil, datetime, sys
 
 TERM = r"C:/Users/3762/AppData/Roaming/MetaQuotes/Terminal/DAD3B8CC3EAC09C0C9725021DF0C7A65"
 CHDIR = os.path.join(TERM, "MQL5", "Profiles", "Charts", "Default")
-BAK = r"F:/use_code/MTA5_l/backup_20260907/mt5_ea/摘除三原油EA前chr备份_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+BAK = r"F:/use_code/MTA5_l/archive/backup_20260907/mt5_ea/摘除三原油EA前chr备份_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 TARGETS = {  # chart -> 要摘除的 EA 名
     "chart05.chr": "USOIL2H_CrossConfirm_EA",
     "chart08.chr": "USOIL4H_Gate_On2H_EA",
