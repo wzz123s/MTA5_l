@@ -14,11 +14,11 @@
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\黄金\\2H_M30_6H策略\\data\\raw\\mt5_history\\2h_m30_6h_live\\XAUUSDm_M30.csv",
-      "rows": 79086,
+      "rows": 79087,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:30:00+00:00",
-      "sha256": "7b9e9ecc04ea8e8161366103af196cb79e21638fd5c2fc81b3eeb2e71b68ff33",
-      "size": 8706070
+      "last_time_utc": "2026-09-08 15:00:00+00:00",
+      "sha256": "ca54d2465c5c28ea03938d08a586959431f4c6528a88e2ebcaede5680af3e31e",
+      "size": 8706179
     },
     {
       "timeframe": "H2",
@@ -26,8 +26,8 @@
       "rows": 20707,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
       "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "aaeba2e3f2fbded69ede58f46cc26a3163901083e9afdd3b0e5d49f95d52c3eb",
-      "size": 2268431
+      "sha256": "840d993849a740c9cf0aeb559bfef7b98e0ad9baf13c64ceabfa4e73ad78f51a",
+      "size": 2268430
     },
     {
       "timeframe": "H6",
@@ -35,14 +35,14 @@
       "rows": 7335,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
       "last_time_utc": "2026-09-08 12:00:00+00:00",
-      "sha256": "12e1d9abc37a066917ad91750712a10b556c81715a1613381717b5836e3fcdf4",
+      "sha256": "f9f3c70d93198a30f22530922231d2ef36b8fb18762f42182a1c139d539c3697",
       "size": 807257
     }
   ],
-  "compatibility_raw_sha256": "7b9e9ecc04ea8e8161366103af196cb79e21638fd5c2fc81b3eeb2e71b68ff33",
-  "generated_at_utc": "2026-09-08T14:54:06.366976+00:00",
+  "compatibility_raw_sha256": "ca54d2465c5c28ea03938d08a586959431f4c6528a88e2ebcaede5680af3e31e",
+  "generated_at_utc": "2026-09-08T15:24:06.003090+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\黄金\\2H_M30_6H策略\\data\\raw\\mt5_history\\2h_m30_6h_live",
-  "bundle_sha256": "6eaaf6f74019b49fda2aee1aba3676f3ca1f65f40703bd690cce27c673bd8316",
+  "bundle_sha256": "6d5eec4fc0b3d45c621bebffdf6985d4c3d4e65012d6a1197652d1d64fd8ef8d",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\黄金\\2H_M30_6H策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",

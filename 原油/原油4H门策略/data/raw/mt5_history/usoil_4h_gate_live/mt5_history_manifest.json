@@ -14,11 +14,11 @@
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\原油\\原油4H门策略\\data\\raw\\mt5_history\\usoil_4h_gate_live\\USOILm_M30.csv",
-      "rows": 61691,
+      "rows": 61692,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:30:00+00:00",
-      "sha256": "bdc416fa4acd985e033484db858eb65ed8f31d5b4ab125f7e30b5fa784bfc4b3",
-      "size": 6184133
+      "last_time_utc": "2026-09-08 15:00:00+00:00",
+      "sha256": "bf2d337ac1806ecfd755d5bc62ec46745f244948a1987828854ba4a2f23c184a",
+      "size": 6184235
     },
     {
       "timeframe": "H2",
@@ -26,8 +26,8 @@
       "rows": 16461,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
       "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "f2a1b164ec5e61af5400c813019938f52a95c0b261d59dca68bffb9169a740ab",
-      "size": 1642395
+      "sha256": "cca7ee56dda9b68ee5ab2153b1c5321d881c17d29cfbda0f4eb931517b4ef4d2",
+      "size": 1642397
     },
     {
       "timeframe": "H4",
@@ -35,14 +35,14 @@
       "rows": 8764,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
       "last_time_utc": "2026-09-08 12:00:00+00:00",
-      "sha256": "e842ac7eeb48c286dab40817af56b68eb4f213a14735b389f29d516afdb47cfd",
+      "sha256": "f555663ade75f6395b140422a8b9cf96b6eb08f5e3829be9adf55fd4c5271aa7",
       "size": 876685
     }
   ],
-  "compatibility_raw_sha256": "bdc416fa4acd985e033484db858eb65ed8f31d5b4ab125f7e30b5fa784bfc4b3",
-  "generated_at_utc": "2026-09-08T14:54:08.085658+00:00",
+  "compatibility_raw_sha256": "bf2d337ac1806ecfd755d5bc62ec46745f244948a1987828854ba4a2f23c184a",
+  "generated_at_utc": "2026-09-08T15:24:07.487263+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\原油\\原油4H门策略\\data\\raw\\mt5_history\\usoil_4h_gate_live",
-  "bundle_sha256": "8fd010b7eac5b8cf7dbf2926a8d989512acb2922f80bb09807d284531a9ffe26",
+  "bundle_sha256": "8a3a8af30abeda9a3334f8ada5b57e69d64f17a8d52a5bb765e2538af0e95b1b",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\原油\\原油4H门策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",

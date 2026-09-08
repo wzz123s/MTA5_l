@@ -14,11 +14,11 @@
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live\\XAUUSDm_M30.csv",
-      "rows": 90908,
+      "rows": 90909,
       "first_time_utc": "2019-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:30:00+00:00",
-      "sha256": "6eba67c6cb5963ff4a3113ba27d18162bcd4d329a08bfbbc3fdf335de55ccfc2",
-      "size": 9985723
+      "last_time_utc": "2026-09-08 15:00:00+00:00",
+      "sha256": "2b28dbb15a919567aaa07ab6e6c722eedfabfea3f8a195f01a6f0838fbc1556b",
+      "size": 9985833
     },
     {
       "timeframe": "H2",
@@ -26,8 +26,8 @@
       "rows": 23832,
       "first_time_utc": "2019-01-02 00:00:00+00:00",
       "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "ecc11755b99ab85b3235d3ec5664c93a01e7276f2e90b3859a5680cad0eb38e8",
-      "size": 2604592
+      "sha256": "824f334f0a7bfd7eb17b76eab0fba375138f174fa64c6324ed7c7ada5fda90db",
+      "size": 2604590
     },
     {
       "timeframe": "H6",
@@ -35,14 +35,14 @@
       "rows": 8467,
       "first_time_utc": "2019-01-02 00:00:00+00:00",
       "last_time_utc": "2026-09-08 12:00:00+00:00",
-      "sha256": "223ebac5510b60f15b6b354fa4b8c5bfcd1b38aa8854645a02c59f10c1d6aa84",
-      "size": 929812
+      "sha256": "a99fa1d803d4eba8588ff0be00440fc5e07c9ff89409f8d56611a93ee699f274",
+      "size": 929814
     }
   ],
-  "compatibility_raw_sha256": "6eba67c6cb5963ff4a3113ba27d18162bcd4d329a08bfbbc3fdf335de55ccfc2",
-  "generated_at_utc": "2026-09-08T14:54:09.363424+00:00",
+  "compatibility_raw_sha256": "2b28dbb15a919567aaa07ab6e6c722eedfabfea3f8a195f01a6f0838fbc1556b",
+  "generated_at_utc": "2026-09-08T15:24:08.561074+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live",
-  "bundle_sha256": "041835a71fe86087d2a44dfb69a5b42c247450a282d843192ffb326beb1e6555",
+  "bundle_sha256": "b324b7d0e2be60597347503acd6b60fe6dc919669933b005c945f9b889b82bea",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",

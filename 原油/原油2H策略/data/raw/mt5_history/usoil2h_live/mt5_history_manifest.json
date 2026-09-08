@@ -13,11 +13,11 @@
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\原油\\原油2H策略\\data\\raw\\mt5_history\\usoil2h_live\\USOILm_M30.csv",
-      "rows": 61691,
+      "rows": 61692,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:30:00+00:00",
-      "sha256": "1f88357230f2b33dcd60d2a21f1db487dcbd6e4af2546051498a404bb95d11d5",
-      "size": 6184132
+      "last_time_utc": "2026-09-08 15:00:00+00:00",
+      "sha256": "61e74df6e10f51ca1d049dcb7869642e7ce74d0beb930ee24d94630fcd25d6af",
+      "size": 6184235
     },
     {
       "timeframe": "H2",
@@ -25,14 +25,14 @@
       "rows": 16461,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
       "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "ff3a1074975c2ec13ed5d5809588f53aec5722675264676e7e89751eef3c193a",
-      "size": 1642395
+      "sha256": "ba1237e21533ad0dd2931edeba07c224e29f46c26adeee78ee7021741fc6fb06",
+      "size": 1642397
     }
   ],
-  "compatibility_raw_sha256": "1f88357230f2b33dcd60d2a21f1db487dcbd6e4af2546051498a404bb95d11d5",
-  "generated_at_utc": "2026-09-08T14:54:07.148957+00:00",
+  "compatibility_raw_sha256": "61e74df6e10f51ca1d049dcb7869642e7ce74d0beb930ee24d94630fcd25d6af",
+  "generated_at_utc": "2026-09-08T15:24:06.708301+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\原油\\原油2H策略\\data\\raw\\mt5_history\\usoil2h_live",
-  "bundle_sha256": "09fb980f83e9169ecb8f955abb42831c321ba9bd2b1889db9790239152fbcacf",
+  "bundle_sha256": "ab9bb5838bb770a23cd14e2f065e238f26ca191f14db648a8c1e768df8bac174",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\原油\\原油2H策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",
