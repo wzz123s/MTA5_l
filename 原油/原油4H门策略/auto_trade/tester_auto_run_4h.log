@@ -1,0 +1,114 @@
+[2026-08-20 08:36:47] === tester auto run start ===
+[2026-08-20 08:37:07] FATAL: tester panel not found
+[2026-08-20 08:37:39] === tester auto run start ===
+[2026-08-20 08:37:39] tester found: 策略测试
+[2026-08-20 08:37:39] tester rect: 9,467,2039,1115
+[2026-08-20 08:37:45] mode click failed: ElementNotFoundError({'class_name': 'Button', 'control_id': 3734, 'top_level_only': False, 'parent': <win32_element_info.HwndElementInfo - '策略测试', Afx:ControlBar:00007FF691E10000:8:0000000000010003:0000000000000010, 67330>, 'backend': 'win32'})
+[2026-08-20 08:37:45] EA select attempt 1 failed: ValueError("'Advisors\\\\USOIL4H_Gate_On2H_EA.ex5' is not in list")
+[2026-08-20 08:37:47] EA select attempt 2 failed: ValueError("'Advisors\\\\USOIL4H_Gate_On2H_EA.ex5' is not in list")
+[2026-08-20 08:37:49] EA select attempt 3 failed: ValueError("'Advisors\\\\USOIL4H_Gate_On2H_EA.ex5' is not in list")
+[2026-08-20 08:37:54] date wrapper failed: ImportError("cannot import name 'DateTimePickerWrapper' from 'pywinauto.controls.win32_controls' (F:\\Program Files\\Python\\lib\\site-packages\\pywinauto\\controls\\win32_controls.py)")
+[2026-08-20 08:37:56] From date now: '2001.01.21'
+[2026-08-20 08:37:56] check EA       want='USOIL4H_Gate_On2H_EA.ex5' got='Advisors\\USOIL2H_CrossConfirm_EA.ex5' MISMATCH
+[2026-08-20 08:37:56] check symbol   want='USOILm' got='USOILm' OK
+[2026-08-20 08:37:56] check period   want='H2' got='H2' OK
+[2026-08-20 08:37:56] check model    want='1分钟 OHLC' got='1分钟 OHLC' OK
+[2026-08-20 08:37:56] check deposit  want='500' got='500' OK
+[2026-08-20 08:37:56] check from     want='2021.01.01' got='2001.01.21' MISMATCH
+[2026-08-20 08:37:56] check to       want='2026.08.15' got='2026.08.15' OK
+[2026-08-20 08:37:56] check delay    want='零延迟，理想执行' got='零延迟，理想执行' OK
+[2026-08-20 08:37:56] check opt      want='已禁用' got='已禁用' OK
+[2026-08-20 08:37:56] check forward  want='否' got='否' OK
+[2026-08-20 08:37:56] FATAL: settings mismatch, aborting before start
+[08:46:43] === v2 auto run start ===
+[08:46:49] MT5 stopped for ini patch
+[08:46:49] ini patched: Expert x2 LastExpert x1
+[08:46:49] MT5 relaunched, waiting for window
+[08:46:52] MT5 window: 277752085 - Exness-MT5Trial5: 模拟账户 - Hedge - Exness Technologies Ltd
+[08:46:52] tester panel open
+[08:46:54] check EA       want='USOIL4H_Gate_On2H_EA' got='Advisors\\USOIL4H_Gate_On2H_EA.ex5' OK
+[08:46:54] check symbol   want='USOILm' got='USOILm' OK
+[08:46:54] check period   want='H2' got='H2' OK
+[08:46:54] check model    want='1分钟 OHLC' got='1分钟 OHLC' OK
+[08:46:54] check deposit  want='500' got='500' OK
+[08:46:54] check from     want='2021.01.01' got='2001.01.24' MISMATCH
+[08:46:54] check to       want='2026.08.15' got='2026.08.15' OK
+[08:46:54] check opt      want='已禁用' got='已禁用' OK
+[08:46:54] FATAL: settings mismatch
+[08:49:20] === v3 auto run start ===
+[08:49:26] MT5 stopped
+[08:49:26] terminal.ini patched
+[08:49:26] 4H run profile written: USOIL4H_Gate_On2H_EA.USOILm.H2.20210101_20260815.000.ini
+[08:49:26] MT5 relaunched
+[08:49:32] check EA       want='USOIL4H_Gate_On2H_EA' got='Advisors\\USOIL4H_Gate_On2H_EA.ex5' OK
+[08:49:32] check symbol   want='USOILm' got='USOILm' OK
+[08:49:32] check period   want='H2' got='H2' OK
+[08:49:32] check model    want='1分钟 OHLC' got='1分钟 OHLC' OK
+[08:49:32] check deposit  want='500' got='500' OK
+[08:49:32] check from     want='2021.01.01' got='2001.01.24' MISMATCH
+[08:49:32] check to       want='2026.08.15' got='2026.08.15' OK
+[08:49:32] FATAL: settings mismatch after profile restore
+[08:50:50] === v3 auto run start ===
+[08:50:56] MT5 stopped
+[08:50:56] terminal.ini patched
+[08:50:56] 4H run profile written: USOIL4H_Gate_On2H_EA.USOILm.H2.20210101_20260815.000.ini
+[08:50:56] MT5 relaunched
+[08:51:01] check EA       want='USOIL4H_Gate_On2H_EA' got='Advisors\\USOIL4H_Gate_On2H_EA.ex5' OK
+[08:51:01] check symbol   want='USOILm' got='USOILm' OK
+[08:51:01] check period   want='H2' got='H2' OK
+[08:51:01] check model    want='1分钟 OHLC' got='1分钟 OHLC' OK
+[08:51:01] check deposit  want='500' got='500' OK
+[08:51:01] check from     want='2021.01.01' got='2021.01.01' OK
+[08:51:01] check to       want='2026.08.15' got='2026.08.15' OK
+[08:51:01] start click err AttributeError("'UIAWrapper' object has no attribute 'child_window'"); coords fallback
+[08:51:16] poll rows=-1 button=''
+[08:51:26] poll rows=-1 button=''
+[08:51:36] poll rows=-1 button=''
+[08:51:46] poll rows=-1 button=''
+[08:51:56] poll rows=-1 button=''
+[08:52:06] poll rows=-1 button=''
+[08:52:16] poll rows=-1 button=''
+[08:52:26] poll rows=-1 button=''
+[08:52:36] poll rows=-1 button=''
+[08:52:46] poll rows=-1 button=''
+[08:52:56] poll rows=-1 button=''
+[08:54:20] === v5 auto run start ===
+[08:54:20] MT5 launched
+[08:54:26] check EA       want='USOIL4H_Gate_On2H_EA' got='Advisors\\USOIL4H_Gate_On2H_EA.ex5' OK
+[08:54:26] check symbol   want='USOILm' got='USOILm' OK
+[08:54:26] check period   want='H2' got='H2' OK
+[08:54:26] check model    want='1分钟 OHLC' got='1分钟 OHLC' OK
+[08:54:26] check deposit  want='500' got='500' OK
+[08:54:26] check from     want='2021.01.01' got='2021.01.01' OK
+[08:54:26] check to       want='2026.08.15' got='2026.08.15' OK
+[08:54:26] Start clicked via UIA (attempt 1)
+[08:54:32] after click: metatester=1 button='停止'
+[08:54:47] watch rows=72 metatester=1 term_alive=True
+[08:55:02] watch rows=72 metatester=1 term_alive=True
+[08:55:17] watch rows=72 metatester=1 term_alive=True
+[08:55:32] watch rows=72 metatester=1 term_alive=True
+[08:55:47] watch rows=72 metatester=1 term_alive=True
+[08:56:02] watch rows=72 metatester=1 term_alive=True
+[08:56:17] watch rows=72 metatester=1 term_alive=True
+[08:56:32] watch rows=72 metatester=1 term_alive=True
+[08:56:47] watch rows=72 metatester=1 term_alive=True
+[08:57:02] watch rows=72 metatester=1 term_alive=True
+[08:57:17] watch rows=72 metatester=1 term_alive=True
+[08:57:32] watch rows=72 metatester=1 term_alive=True
+[08:57:47] watch rows=72 metatester=1 term_alive=True
+[08:58:02] watch rows=72 metatester=1 term_alive=True
+[08:58:17] watch rows=72 metatester=1 term_alive=True
+[08:58:32] watch rows=72 metatester=1 term_alive=True
+[08:58:47] watch rows=72 metatester=1 term_alive=True
+[08:59:02] watch rows=72 metatester=1 term_alive=True
+[08:59:17] watch rows=72 metatester=1 term_alive=True
+[08:59:32] watch rows=72 metatester=1 term_alive=True
+[08:59:47] watch rows=72 metatester=1 term_alive=True
+[09:00:02] watch rows=72 metatester=1 term_alive=True
+[09:00:17] watch rows=72 metatester=0 term_alive=True
+[09:00:32] watch rows=72 metatester=0 term_alive=True
+[09:00:47] watch rows=72 metatester=0 term_alive=True
+[09:01:02] watch rows=72 metatester=0 term_alive=True
+[09:01:02] done: agents idle + ledger stable 72 rows
+[09:01:06] ledger copied: F:\use_code\MTA5_l\原油\原油4H门策略\auto_trade\tester_ledger_4h_gate.csv rows=72 (source C:\Users\3762\AppData\Roaming\MetaQuotes\Tester\DAD3B8CC3EAC09C0C9725021DF0C7A65\Agent-127.0.0.1-3000\MQL5\Files\USOIL4H_gate_trade_ledger.csv)
+[09:01:06] === v5 done ===

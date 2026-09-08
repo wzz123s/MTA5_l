@@ -1,0 +1,18 @@
+﻿{
+  "decision_time": "2026-07-21T11:59:51",
+  "check_id": "stage_state_live_gate_evidence_fill_plan",
+  "status": "fill_plan_draft_complete",
+  "fill_plan_item_count": 22,
+  "auto_item_count": 5,
+  "manual_item_count": 13,
+  "rehearsal_item_count": 4,
+  "contains_secret_risk_count": 4,
+  "live_action_risk_count": 12,
+  "requires_user_approval_count": 15,
+  "missing_rule_count": 0,
+  "missing_rules": "",
+  "template_review_status": "pass_templates_open_live_blocked",
+  "all_gate_status": "open",
+  "ready_to_live_trade": false,
+  "recommended_next_action": "review_fill_plan_without_filling_live_values"
+}

@@ -1,0 +1,32 @@
+; Oil_DataEvent_EA | 原油数据行情策略 | SimMode
+; 依据 ea_parameter_pack.json v0.4.1（M3 验证：way门基线 PF 1.419 / V1_T1h PF 1.488）
+; 信号：4H way门（C1/C2/C3）+ 2H cross/pre_cross + 单段退出 + 非农事件过滤
+InpMagic=411102
+InpSymbol="USOILm"
+InpRiskPct=1.0
+InpStopLoPct=0.1
+InpStopHiPct=1.0
+InpMaxOpenVirtual=10
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimStartBalance=500.0
+InpSMA5=5
+InpSMA13=13
+InpPreGap=0.003
+InpHistoryBars2H=20000
+InpGateSMA5=5
+InpGateSMA13=13
+InpMergedMinLen=8
+InpVolMaPeriod=120
+InpGateThr=0.5
+InpGateAmpLo=0.5
+InpGateAmpHi=5.0
+InpHistoryBars4H=10000
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportCSV=true
+InpExportLedger=true
+InpVerboseDiag=true
+InpEventFilterOn=true
+InpEventFilterHrs=1
+InpEventCheckEvery=300

@@ -1,0 +1,361 @@
+﻿ 
+ 
+ 
+ 
+ 
+ EDGAR Filing Documents for 0001193125-26-342390 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ This page uses Javascript. Your browser either doesn't support Javascript or you have it turned off. To see this page as it is meant to appear please use a Javascript enabled browser.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ SEC.gov 
+ 
+ 
+ 
+ EDGAR 
+ 
+ 
+
+ 
+ 
+ Latest Filings 
+ 
+ 
+ Filings search tools 
+ 
+ 
+ 
+ Filing Detail 
+
+
+
+ 
+
+
+ 
+ 
+ 
+ SEC Home &#187; 
+ Company Search &#187; 
+ Current Page 
+ 
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ Form 8-K - Current report: 
+ 
+
+ 
+ SEC Accession No. 0001193125-26-342390
+ 
+
+ 
+
+ 
+ 
+ 
+ Filing Date
+
+ 2026-08-10
+
+ Accepted
+
+ 2026-08-10 16:10:48
+
+ Documents
+
+ 26
+
+ 
+
+ 
+ Period of Report
+
+ 2026-08-10
+
+ 
+
+ 
+ Items
+
+ Item 8.01: Other Events
+Item 9.01: Financial Statements and Exhibits
+
+
+ 
+
+ 
+
+ 
+ 
+ 
+ Interactive Data 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ Document Format Files
+
+ 
+ 
+ Seq | 
+ Description | 
+ Document | 
+ Type | 
+ Size | 
+ 
+
+ 
+ 1 | 
+ 8-K | 
+ d171253d8k.htm iXBRL | 
+ 8-K | 
+ 75964 | 
+ 
+
+ 
+ 2 | 
+ EX-4.2 | 
+ d171253dex42.htm | 
+ EX-4.2 | 
+ 63644 | 
+ 
+
+ 
+ 3 | 
+ EX-4.3 | 
+ d171253dex43.htm | 
+ EX-4.3 | 
+ 44323 | 
+ 
+
+ 
+ 4 | 
+ EX-4.4 | 
+ d171253dex44.htm | 
+ EX-4.4 | 
+ 63034 | 
+ 
+
+ 
+ 5 | 
+ EX-4.5 | 
+ d171253dex45.htm | 
+ EX-4.5 | 
+ 45281 | 
+ 
+
+ 
+ 6 | 
+ EX-4.6 | 
+ d171253dex46.htm | 
+ EX-4.6 | 
+ 43036 | 
+ 
+
+ 
+ 7 | 
+ EX-4.7 | 
+ d171253dex47.htm | 
+ EX-4.7 | 
+ 44604 | 
+ 
+
+ 
+ 8 | 
+ EX-4.8 | 
+ d171253dex48.htm | 
+ EX-4.8 | 
+ 44432 | 
+ 
+
+ 
+ 9 | 
+ EX-4.9 | 
+ d171253dex49.htm | 
+ EX-4.9 | 
+ 44464 | 
+ 
+
+ 
+ 10 | 
+ EX-4.10 | 
+ d171253dex410.htm | 
+ EX-4.10 | 
+ 42593 | 
+ 
+
+ 
+ 11 | 
+ EX-4.11 | 
+ d171253dex411.htm | 
+ EX-4.11 | 
+ 44782 | 
+ 
+
+ 
+ 12 | 
+ EX-5.1 | 
+ d171253dex51.htm | 
+ EX-5.1 | 
+ 19051 | 
+ 
+
+ 
+ 17 | 
+ GRAPHIC | 
+ g171253g0809040243393.jpg | 
+ GRAPHIC | 
+ 9804 | 
+ 
+
+ 
+ 18 | 
+ GRAPHIC | 
+ g171253g71n29.jpg | 
+ GRAPHIC | 
+ 32425 | 
+ 
+
+ 
+ 19 | 
+ GRAPHIC | 
+ g171253g78z81.jpg | 
+ GRAPHIC | 
+ 4378 | 
+ 
+
+ 
+ | 
+ Complete submission text file | 
+ 0001193125-26-342390.txt | 
+ | 
+ 1090225 | 
+ 
+
+ 
+ 
+
+
+
+ 
+ 
+ Data Files
+
+ 
+ 
+ Seq | 
+ Description | 
+ Document | 
+ Type | 
+ Size | 
+ 
+
+ 
+ 13 | 
+ XBRL TAXONOMY EXTENSION SCHEMA | 
+ goog-20260810.xsd | 
+ EX-101.SCH | 
+ 9737 | 
+ 
+
+ 
+ 14 | 
+ XBRL TAXONOMY EXTENSION DEFINITION LINKBASE | 
+ goog-20260810_def.xml | 
+ EX-101.DEF | 
+ 22576 | 
+ 
+
+ 
+ 15 | 
+ XBRL TAXONOMY EXTENSION LABEL LINKBASE | 
+ goog-20260810_lab.xml | 
+ EX-101.LAB | 
+ 41103 | 
+ 
+
+ 
+ 16 | 
+ XBRL TAXONOMY EXTENSION PRESENTATION LINKBASE | 
+ goog-20260810_pre.xml | 
+ EX-101.PRE | 
+ 25039 | 
+ 
+
+ 
+ 30 | 
+ EXTRACTED XBRL INSTANCE DOCUMENT | 
+ d171253d8k_htm.xml | 
+ XML | 
+ 35444 | 
+ 
+
+ 
+ 
+
+
+
+ 
+ 
+ 
+ Mailing Address
+ 1600 AMPHITHEATRE PARKWAY 
+ 
+MOUNTAIN VIEW CA 
+94043 
+ 
+
+ Business Address
+ 1600 AMPHITHEATRE PARKWAY 
+ 
+MOUNTAIN VIEW CA 
+94043 
+ 650-253-0000 
+ 
+
+ 
+ Alphabet Inc. (Filer)
+ CIK : 0001652044 (see all company filings) 
+ EIN. : 611767919 | State of Incorp.: DE | Fiscal Year End: 1231 
+Type: 8-K | Act: 34 | File No.: 001-37580 | Film No.: 261258502 
+ SIC : 7370 Services-Computer Programming, Data Processing, Etc.
+(CF Office: 06 Technology)
+
+
+
+ 
+
+
+
+ 
+
+
+

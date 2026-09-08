@@ -1,0 +1,20 @@
+﻿{
+  "decision_time": "2026-07-21T12:11:00",
+  "check_id": "stage_state_manual_evidence_prerequisite_plan",
+  "status": "manual_prerequisites_drafted_live_blocked",
+  "fill_plan_items_total": 22,
+  "auto_safe_items_total": 5,
+  "auto_safe_collected_items": 2,
+  "remaining_prerequisite_items": 20,
+  "pending_auto_items": 3,
+  "manual_items": 13,
+  "rehearsal_items": 4,
+  "p0_items": 13,
+  "p1_items": 7,
+  "secret_risk_items": 3,
+  "live_action_risk_items": 11,
+  "requires_user_approval_items": 15,
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "recommended_next_action": "review_manual_evidence_prerequisite_plan"
+}

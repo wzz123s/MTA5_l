@@ -1,0 +1,80 @@
+{
+  "source": "MTA5_l_existing_mt5_history",
+  "symbol": "USOILm",
+  "note": "数据来自 MTA5_l 项目已下载的 MT5 历史数据（2026-08-15 窗口），D1 由 H1 重采样",
+  "files": [
+    {
+      "timeframe": "M15",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\USOILm_M15.csv",
+      "rows": 100086,
+      "first_utc": "2022-05-20 20:30:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 1109,
+      "sha256": "04c8de60ed1d6c894d95dca028c168d1216f4a8e53682d68f261fb2b41de8619"
+    },
+    {
+      "timeframe": "H1",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\USOILm_H1.csv",
+      "rows": 30981,
+      "first_utc": "2020-01-02 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 768,
+      "sha256": "d2941b58d7f1ff7fa3b4a170de3a765693ca0a4ea0a8e7583c770b7a0cbc759a"
+    },
+    {
+      "timeframe": "H2",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\USOILm_H2.csv",
+      "rows": 16396,
+      "first_utc": "2020-01-02 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 748,
+      "sha256": "a611c0f4c048a1d5ee74494e0fc031f902eb8314cd23363e4dbd6d626c701b7d"
+    },
+    {
+      "timeframe": "H4",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\USOILm_H4.csv",
+      "rows": 8730,
+      "first_utc": "2020-01-02 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 746,
+      "sha256": "75f22aba840b39096194af02a79ae74faaffc87dafb3116dbaa7a098d591ad1a"
+    },
+    {
+      "timeframe": "H6",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\USOILm_H6.csv",
+      "rows": 6074,
+      "first_utc": "2020-01-02 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 348,
+      "sha256": "6328afcfb5bba368e91bb6ed676805bbc0470a600b0ddaf9852d0c12002d45c9"
+    },
+    {
+      "timeframe": "H8",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\USOILm_H8.csv",
+      "rows": 4746,
+      "first_utc": "2020-01-02 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 341,
+      "sha256": "ece7a1e505ee091494d1a3545e17c65b721fc047b6996188a2bfe76822985c4b"
+    },
+    {
+      "timeframe": "W1",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\USOILm_W1.csv",
+      "rows": 348,
+      "first_utc": "2020-01-05 00:00:00+00:00",
+      "last_utc": "2026-08-30 00:00:00+00:00",
+      "gaps": 0,
+      "sha256": "98c4401a08742d949d0a25d31ded599d6d912c3567251bf76b812ef590d72789"
+    },
+    {
+      "timeframe": "D1",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\USOILm_D1.csv",
+      "rows": 2073,
+      "first_utc": "2020-01-02 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": -1,
+      "note": "resampled from H1",
+      "sha256": "e8adbf4aa8e1a288c07e34b23a9f2696fbd4ce096ee45d30d674c617f76882fa"
+    }
+  ]
+}

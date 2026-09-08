@@ -1,0 +1,20 @@
+﻿{
+  "decision_time": "2026-07-23T21:02:11",
+  "check_id": "stage_state_exact_mt5_ea_live_loading_package",
+  "status": "exact_live_loading_package_ready_fail_closed",
+  "final_gate_passed_to_loading_package_pending": true,
+  "account_context_matches_approval": true,
+  "risk_guard_rehearsal_passed": true,
+  "compile_log_zero_errors_warnings": true,
+  "critical_inputs_match": true,
+  "stop_flags_present": true,
+  "terminal_autotrading_disabled": true,
+  "orders_placed": false,
+  "runner_executed": false,
+  "ea_loaded": false,
+  "stop_flags_removed": false,
+  "ready_for_live_loading_package": true,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "request_explicit_stop_flag_removal_and_manual_ea_loading_approval"
+}

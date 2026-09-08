@@ -1,0 +1,86 @@
+﻿{
+  "strategy": "2H_M30_6H",
+  "source_type": "mt5_api_live",
+  "source_id": "2h_m30_6h_live_smoke",
+  "symbol": "XAUUSDm",
+  "timeframes": [
+    "M30",
+    "H2",
+    "H6"
+  ],
+  "generated_at_utc": "2026-07-25T04:04:35.188242+00:00",
+  "poll_seconds": 5.0,
+  "max_iterations": 1,
+  "bars_per_timeframe": 200,
+  "live_dir": "F:\\use_code\\MTA5_l\\2H_M30_6H策略\\data\\live\\2h_m30_6h_live_smoke",
+  "snapshot": {
+    "terminal": {
+      "mt5_version": [
+        500,
+        5833,
+        "25 Apr 2026"
+      ],
+      "name": "MetaTrader 5",
+      "company": "MetaQuotes Ltd.",
+      "path": "F:\\Program Files\\MetaTrader 5 EXNESS",
+      "data_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16",
+      "commondata_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common",
+      "build": 5833,
+      "connected": true
+    },
+    "account": {
+      "account_connected": true,
+      "login_sha256": "ae4f250733c70c90ce7fcb0bf1f9864cbc58b0c45423ac73efbaa720c89b9055",
+      "server": "Exness-MT5Trial5",
+      "currency": "USD",
+      "trade_mode": 0,
+      "leverage": 2000
+    },
+    "symbol": {
+      "available": true,
+      "name": "XAUUSDm",
+      "path": "Standard\\Forex\\XAUUSDm",
+      "digits": 3,
+      "point": 0.001,
+      "trade_contract_size": 100.0,
+      "currency_profit": "USD",
+      "currency_margin": "XAU",
+      "spread": 240,
+      "trade_mode": 4,
+      "visible": true
+    }
+  },
+  "captures": [
+    {
+      "tick_path": "F:\\use_code\\MTA5_l\\2H_M30_6H策略\\data\\live\\2h_m30_6h_live_smoke\\ticks_XAUUSDm.jsonl",
+      "tick": {
+        "captured_at_utc": "2026-07-25T04:04:34.192800+00:00",
+        "symbol": "XAUUSDm",
+        "time": 1784926679,
+        "time_msc": 1784926679969,
+        "bid": 4052.68,
+        "ask": 4052.92,
+        "last": 0.0,
+        "volume": 0,
+        "flags": 6
+      },
+      "bar_files": [
+        {
+          "timeframe": "M30",
+          "path": "F:\\use_code\\MTA5_l\\2H_M30_6H策略\\data\\live\\2h_m30_6h_live_smoke\\bars_XAUUSDm_M30_latest.csv",
+          "rows": 200
+        },
+        {
+          "timeframe": "H2",
+          "path": "F:\\use_code\\MTA5_l\\2H_M30_6H策略\\data\\live\\2h_m30_6h_live_smoke\\bars_XAUUSDm_H2_latest.csv",
+          "rows": 200
+        },
+        {
+          "timeframe": "H6",
+          "path": "F:\\use_code\\MTA5_l\\2H_M30_6H策略\\data\\live\\2h_m30_6h_live_smoke\\bars_XAUUSDm_H6_latest.csv",
+          "rows": 200
+        }
+      ]
+    }
+  ]
+}

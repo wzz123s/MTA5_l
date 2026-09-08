@@ -1,0 +1,20 @@
+﻿{
+  "gap_id": "LIVE-GAP-006",
+  "gate_item": "Live risk policy",
+  "template_status": "template_only",
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "contains_real_credentials": false,
+  "fields": {
+    "max_daily_loss": "TEMPLATE_PLACEHOLDER",
+    "max_drawdown": "TEMPLATE_PLACEHOLDER",
+    "max_orders": "TEMPLATE_PLACEHOLDER",
+    "max_spread_points": "TEMPLATE_PLACEHOLDER",
+    "margin_guard_pct": "TEMPLATE_PLACEHOLDER",
+    "min_lot": "TEMPLATE_PLACEHOLDER",
+    "max_lot": "TEMPLATE_PLACEHOLDER",
+    "balance_cap": "TEMPLATE_PLACEHOLDER"
+  },
+  "manual_confirmation": "Operator confirms policy matches the intended account size and leverage.",
+  "fail_closed_action": "Reject live start if any risk value is missing, zero where not allowed, or too broad."
+}

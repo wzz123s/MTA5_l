@@ -1,0 +1,23 @@
+﻿{
+  "operator_alias": "填一个非秘密别名，例如 owner_local",
+  "approve_all_10_boolean_items": false,
+  "or_approval_items": {
+    "LIVE-GAP-001_live_trading_approval": false,
+    "LIVE-GAP-002_live_package_manifest_release_approval": false,
+    "LIVE-GAP-003_InpSimMode_false_loading_approval": false,
+    "LIVE-GAP-004_secret_externalization_approval": false,
+    "LIVE-GAP-005_MT5_EA_only_order_path_approval": false,
+    "LIVE-GAP-006_live_risk_policy_approval": false,
+    "LIVE-GAP-008_watched_alert_channel_confirmed": false,
+    "LIVE-GAP-008_operator_reconciliation_confirmed": false,
+    "LIVE-GAP-009_account_spec_intended_context_confirmed": false,
+    "LIVE-GAP-010_nonprod_rehearsal_alert_emergency_acceptance": false
+  },
+  "do_not_include": [
+    "full account number",
+    "password",
+    "investor password",
+    "api token",
+    "secret key"
+  ]
+}

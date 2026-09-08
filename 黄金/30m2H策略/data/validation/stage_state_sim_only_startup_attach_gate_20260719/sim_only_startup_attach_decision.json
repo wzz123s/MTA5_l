@@ -1,0 +1,14 @@
+﻿{
+  "check_id": "stage_state_sim_only_startup_attach_gate",
+  "status": "pass_attach_pending_market_data",
+  "ready_to_runtime_forward_review_after_market_tick": true,
+  "ready_to_sim_continuous_runner_execution": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "pending_failure_count": 2,
+  "signal_csv_rows": 0,
+  "trade_ledger_rows": 0,
+  "latest_tick_time": "2026-07-18T04:57:58",
+  "latest_tick_age_minutes": 2107.27,
+  "terminal_running_and_attached": true
+}

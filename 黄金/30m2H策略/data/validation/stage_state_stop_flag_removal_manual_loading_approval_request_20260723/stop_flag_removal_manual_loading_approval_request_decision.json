@@ -1,0 +1,16 @@
+﻿{
+  "decision_time": "2026-07-23T23:10:20",
+  "check_id": "stage_state_stop_flag_removal_manual_loading_approval_request",
+  "status": "stop_flag_removal_manual_loading_approval_request_ready_waiting_for_explicit_approval",
+  "loading_package_ready": true,
+  "stop_flags_present": true,
+  "approval_items_signed": 0,
+  "approval_items_required": 6,
+  "orders_placed": false,
+  "runner_executed": false,
+  "ea_loaded": false,
+  "stop_flags_removed": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "operator_explicitly_approves_stop_flag_removal_and_manual_ea_loading_or_keep_blocked"
+}

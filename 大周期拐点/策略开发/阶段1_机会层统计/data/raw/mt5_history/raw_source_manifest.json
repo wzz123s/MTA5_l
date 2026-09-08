@@ -1,0 +1,323 @@
+{
+  "generated_at": "2026-09-01T11:57:11.423254+00:00",
+  "source_type": "mt5_api_history",
+  "note": "MCT 大周期拐点策略 · 阶段1 多周期验证数据包（独立数据源，v2 真密度）",
+  "period_pairs": [
+    "1H/4H",
+    "2H/6H/8H",
+    "3H/12H",
+    "4H/16H",
+    "6H/1D",
+    "12H/2D",
+    "1D/1W"
+  ],
+  "timeframes": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H6",
+    "H8",
+    "H12",
+    "D1",
+    "W1",
+    "H16",
+    "D2"
+  ],
+  "derived_rules": {
+    "H16": "H4 x4 连续K线合成",
+    "D2": "D1 x2 连续K线合成"
+  },
+  "quality": {
+    "server_history_depth": {
+      "XAUUSDm": {
+        "H1-H8": "2017-03-01 起真密度",
+        "H12/D1/W1": "2016-01-03 起"
+      },
+      "USOILm": {
+        "H1-H8": "2021-07-01 起真密度",
+        "H12/D1/W1": "2019-03-01 起"
+      }
+    },
+    "note": "实测 Exness-MT5Trial5 对 H1~H8 的历史深度有限，更早返回日线粒度伪条；包内所有文件已截断至真密度，valid_from 见各文件。H16/D2 为派生周期（MT5 无原生），规则见 derived_rules。",
+    "h1_roll_gap": {
+      "finding": "H1 每个交易日 22:00/23:00（UTC）系统性缺 1 根小时线（仅周一~周四，约 4.3% 条）",
+      "cause": "Exness-MT5Trial5 每日换日（daily roll）时段数据源固有特性",
+      "impact": "低：不影响 H2~D1 等其余周期（已核实 0 异常间距）；H1 段分析如需严格连续性可插值或按整点重对齐",
+      "verified": "2026-09-01"
+    },
+    "gap_checks": "全部原生周期异常间距=0（H2/H3/H4/H6/H8/H12/D1；H1 仅上述换日缺口）"
+  },
+  "requested_range": {
+    "start": "2016-01-01",
+    "end": "2026-09-01"
+  },
+  "terminal_snapshot": {
+    "terminal_name": "MetaTrader 5",
+    "terminal_path": "F:\\Program Files\\MetaTrader 5",
+    "company": "MetaQuotes Ltd.",
+    "account": 277752085,
+    "account_hash": "ae4f250733c70c90",
+    "leveraged": 2000,
+    "server": "Exness-MT5Trial5",
+    "currency": "USD"
+  },
+  "symbols": [
+    {
+      "symbol": "XAUUSDm",
+      "source_id": "mct_mt5_multiperiod_20260901_115708",
+      "files": [
+        {
+          "name": "XAUUSDm_D1.csv",
+          "rows": 3275,
+          "sha256": "093626ace8cc014a4cacbdd18a9a8c38731902ed539e8a65c31e9f3fce5bc2bb",
+          "timeframe": "D1",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2016-01-03 00:00:00",
+          "first": "2016-01-03 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_D2.csv",
+          "rows": 1637,
+          "sha256": "8edca8dc176c8413f026f95547863a01e925bd09055142965980b9ad3f8fafd6",
+          "timeframe": "D2",
+          "derived": true,
+          "derived_from": "D1",
+          "valid_from": "2016-01-03 00:00:00",
+          "first": "2016-01-03 00:00:00",
+          "last": "2026-08-30 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H1.csv",
+          "rows": 56168,
+          "sha256": "c32a02750ea88d1b30ec775989ce62b66d286dcf4640a5d8c04b49c1817c60f0",
+          "timeframe": "H1",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2017-03-01 00:00:00",
+          "first": "2017-03-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H12.csv",
+          "rows": 5890,
+          "sha256": "21bcfcd4417b7a2c558e32c46d869e534d8b46eace7b6bfb33d806972447b7fa",
+          "timeframe": "H12",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2016-01-03 00:00:00",
+          "first": "2016-01-03 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H16.csv",
+          "rows": 3826,
+          "sha256": "18fe160484a26adb7171117ff789fb114b34939a8af8d11c9dadb984f92ccfeb",
+          "timeframe": "H16",
+          "derived": true,
+          "derived_from": "H4",
+          "valid_from": "2017-03-01 00:00:00",
+          "first": "2017-03-01 00:00:00",
+          "last": "2026-08-31 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H2.csv",
+          "rows": 29399,
+          "sha256": "96a5de40552dc15c1cb4c63ca60d13898fb5c2d138c0b5e8bc8fa55b582ef87c",
+          "timeframe": "H2",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2017-03-01 00:00:00",
+          "first": "2017-03-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H3.csv",
+          "rows": 19841,
+          "sha256": "889bc9c0a231eba0822e800bd447c6e51ed21e883df6b562b6ba5fd18a0644fa",
+          "timeframe": "H3",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2017-03-01 00:00:00",
+          "first": "2017-03-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H4.csv",
+          "rows": 15307,
+          "sha256": "634c9bdcef0c947c61162d979615b04fa2060db7b3a3ff4daac3725c47248311",
+          "timeframe": "H4",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2017-03-01 00:00:00",
+          "first": "2017-03-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H6.csv",
+          "rows": 10419,
+          "sha256": "071dd195d8301ee184a7090a6906ca1af332f379f60e23b9797b7904fef90dc6",
+          "timeframe": "H6",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2017-03-01 00:00:00",
+          "first": "2017-03-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H8.csv",
+          "rows": 7980,
+          "sha256": "19d1ec6ce37b9ea4e947065ff7b29952e89deb72d3439a1a51a19863bbab140c",
+          "timeframe": "H8",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2017-03-01 00:00:00",
+          "first": "2017-03-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_W1.csv",
+          "rows": 557,
+          "sha256": "c226b730f7bbba848d02f8ed05352834884d4a40558fbd80c6558ca3f41d97d7",
+          "timeframe": "W1",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2016-01-03 00:00:00",
+          "first": "2016-01-03 00:00:00",
+          "last": "2026-08-30 00:00:00"
+        }
+      ],
+      "bundle_sha256": "42e2dcada0bb98e281ddf2eaddd7eccb4899e01e75e010735c0bd8def909b4ed"
+    },
+    {
+      "symbol": "USOILm",
+      "source_id": "mct_mt5_multiperiod_20260901_115708",
+      "files": [
+        {
+          "name": "USOILm_D1.csv",
+          "rows": 2331,
+          "sha256": "ba8cb8884f20d124a9f7dd27644063984600f14533011c01a286c02096c8042d",
+          "timeframe": "D1",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2019-03-01 00:00:00",
+          "first": "2019-03-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "USOILm_D2.csv",
+          "rows": 1165,
+          "sha256": "a7b0c6ed638cc4c854a357815bbcbb42d8773ee501d3d10de6105421fb60e1bd",
+          "timeframe": "D2",
+          "derived": true,
+          "derived_from": "D1",
+          "valid_from": "2019-03-01 00:00:00",
+          "first": "2019-03-01 00:00:00",
+          "last": "2026-08-30 00:00:00"
+        },
+        {
+          "name": "USOILm_H1.csv",
+          "rows": 30517,
+          "sha256": "ca7554ba53688371e81b9b6a187eb133c5b4d2770def62f18dd047da53acf794",
+          "timeframe": "H1",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2021-07-01 00:00:00",
+          "first": "2021-07-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "USOILm_H12.csv",
+          "rows": 3671,
+          "sha256": "1c3b8b1889319c2d2bf4a80b44bb18da2f55beeb9353ab9ecd8c0a98e9470bac",
+          "timeframe": "H12",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2019-03-01 00:00:00",
+          "first": "2019-03-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "USOILm_H16.csv",
+          "rows": 2066,
+          "sha256": "433c30d3a5b1041663cca99b708b33f0489e94342eb23e4afb73f68c235ae9b6",
+          "timeframe": "H16",
+          "derived": true,
+          "derived_from": "H4",
+          "valid_from": "2021-07-01 00:00:00",
+          "first": "2021-07-01 00:00:00",
+          "last": "2026-08-31 04:00:00"
+        },
+        {
+          "name": "USOILm_H2.csv",
+          "rows": 15932,
+          "sha256": "5298859195ada98fa5cb4e514d93c046d4c1471e2b7e56cd17db9dac85995172",
+          "timeframe": "H2",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2021-07-01 00:00:00",
+          "first": "2021-07-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "USOILm_H3.csv",
+          "rows": 10733,
+          "sha256": "1da52318fde25c0ad677703808e9c4598cd5b35280f7802f738e033edae98a80",
+          "timeframe": "H3",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2021-07-01 00:00:00",
+          "first": "2021-07-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "USOILm_H4.csv",
+          "rows": 8266,
+          "sha256": "40776848bc66ba2724c2c5dee43d9b89fa902ca7af82451ffcd26855afc3f02d",
+          "timeframe": "H4",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2021-07-01 00:00:00",
+          "first": "2021-07-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "USOILm_H6.csv",
+          "rows": 5610,
+          "sha256": "1781fe100d7ddc4b553146d67b7e0c10d702099a54efae15652242bbc9ec536f",
+          "timeframe": "H6",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2021-07-01 00:00:00",
+          "first": "2021-07-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "USOILm_H8.csv",
+          "rows": 4282,
+          "sha256": "1c6333706aaccd602a7fa22062fefe9fee512a7c9e3c5a5505549a0484b6c04d",
+          "timeframe": "H8",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2021-07-01 00:00:00",
+          "first": "2021-07-01 00:00:00",
+          "last": "2026-09-01 00:00:00"
+        },
+        {
+          "name": "USOILm_W1.csv",
+          "rows": 392,
+          "sha256": "64083be86fe57529dbee99d0ce4b7ef5ef50300c70cabfe2ab676bbc47264512",
+          "timeframe": "W1",
+          "derived": false,
+          "derived_from": null,
+          "valid_from": "2019-03-03 00:00:00",
+          "first": "2019-03-03 00:00:00",
+          "last": "2026-08-30 00:00:00"
+        }
+      ],
+      "bundle_sha256": "812880ef7645dfb15a23a5f2baa334811fe96be0b62d1777b88280ad660e60f0"
+    }
+  ]
+}

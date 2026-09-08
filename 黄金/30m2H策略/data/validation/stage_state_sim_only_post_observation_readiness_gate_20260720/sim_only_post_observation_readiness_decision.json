@@ -1,0 +1,18 @@
+﻿{
+  "decision_time": "2026-07-20T20:05:52",
+  "check_id": "stage_state_sim_only_post_observation_readiness_gate",
+  "status": "pass",
+  "ready_to_continue_sim_only_monitoring": true,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "observation_cycles_completed": 12,
+  "observation_signal_rows_first": 27,
+  "observation_signal_rows_last": 29,
+  "observation_trade_ledger_rows_last": 0,
+  "positions_count": 0,
+  "orders_count": 0,
+  "config_path": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_only_chart_trial_package_20260719\\sim_continuous_runner_config_20260720.json",
+  "observation_decision": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_continuous_runner_observation_window_20260720\\finite_runner_trial_decision.json",
+  "continue_sim_only_command": "python 30m2H策略\\scripts\\validate\\sim_continuous_runner_finite_trial_20260720.py --config 30m2H策略\\data\\validation\\stage_state_sim_only_chart_trial_package_20260719\\sim_continuous_runner_config_20260720.json --out-dir 30m2H策略\\data\\validation\\stage_state_sim_continuous_runner_next_window --cycles 12 --interval-sec 300",
+  "stop_flag_file": "F:\\use_code\\MTA5_l\\auto_trade\\RUNNER_STOP.flag"
+}

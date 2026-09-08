@@ -1,0 +1,88 @@
+﻿{
+  "strategy": "Gold_DataEvent",
+  "source_type": "mt5_api_history",
+  "source_id": "gold_dataevent_live",
+  "symbol": "XAUUSDm",
+  "timeframes": [
+    "M30",
+    "H2",
+    "H6"
+  ],
+  "date_from_utc": "2019-01-01 00:00:00+00:00",
+  "date_to_utc": "2026-09-09 00:00:00+00:00",
+  "files": [
+    {
+      "timeframe": "M30",
+      "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live\\XAUUSDm_M30.csv",
+      "rows": 90908,
+      "first_time_utc": "2019-01-02 00:00:00+00:00",
+      "last_time_utc": "2026-09-08 14:30:00+00:00",
+      "sha256": "6eba67c6cb5963ff4a3113ba27d18162bcd4d329a08bfbbc3fdf335de55ccfc2",
+      "size": 9985723
+    },
+    {
+      "timeframe": "H2",
+      "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live\\XAUUSDm_H2.csv",
+      "rows": 23832,
+      "first_time_utc": "2019-01-02 00:00:00+00:00",
+      "last_time_utc": "2026-09-08 14:00:00+00:00",
+      "sha256": "ecc11755b99ab85b3235d3ec5664c93a01e7276f2e90b3859a5680cad0eb38e8",
+      "size": 2604592
+    },
+    {
+      "timeframe": "H6",
+      "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live\\XAUUSDm_H6.csv",
+      "rows": 8467,
+      "first_time_utc": "2019-01-02 00:00:00+00:00",
+      "last_time_utc": "2026-09-08 12:00:00+00:00",
+      "sha256": "223ebac5510b60f15b6b354fa4b8c5bfcd1b38aa8854645a02c59f10c1d6aa84",
+      "size": 929812
+    }
+  ],
+  "compatibility_raw_sha256": "6eba67c6cb5963ff4a3113ba27d18162bcd4d329a08bfbbc3fdf335de55ccfc2",
+  "generated_at_utc": "2026-09-08T14:54:09.363424+00:00",
+  "bundle_dir": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live",
+  "bundle_sha256": "041835a71fe86087d2a44dfb69a5b42c247450a282d843192ffb326beb1e6555",
+  "compatibility_raw_file": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\XAUUSDm30.csv",
+  "terminal_path_arg": "",
+  "server_arg": "",
+  "portable": false,
+  "snapshot": {
+    "terminal": {
+      "mt5_version": [
+        500,
+        6182,
+        "5 Sep 2026"
+      ],
+      "name": "MetaTrader 5",
+      "company": "MetaQuotes Ltd.",
+      "path": "F:\\Program Files\\MetaTrader 5",
+      "data_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\DAD3B8CC3EAC09C0C9725021DF0C7A65",
+      "commondata_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common",
+      "build": 6182,
+      "connected": true
+    },
+    "account": {
+      "account_connected": true,
+      "login_sha256": "ae4f250733c70c90ce7fcb0bf1f9864cbc58b0c45423ac73efbaa720c89b9055",
+      "server": "Exness-MT5Trial5",
+      "currency": "USD",
+      "trade_mode": 0,
+      "leverage": 2000
+    },
+    "symbol": {
+      "available": true,
+      "name": "XAUUSDm",
+      "path": "Standard\\Forex\\XAUUSDm",
+      "digits": 3,
+      "point": 0.001,
+      "trade_contract_size": 100.0,
+      "currency_profit": "USD",
+      "currency_margin": "XAU",
+      "spread": 260,
+      "trade_mode": 4,
+      "visible": true
+    }
+  },
+  "rule": "strategy_dedicated_raw_source_required; direct_mt5_api_required"
+}

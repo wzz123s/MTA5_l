@@ -1,0 +1,29 @@
+; USOIL4H_Gate_On2H | 4H 机会门 -> 2H cross/pre_cross | SimMode
+; 对齐 validate_usoil_gate_strategy.py 4H门（72 笔, PF 1.73, OOS 2.07）
+; 门因果性已验证：sl>=8 段不受短段合并 lookahead 影响（0 flip）
+InpMagic=362137
+InpSymbol=USOILm
+InpRiskPct=1.0
+InpStopLoPct=0.1
+InpStopHiPct=1.0
+InpMaxOpenVirtual=10
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimStartBalance=500.0
+InpSMA5=5
+InpSMA13=13
+InpPreGap=0.003
+InpHistoryBars2H=20000
+InpGateSMA5=5
+InpGateSMA13=13
+InpMergedMinLen=8
+InpVolMaPeriod=120
+InpGateThr=0.5
+InpGateAmpLo=0.5
+InpGateAmpHi=5.0
+InpHistoryBars4H=10000
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportCSV=true
+InpExportLedger=true
+InpVerboseDiag=true

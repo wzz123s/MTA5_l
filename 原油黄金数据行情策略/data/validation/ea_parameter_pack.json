@@ -1,0 +1,80 @@
+{
+  "strategy": "原油黄金数据行情策略",
+  "version": "0.4.1",
+  "generated_at_utc": "2026-08-30T00:30:00Z",
+  "gold": {
+    "symbol": "XAUUSDm",
+    "entry": "M30",
+    "gate": [
+      "H6_bias5_signed_pct>0",
+      "H6_bias13_signed_pct>0",
+      "H6_bias55_signed_pct>0"
+    ],
+    "opportunities": [
+      "pre_cross(gap<=0.300%)",
+      "cross",
+      "post_n(2-6)"
+    ],
+    "quality": "Bias_5 top34%",
+    "stop": "prev_seg SMA13 extreme",
+    "exit": {
+      "stage1": "2.0R",
+      "stage2": "1.5R trail + 4.0R force",
+      "stage3": "M30 merged reverse cross"
+    },
+    "variants": {
+      "V1_filter_hours": 2,
+      "V1_pf": 1.753,
+      "V1_ev": 37906,
+      "adopt": "optional",
+      "combo_V1T1h_V5w3x_pf": 1.745,
+      "combo_ev": 40529,
+      "V5_widen_mult": 3,
+      "V5_widen_hours": 4,
+      "V5_pf": 1.673
+    },
+    "baseline": {
+      "n": 1018,
+      "pf": 1.64,
+      "wr": 0.386,
+      "pos_years": "8/8"
+    }
+  },
+  "oil": {
+    "symbol": "USOILm",
+    "entry": "H2 cross+pre_cross",
+    "gate": {
+      "C1": "seg_len>=8",
+      "C2": "ext way/vol_way>=0.5",
+      "C3": "amp 0.5-5%"
+    },
+    "stop": "H2 structure 0.1-1.0%",
+    "exit": "H2 reverse cross (single pos)",
+    "variants": {
+      "V1_filter_hours": 1,
+      "V1_pf": 1.488,
+      "V1_ev": 9.57,
+      "adopt": "NO (way-gate)",
+      "V5_widen_mult": 3,
+      "V5_pf": 1.343
+    },
+    "baseline": {
+      "n": 58,
+      "pf": 1.419,
+      "wr": 0.414,
+      "pos_years": "4/6",
+      "warning": "2024后收益集中，前向验证必需"
+    }
+  },
+  "event_gate": {
+    "importance_min": 3,
+    "currency_whitelist": [
+      "USD",
+      "EUR",
+      "GBP",
+      "CAD"
+    ],
+    "blackout_events_total": 5949,
+    "calendar_file": "data/raw/calendar_export.csv"
+  }
+}

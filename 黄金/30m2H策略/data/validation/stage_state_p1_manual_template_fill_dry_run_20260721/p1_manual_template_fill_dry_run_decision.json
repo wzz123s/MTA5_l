@@ -1,0 +1,19 @@
+﻿{
+  "decision_time": "2026-07-21T16:25:30",
+  "check_id": "stage_state_p1_manual_template_fill_dry_run",
+  "status": "p1_manual_dry_run_generated_live_blocked",
+  "p1_manual_items": 3,
+  "dry_run_files_written": 3,
+  "required_fields_total": 19,
+  "csv_files": 1,
+  "json_files": 2,
+  "original_templates_overwritten": false,
+  "credential_values_output": false,
+  "runner_executed": false,
+  "mt5_accessed": false,
+  "orders_placed": false,
+  "live_set_switched": false,
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "recommended_next_action": "review_p1_manual_template_fill_dry_run"
+}

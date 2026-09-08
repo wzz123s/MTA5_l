@@ -1,0 +1,45 @@
+﻿{
+  "gap_id": "LIVE-GAP-008",
+  "policy_status": "local_policy_and_probe_ready_watched_channel_pending",
+  "scope": "MT5_EA_ONLY_XAUUSDm_monitoring_reconciliation",
+  "generated_at": "2026-07-23T19:33:10",
+  "ready_to_live_trade": false,
+  "alert_channels": {
+    "local_file": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_live_monitoring_reconciliation_package_20260723\\live_monitoring_alert_test_log.jsonl",
+    "terminal_journal": "MT5 Journal/Experts logs",
+    "external_watched_channel": "manual_pending"
+  },
+  "watched_alert_channel_confirmed": false,
+  "checks": {
+    "terminal_process": {
+      "frequency_sec": 60,
+      "source": "Get-Process terminal64",
+      "fail_closed_action": "create EMERGENCY_STOP.flag and RUNNER_STOP.flag; notify operator"
+    },
+    "ea_log_errors": {
+      "frequency_sec": 60,
+      "source": "MT5 Experts/Journal logs",
+      "fail_closed_action": "stop new entries and review logs before resume"
+    },
+    "signal_export_freshness": {
+      "frequency_sec": 300,
+      "source": "30m2H_strategy_signals_export.csv",
+      "fail_closed_action": "alert if stale during scheduled trading window"
+    },
+    "trade_ledger_reconciliation": {
+      "frequency_sec": 300,
+      "source": "30m2H_strategy_trade_ledger.csv and deal history",
+      "fail_closed_action": "block resume until ledger/deal mismatch is explained"
+    },
+    "position_order_snapshot": {
+      "frequency_sec": 60,
+      "source": "MT5 positions/orders read-only snapshot",
+      "fail_closed_action": "operator review if unexpected position/order exists"
+    },
+    "margin_level": {
+      "frequency_sec": 60,
+      "threshold_pct": 500,
+      "fail_closed_action": "block new entries and escalate"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+﻿# Comparable Anchor Alignment
+
+- comparable_start: `2022-04-08 14:30:00`
+- evaluated_deltas: `0, 30, 60, 90, 120`
+
+## Overall
+
+|   delta_minutes | comparable_start    |   mt5_signals |   python_signals |   shared_signals |   mt5_only_signals |   python_only_signals |   same_trigger_shared |   same_mode_shared |   same_trigger_ratio |   same_mode_ratio |
+|----------------:|:--------------------|--------------:|-----------------:|-----------------:|-------------------:|----------------------:|----------------------:|-------------------:|---------------------:|------------------:|
+|               0 | 2022-04-08 14:30:00 |            49 |               37 |                1 |                 48 |                    36 |                     1 |                  0 |                100   |            0      |
+|              30 | 2022-04-08 14:30:00 |            49 |               37 |                1 |                 48 |                    36 |                     1 |                  0 |                100   |            0      |
+|              60 | 2022-04-08 14:30:00 |            49 |               37 |                0 |                 49 |                    37 |                     0 |                  0 |                  0   |            0      |
+|              90 | 2022-04-08 14:30:00 |            49 |               37 |               18 |                 31 |                    19 |                    18 |                 17 |                100   |           94.4444 |
+|             120 | 2022-04-08 14:30:00 |            49 |               37 |                8 |                 41 |                    29 |                     1 |                  3 |                 12.5 |           37.5    |
+
+## By Trigger
+
+|   delta_minutes | trigger   |   mt5_signals |   shared_signals |   mt5_only_signals |   same_trigger_shared |   same_mode_shared |   same_trigger_ratio |   same_mode_ratio |
+|----------------:|:----------|--------------:|-----------------:|-------------------:|----------------------:|-------------------:|---------------------:|------------------:|
+|               0 | M30 CLOSE |            30 |                0 |                 30 |                     0 |                  0 |                    0 |            0      |
+|               0 | M15 SLOT1 |            19 |                1 |                 18 |                     1 |                  0 |                  100 |            0      |
+|              30 | M30 CLOSE |            30 |                0 |                 30 |                     0 |                  0 |                    0 |            0      |
+|              30 | M15 SLOT1 |            19 |                1 |                 18 |                     1 |                  0 |                  100 |            0      |
+|              60 | M30 CLOSE |            30 |                0 |                 30 |                     0 |                  0 |                    0 |            0      |
+|              60 | M15 SLOT1 |            19 |                0 |                 19 |                     0 |                  0 |                    0 |            0      |
+|              90 | M30 CLOSE |            30 |               14 |                 16 |                    14 |                 14 |                  100 |          100      |
+|              90 | M15 SLOT1 |            19 |                4 |                 15 |                     4 |                  3 |                  100 |           75      |
+|             120 | M30 CLOSE |            30 |                7 |                 23 |                     0 |                  2 |                    0 |           28.5714 |
+|             120 | M15 SLOT1 |            19 |                1 |                 18 |                     1 |                  1 |                  100 |          100      |
+
+## Best Delta
+
+- overall best: `90` minutes, shared `18`, same_mode `17`
+- M15 SLOT1: best `90` minutes, shared `4`, same_mode `3`
+- M30 CLOSE: best `90` minutes, shared `14`, same_mode `14`
+
+## Current Delta Shared Detail
+
+| mt5_raw_anchor_time   | anchor_time         | candidate_anchor_time   | python_anchor_time   | dir   | trigger   | python_trigger   | mode_norm   | python_mode_norm   | same_trigger   | same_mode   |   mt5_stop_dist |   python_stop_dist_1dp |   stop_dist_gap_1dp |
+|:----------------------|:--------------------|:------------------------|:---------------------|:------|:----------|:-----------------|:------------|:-------------------|:---------------|:------------|----------------:|-----------------------:|--------------------:|
+| 2022-11-08 16:30:00   | 2022-11-08 18:00:00 | 2022-11-08 18:00:00     | 2022-11-08 18:00:00  | L     | M15 SLOT1 | M15 SLOT1        | post_n5     | post_n6            | True           | False       |            32.9 |                   32.1 |                 0.8 |
+| 2022-11-10 14:00:00   | 2022-11-10 15:30:00 | 2022-11-10 15:30:00     | 2022-11-10 15:30:00  | L     | M30 CLOSE | M30 CLOSE        | post_n2     | post_n2            | True           | True        |            24   |                   23   |                 1   |
+| 2024-04-03 07:30:00   | 2024-04-03 09:00:00 | 2024-04-03 09:00:00     | 2024-04-03 09:00:00  | S     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |             6.4 |                    5.9 |                 0.5 |
+| 2024-04-08 12:30:00   | 2024-04-08 14:00:00 | 2024-04-08 14:00:00     | 2024-04-08 14:00:00  | S     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |             5.7 |                    6.5 |                -0.8 |
+| 2024-04-08 18:00:00   | 2024-04-08 19:30:00 | 2024-04-08 19:30:00     | 2024-04-08 19:30:00  | L     | M30 CLOSE | M30 CLOSE        | cross       | cross              | True           | True        |             7.3 |                    7.2 |                 0.1 |
+| 2024-11-12 13:30:00   | 2024-11-12 15:00:00 | 2024-11-12 15:00:00     | 2024-11-12 15:00:00  | L     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |             7.6 |                    7.1 |                 0.5 |
+| 2025-10-15 12:30:00   | 2025-10-15 14:00:00 | 2025-10-15 14:00:00     | 2025-10-15 14:00:00  | S     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |             6.8 |                    5.8 |                 1   |
+| 2025-10-16 06:00:00   | 2025-10-16 07:30:00 | 2025-10-16 07:30:00     | 2025-10-16 07:30:00  | S     | M15 SLOT1 | M15 SLOT1        | pre_cross   | pre_cross          | True           | True        |             6.4 |                    6   |                 0.4 |
+| 2025-12-24 03:00:00   | 2025-12-24 04:30:00 | 2025-12-24 04:30:00     | 2025-12-24 04:30:00  | S     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |            15.5 |                   14.9 |                 0.6 |
+| 2026-01-21 15:30:00   | 2026-01-21 17:00:00 | 2026-01-21 17:00:00     | 2026-01-21 17:00:00  | S     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |            18.8 |                   18.6 |                 0.2 |
+| 2026-01-26 19:00:00   | 2026-01-26 20:30:00 | 2026-01-26 20:30:00     | 2026-01-26 20:30:00  | S     | M15 SLOT1 | M15 SLOT1        | pre_cross   | pre_cross          | True           | True        |            14.8 |                    5.6 |                 9.2 |
+| 2026-01-27 06:00:00   | 2026-01-27 07:30:00 | 2026-01-27 07:30:00     | 2026-01-27 07:30:00  | L     | M30 CLOSE | M30 CLOSE        | post_n5     | post_n5            | True           | True        |            19.2 |                   18.7 |                 0.5 |
+| 2026-02-02 14:00:00   | 2026-02-02 15:30:00 | 2026-02-02 15:30:00     | 2026-02-02 15:30:00  | S     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |            17.7 |                   19.8 |                -2.1 |
+| 2026-03-24 00:30:00   | 2026-03-24 02:00:00 | 2026-03-24 02:00:00     | 2026-03-24 02:00:00  | S     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |            28.9 |                   28.2 |                 0.7 |
+| 2026-03-24 08:30:00   | 2026-03-24 10:00:00 | 2026-03-24 10:00:00     | 2026-03-24 10:00:00  | L     | M30 CLOSE | M30 CLOSE        | post_n2     | post_n2            | True           | True        |            15.3 |                   15.1 |                 0.2 |
+| 2026-06-08 11:30:00   | 2026-06-08 13:00:00 | 2026-06-08 13:00:00     | 2026-06-08 13:00:00  | L     | M15 SLOT1 | M15 SLOT1        | pre_cross   | pre_cross          | True           | True        |             6.3 |                   10.1 |                -3.8 |
+| 2026-06-19 13:00:00   | 2026-06-19 14:30:00 | 2026-06-19 14:30:00     | 2026-06-19 14:30:00  | L     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |            13.7 |                   12.7 |                 1   |
+| 2026-06-30 06:30:00   | 2026-06-30 08:00:00 | 2026-06-30 08:00:00     | 2026-06-30 08:00:00  | L     | M30 CLOSE | M30 CLOSE        | pre_cross   | pre_cross          | True           | True        |            16.3 |                   16   |                 0.3 |
+
+## Offset Summary
+
+|   offset_vs_current_anchor_min |   samples |   python_match_exists_samples |   same_trigger_matches |   same_mode_matches |   candidate_delta_from_raw_min_values |
+|-------------------------------:|----------:|------------------------------:|-----------------------:|--------------------:|--------------------------------------:|
+|                           -120 |         4 |                             1 |                      0 |                   0 |                                   -30 |
+|                            -60 |         1 |                             1 |                      1 |                   0 |                                    30 |
+|                            -30 |         1 |                             0 |                      0 |                   0 |                                    60 |
+|                             30 |         4 |                             3 |                      1 |                   2 |                                   120 |
+
+## Offset Detail
+
+| anchor_time         | mt5_raw_anchor_time   | dir   | trigger   | mode_norm   |   current_delta_minutes | nearest_raw_anchor   | nearest_raw_mode   | nearest_raw_spec_reason   |   offset_vs_current_anchor_min |   candidate_delta_from_raw_min | python_match_exists   | python_match_trigger   | python_match_mode_norm   | python_match_same_trigger   | python_match_same_mode   | python_match_stage3_time   | cause_text                                                             |
+|:--------------------|:----------------------|:------|:----------|:------------|------------------------:|:---------------------|:-------------------|:--------------------------|-------------------------------:|-------------------------------:|:----------------------|:-----------------------|:-------------------------|:----------------------------|:-------------------------|:---------------------------|:-----------------------------------------------------------------------|
+| 2023-03-14 09:30:00 | 2023-03-14 08:00:00   | L     | M30 CLOSE | post_n4     |                      90 | NaT                  | nan                | nan                       |                            nan |                            nan | False                 |                        |                          | False                       | False                    | NaT                        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2023-03-15 14:30:00 | 2023-03-15 13:00:00   | L     | M30 CLOSE | post_n4     |                      90 | 2023-03-15 15:00:00  | post_n5            | ok                        |                             30 |                            120 | True                  | M15 SLOT1              | post_n5                  | False                       | False                    | 2023-03-16 03:30:00        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2025-04-14 00:00:00 | 2025-04-13 22:30:00   | S     | M15 SLOT1 | pre_cross   |                      90 | 2025-04-14 00:30:00  | pre_cross          | ok                        |                             30 |                            120 | True                  | M15 SLOT1              | pre_cross                | True                        | True                     | 2025-04-14 02:00:00        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2025-09-05 16:00:00 | 2025-09-05 14:30:00   | L     | M15 SLOT1 | post_n5     |                      90 | NaT                  | nan                | nan                       |                            nan |                            nan | False                 |                        |                          | False                       | False                    | NaT                        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2025-10-07 15:30:00 | 2025-10-07 14:00:00   | L     | M30 CLOSE | post_n5     |                      90 | 2025-10-07 13:30:00  | cross              | ok                        |                           -120 |                            -30 | False                 |                        |                          | False                       | False                    | NaT                        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2025-10-09 02:30:00 | 2025-10-09 01:00:00   | S     | M30 CLOSE | post_n5     |                      90 | 2025-10-09 03:00:00  | post_n5            | too_tight                 |                             30 |                            120 | True                  | M15 SLOT1              | post_n5                  | False                       | True                     | 2025-10-09 03:30:00        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2025-10-14 19:30:00 | 2025-10-14 18:00:00   | L     | M30 CLOSE | post_n5     |                      90 | 2025-10-14 17:30:00  | cross              | ok                        |                           -120 |                            -30 | False                 |                        |                          | False                       | False                    | NaT                        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2026-02-02 16:30:00 | 2026-02-02 15:00:00   | L     | M15 SLOT1 | post_n4     |                      90 | 2026-02-02 14:30:00  | cross              | too_wide                  |                           -120 |                            -30 | False                 |                        |                          | False                       | False                    | NaT                        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2026-02-02 18:00:00 | 2026-02-02 16:30:00   | S     | M15 SLOT1 | post_n2     |                      90 | 2026-02-02 17:00:00  | cross              | ok                        |                            -60 |                             30 | True                  | M15 SLOT1              | cross                    | True                        | False                    | 2026-02-03 01:30:00        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2026-02-02 19:00:00 | 2026-02-02 17:30:00   | S     | M30 CLOSE | post_n5     |                      90 | 2026-02-02 17:00:00  | cross              | ok                        |                           -120 |                            -30 | True                  | M15 SLOT1              | cross                    | False                       | False                    | 2026-02-03 01:30:00        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2026-02-03 01:00:00 | 2026-02-02 23:30:00   | L     | M15 SLOT1 | pre_cross   |                      90 | 2026-02-03 01:30:00  | pre_cross          | too_wide                  |                             30 |                            120 | False                 |                        |                          | False                       | False                    | NaT                        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |
+| 2026-03-23 17:30:00 | 2026-03-23 16:00:00   | L     | M15 SLOT1 | post_n6     |                      90 | 2026-03-23 17:00:00  | post_n6            | too_wide                  |                            -30 |                             60 | False                 |                        |                          | False                       | False                    | NaT                        | Python 当前口径下未找到同锚点候选，需要进一步复核 Layer2/stop 生成过程 |

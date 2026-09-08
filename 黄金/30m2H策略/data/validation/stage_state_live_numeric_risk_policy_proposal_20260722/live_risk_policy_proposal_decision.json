@@ -1,0 +1,20 @@
+﻿{
+  "decision_time": "2026-07-22T08:38:20",
+  "check_id": "stage_state_live_numeric_risk_policy_proposal",
+  "status": "live_numeric_risk_policy_proposal_pending_user_confirmation",
+  "max_daily_loss_usd": 120.0,
+  "max_drawdown_usd": 200.0,
+  "max_open_positions": 3,
+  "max_new_positions_per_day": 9,
+  "max_spread_points": 300,
+  "margin_guard_pct": 500,
+  "min_lot": 0.01,
+  "max_lot": 0.1,
+  "requires_user_confirmation": true,
+  "requires_ea_guard_implementation_or_external_monitor": true,
+  "live_gap_006_closed": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "warning_count": 0,
+  "recommended_next_action": "user_confirm_or_adjust_numeric_risk_limits_then_decide_ea_guard_or_external_monitor"
+}

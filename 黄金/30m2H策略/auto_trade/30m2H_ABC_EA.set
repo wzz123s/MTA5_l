@@ -1,0 +1,35 @@
+; 30m2H ABC Tester 对齐参数包 (2026-09-06)
+; 门: |H2 bias55|>3% 且 bias5 同向>=0.2% (推荐组合 5_35/bias5>=0.2) | 冷却=0 对齐 Python
+InpMagic=352036
+InpSymbol=XAUUSDm
+InpRiskPct=1.0
+InpStopLoPt=5.0
+InpStopHiPt=35.0
+InpMaxOpenVirtual=100
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimStartBalance=500.0
+InpPreCrossGapPct=0.300
+InpPostNMin=2
+InpPostNMax=6
+InpMergedMinLen=8
+InpBias55Threshold=3.0
+InpBias5MinPct=0.2
+InpH2SMA5=5
+InpH2SMA55=55
+InpM30SMA5=5
+InpM30SMA13=13
+InpStage1R=2.0
+InpStage2TrailR=1.5
+InpStage2ForceR=4.0
+InpStage1Units=0.5
+InpStage2Units=1.0
+InpStage3Units=1.5
+InpHistoryBars=600
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportCSV=true
+InpExportLedger=true
+InpVerboseDiag=true
+InpSameDirCdBars=0
+InpLossCdLoss=0

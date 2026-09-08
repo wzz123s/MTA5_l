@@ -1,0 +1,5303 @@
+﻿# 研究发现
+
+> 作用：只记录研究结论、判断依据和风险提示。  
+> 不写：时间过程、执行步骤、待办清单。  
+> 当前最终采用值，以 [30m2H策略/策略说明.md](/F:/use_code/MTA5/30m2H策略/策略说明.md) 和各策略目录主文档为准。
+
+## 当前结论摘要（2026-07-12）
+
+> 维护规则：本节只放当前稳定判断；下面的编号结论保留为证据链。后续新增发现先归并到本节主题，再决定是否新增编号结论。
+
+### 1. 当前 EA 不是“已对齐版”，只是较稳的中间基线
+- 当前保留版本是 `M30-only strict-veto` 恢复版，full tester 为 `3940.37 USD / 78 signals`。
+- 关键对齐指标仍未改善：`shared = 34`，`MT5-only = 44`，`Python-only = 26`。
+- 因此它只能作为后续对比基线，不能表述为 EA/Python 已完成对齐。
+
+### 2. 已否决的修复方向
+- 全局 Python-style `merged_post_n` 会删除一批 MT5-only post_n，但收益回撤到 `2956.23 USD`，不能并入主线。
+- 直接把 strict-veto 扩展到 `M15 SLOT1 post_n` 也回落到 `2956.23 USD / 70 signals`，说明 M15 修复不能用简单扩大 strict counter 的方式。
+- 后续 M15 修复应围绕“是否依附附近 raw M30 candidate、是否符合 Python replace/rescue 规则”做更窄的约束。
+
+### 3. 三版本不能直接用最终金额横向比较
+- Python 基础版、Python 调用 MT5 数据版、MT5 单独版虽然都以 `500 USD` 为起点，但执行模型不同。
+- Python 两版仍是研究回放模型；MT5 单独版是真实 EA 订单生命周期、保证金、真实成交和持仓互斥。
+- 当前 MT5 主回测是 `Leverage=100 + InpRiskPct=3.0 + InpUseDynamicLots=true`；`0.01/0.02/0.03 lot` 只是关闭动态手数时的 fallback，不是主执行口径。
+
+### 4. 差异源头已前移到数据/计算/信号层
+- Python 基础版与 Python MT5 数据版 close 基本一致，但 SMMA5/13 已有系统差异。
+- Python/Python-MT5 processed 与 MT5-only bar export 的 close、SMA5、SMA13 差异更明显，说明 MT5-only export 还不能直接当作同时间语义的数据源。
+- MT5 bar export 的 `decision=SIGNAL` 只有 `29` 行，而 EA 日志交易信号是 `78` 行；M15 SLOT1 仍需要从 tester log 或后续 ledger 补全。
+- 最新时间语义诊断显示，MT5 bar export 与 Python M30 processed 的 close 最佳对齐是 `MT5 bar_time + 90min`，close mean abs diff 降到 `0.000062`；这说明此前 close 大差异主要是时间语义偏移，不是价格源本身完全不同。
+
+### 5. 下一轮判断边界
+- MT5 trade ledger 已完成闭合验证：修复后 ledger `net_profit = 3440.37`，与 raw deal history、tester final balance 完全一致。
+- 下一轮不再卡在 ledger 完整性，而是卡在“如何用可靠 ledger 与 Python 动态风险版建立同锚点映射”。
+- 后续比较顺序应固定为：原始数据一致性 -> 指标计算一致性 -> raw/accepted/picked/executed 信号链路 -> 交易 ledger -> 资金曲线。
+- 已知仍需处理的源头风险是：`full_data_30m2h` 的 base/raw 不一致、H2 decision 异常桶、以及 MT5 bar export 未覆盖完整 M15 SLOT1 信号。
+- Python-MT5 shift90 版本化重建显示：总笔数接近 MT5 不代表集合对齐，`77` 笔的 MT5 bar-level H2 变体 shared 只有 `13`。
+- Python-only vs Python-MT5 详细 diff 已补齐，说明这两版的主差异不是 Layer1/Layer2 候选整体崩掉，而是从 Layer3 入选和执行阶段开始明显放大。
+- 已解决的 ledger 口径差异：
+  - MT5 日志 `78` 条信号 vs ledger `66/73` 个唯一成交信号，已恢复为 `78`
+  - ledger 净利润 `-1669.38`，已修复为 `3440.37`
+- 仍需后续处理：
+  - Python/MT5 exact key overlap 仍为 `0`，需要用 `EA_ALIGN_DELTA=90` 和 trigger/mode 归一规则重建映射
+  - EA stage 状态模型仍是“单 stage 单槽位”，这是交易管理层风险，但不再是 ledger 完整性的当前阻塞
+
+## EA v3.25 对齐研究 (2026-07-10)
+
+### 结论 1: SMMA 初始化方式是关键分歧
+- EA 的 iMA(MODE_SMMA) 用第一根 K 线价格作为初值
+- Python calc_smma() 用前 N 根均值作为初值
+- 差异导致 SMA5/13 穿越点偏移，进而影响 post_n 计数和 Layer1/Layer3 判定
+- **判断**: 所有方向判定函数必须使用 PythonSMMA()，不能用 MODE_SMMA CopyBuffer
+
+### 结论 2: post_n 计数器必须与 Python 一致
+- Python direction.py L141-146: 方向不匹配时 `counter=0, last_cross=None`
+- EA v3.22 注释错误声称"Python does the same"但实际保留了 counter
+- 影响: EA post_n 多出 ~28 个（Python 57 vs EA 34）
+- **判断**: 必须在对齐 SMMA 后严格按 Python 逻辑重置
+
+### 结论 3: M15 slot2 扫描可增加 M15 入场
+- Python choose_any 扫描 M30 窗口内所有 M15 bar (slot1+slot2)
+- EA v3.22 硬编码 slot1 only
+- **判断**: 应同时检查 slot2，增加 M15 提前入场机会
+
+### 结论 4: PythonSMMA 性能风险
+- 初始版本 per-tick 高频调用 → 4 小时回测
+- 缓存键用 Bars()（仅新 bar 时重算）+ 去 iBarShift → 性能正常
+- **风险**: 若任何高频路径（per-tick）使用 PythonSMMA，性能会大幅下降
+- **判断**: PythonSMMA 只用于 Bias 函数和 post_n 方向检测（per-bar，非 per-tick）
+
+### 结论 5: M15 rescue 路径待完善
+- v3.25 实施后 rescue 成功率 0/7
+- M30 too_wide → M15 close ± 止损仍超 spec → 救不回来
+- **判断**: 需要检查 M15 rescue 是否真的在正确时机触发了方向正确、M15 close 符合条件的入口
+
+### 结论 6: 日志记录规范
+- MT5 Tester 日志 UTF-16 LE 编码，Agent-127.0.0.1-3000\logs 目录
+- 单文件 411MB / 2.8M 行，包含多个 session
+- 关键搜索词: "Initializing"（版本）, "[SIGNAL]"（信号）, "final balance"（结果）
+
+### 结论 7: post_n 状态机必须按 completed M30 bar 去重更新
+- 即使 `UpdatePostNState()` 内部已经改用 `PythonSMMA()`，如果它仍在每个 tick 执行，`g_post_n_counter` 也会在同一根 M30 内重复累加
+- smoke tester 首轮日志中 `post_n_counter` 跑到上万，根因不是公式错，而是调用频率错
+- **判断**: `UpdatePostNState()` 必须只在新 M30 bar 时推进一次，或在函数内部按 `iTime(M30,1)` 做 completed-bar 去重
+
+### 结论 8: post_n 不能绕过 M30 close 的 Layer1/Layer3 门控
+- v3.26 首轮 full tester 虽然已修复 `post_n_counter` 暴走，但仍出现 `final balance = 11.68 USD` 的灾难性结果
+- 根因是 M30 close 路径里保留了“`post_n` 继承原始 cross 的 Layer1+Layer3”逻辑，导致 `post_n` 候选即使不满足当前门控也能直接开仓
+- 修复后改为：`post_n / pre_cross / cross` 全部统一经过 `PassLayer1Gate()` 与 `PassLayer3Gate()`
+- 修复后的 full tester 结果显著收敛：
+  - `final balance: 11.68 -> 3781.96 USD`
+  - agent log `No money: 22937 -> 0`
+  - agent log `[M30 CLOSE] [SIGNAL]: 3813/57（旧 run/新 run）`
+  - 最新 tester CSV 中 M30 `decision=SIGNAL` 仅 `22` 行，说明主线过度触发已被压住
+- **判断**: 在没有“原始 cross 已通过门控”的持久化状态机之前，`post_n` 不能做门控继承，只能复用实时门控
+
+### 结论 9: merged_post_n 切换不是当前全量残差的主因
+- 已在 EA 中把 `post_n` 判定切到 `g_merged_post_n_counter`，并让 merged 状态机改用 `GetM30SMAArrays_Python()`
+- 重新编译并跑 full tester（`2026-07-11`）后，结果只出现轻微收益变化：
+  - `final balance: 3781.96 -> 3799.32 USD`
+- 但全量对齐指标几乎完全不变：
+  - `MT5 signals = 79`
+  - `Python executed (EA diag) = 60`
+  - `shared = 34`
+  - `MT5-only = 45`
+- **判断**: 现阶段不应再把主要精力放在 `raw post_n` vs `merged post_n` 状态机切换上
+
+### 结论 10: Python M15 覆盖起点是 2022-04-08 14:30，早期 M15 SLOT1 不可直接做逐笔对齐
+- 通过 `cb.load_market_context()` 复核，当前 Python M15 数据覆盖区间为：
+  - `m15_start = 2022-04-08 14:30:00`
+  - `m15_end   = 2026-07-03 18:45:00`
+- 因此 `2020-2022` 早期的 MT5 `M15 SLOT1` 信号中，至少一部分并不处于 Python 可比样本期
+- 例如：
+  - `2020-03-13 11:00:00` 的 MT5 `M15 SLOT1 post_n4`，在 Python 当前 M15 窗口中为空
+- **判断**: 以后做 EA/Python 全量对齐时，必须把“全历史对齐”和“Python M15 可比覆盖期对齐”分开统计
+
+### 结论 11: 当前可比覆盖期内的主差异，更像锚点/窗口定义问题，而不是单纯公式错
+- 把统计限制到 `2022-04-08 14:30:00` 之后，仍有：
+  - `MT5_after = 49`
+  - `Python_after = 37`
+  - `MT5-only_after = 31`
+- 其中 `MT5-only_after` 的最大成因仍是：
+  - `Python 当前口径下未找到同锚点候选 = 12`
+- 这 12 笔里，最近原始候选与 MT5 锚点的偏移分布为：
+  - `30 分钟 = 5`
+  - `60 分钟 = 1`
+  - `120 分钟 = 4`
+  - `无邻近候选 = 2`
+- **判断**: 下一阶段应优先排查 `EA_ALIGN_DELTA`、M30/M15 anchor 语义、gap/coverage 窗口定义，而不是继续盲改信号公式
+### 结论 12: `EA_ALIGN_DELTA=90` 仍是当前可比覆盖期内的全局最优值，不应贸然改成 120
+- 已新增脚本：
+  - `30m2H策略/scripts/validate/analyze_comparable_anchor_alignment.py`
+- 用 `Python M15` 覆盖起点 `2022-04-08 14:30:00` 作为可比样本期起点后，比较 `delta = 0/30/60/90/120`，结果为：
+  - `delta=90`: `shared = 18`, `same_mode = 17`
+  - `delta=120`: `shared = 8`, `same_mode = 3`
+  - `delta=0/30/60`: `shared <= 1`
+- 分触发看也是同一个结论：
+  - `M30 CLOSE`: `delta=90 -> shared 14`，`delta=120 -> shared 7`
+  - `M15 SLOT1`: `delta=90 -> shared 4`，其余 delta 最多 `1`
+- 对“同锚点无候选”的可比残差进一步拆样本后发现：
+  - `+30` 分钟偏移样本里，既有真的 `M15 SLOT1 pre_cross` 同触发同模式对齐，也有 `M30 CLOSE -> M15 SLOT1 post_n5` 这种跨触发样本
+  - `-120 / -60 / -30` 分钟偏移样本里，常见的是 `post_n` 对到 `cross`，或 `M30 CLOSE` 对到 `M15 SLOT1`
+- **判断**:
+  - 当前剩余问题不是“全局 `EA_ALIGN_DELTA` 设错了”
+  - 更像是少数局部样本在 `M30 CLOSE / M15 SLOT1` 分支上的 anchor 语义漂移，外加一部分跨触发归因差异
+### 结论 13: 可比覆盖期内原先的 `12` 个“同锚点无候选”样本里，已有 `5` 个可重分类为“近邻 executed 映射残差”
+- 已在：
+  - `30m2H策略/scripts/validate/diagnose_mt5_session_mismatch_causes.py`
+  中加入 `nearest_python_executed` 近邻 executed 标记，并重跑：
+  - `mt5_log_session_diag_v326_full_20260711_ea_diag_refined/session_01/mt5_only_cause_diag.csv`
+- 以 `Python M15` 覆盖起点 `2022-04-08 14:30:00` 过滤后，`MT5-only` 的细分结果变为：
+  - `真正同锚点无候选 = 7`
+  - `accepted 但被 Layer3 过滤 = 8`
+  - `已通过 Layer3 但执行占用挡掉 = 5`
+  - `止损过窄 = 4`
+  - `止损过宽 = 2`
+  - `近邻 executed 映射残差 = 5`
+- 这 `5` 个近邻 executed 样本分别是：
+  - `+30 分钟，同触发同模式锚点偏移 = 1`
+  - `+30 分钟，跨触发同模式/跨触发跨模式 = 3`
+  - `-60 分钟，同触发但模式不同 = 1`
+  - `-120 分钟，跨触发跨模式 = 1`
+- 代表性样本：
+  - `2025-04-14 00:00:00`：`M15 SLOT1 pre_cross -> M15 SLOT1 pre_cross (+30)`
+  - `2025-10-09 02:30:00`：`M30 CLOSE post_n5 -> M15 SLOT1 post_n5 (+30)`
+  - `2026-02-02 18:00:00`：`M15 SLOT1 post_n2 -> M15 SLOT1 cross (-60)`
+  - `2026-02-02 19:00:00`：`M30 CLOSE post_n5 -> M15 SLOT1 cross (-120)`
+- **判断**:
+  - 当前剩余 anchor 残差里，至少有一块不该再被统称成“Python 没有候选”
+  - 后续应把“近邻 executed 映射残差”和“真正缺候选”分开处理：
+    - 前者优先核对 `M30 CLOSE / M15 SLOT1` 的 anchor 语义与跨触发归因
+    - 后者再继续追 `Layer2/stop` 候选生成链
+### 结论 14: 这 `5` 个可比期近邻 executed 残差，已经收敛到两个最可疑的代码热点
+- 已新增脚本：
+  - `30m2H策略/scripts/validate/inspect_nearby_executed_mapping_cases.py`
+- 输出：
+  - `30m2H策略/data/validation/nearby_executed_mapping_cases_v326_full_20260711_ea_diag/session_01`
+- 逐笔复核后，`5` 个可比期近邻 executed 样本全部满足：
+  - `MT5 锚点上 exact_raw_exists = False`
+  - 但 `nearest_raw_exists = True`
+  - 且 `nearest_raw_trigger = M30 CLOSE`
+  - Python 最终 executed 都来自这条附近的 `raw M30` 候选，再经 `ea_slot1_replace / ea_slot1_runtime_rescue` 变成 `M15 SLOT1`
+- 这说明它们本质上不是“EA 发现了 Python 完全没有的独立机会”，而是：
+  - EA 在附近 bar 上提前/滞后地产生了一个 `M15` 或 `M30 post_n` 信号
+  - Python 则把附近的 `raw M30` 候选，改写成了 `M15 SLOT1` executed
+- 样本分组：
+  - `cross_trigger_cross_mode = 2`
+  - `cross_trigger_same_mode = 1`
+  - `pure_anchor_shift = 1`
+  - `same_trigger_mode_drift = 1`
+- 两个最可疑热点：
+  1. `auto_trade/30m2H_Strategy_EA.mq5` 中 `TryM15EarlyEntry()` 的独立 Layer2 判定
+     - 位置：`[1668-1806]`
+     - 现状：EA 在 `M15 SLOT1` 路径里直接用当前上下文重新判 `pre_cross / cross / post_n`
+     - 风险：容易生成“Python 原始 M30 候选并不存在的锚点/模式”
+     - 证据：
+       - `2025-04-14 00:00`：EA `M15 SLOT1 pre_cross`，Python 最近 raw 只在 `00:30 pre_cross`
+       - `2026-02-02 18:00`：EA `M15 SLOT1 post_n2`，Python 最近 raw 只在 `17:00 cross`
+  2. `auto_trade/30m2H_Strategy_EA.mq5` 中 `M30 CLOSE post_n` 主分支
+     - 位置：`[2145-2165]`
+     - 现状：EA 会在 `new_m30_bar` 后直接按 `g_merged_post_n_counter` 生成 `post_n`
+     - 风险：会把 Python 附近那条 `raw M30 -> picked M15` 轨迹，提前一根 bar 或延后几根 bar 表达成新的 `M30 CLOSE post_n`
+     - 证据：
+       - `2023-03-15 14:30 post_n4`，而 Python 最近 raw 从 `15:00 post_n5` 开始
+       - `2025-10-09 02:30 post_n5`，而 Python 最近 raw 是 `03:00 post_n5 too_tight -> runtime_rescue`
+       - `2026-02-02 19:00 post_n5`，而 Python 最近 raw 只在 `17:00 cross`
+- **判断**:
+  - 下一步修复不应再从 `SMMA / merged_post_n / EA_ALIGN_DELTA` 全局层面下手
+  - 应优先把：
+    - `M15 SLOT1` 从“独立造信号”收紧到“依附附近 M30 raw 候选做 replace/rescue”
+    - `M30 CLOSE post_n` 从“纯计数即发”收紧到更接近 Python raw 候选出现时点
+
+### 结论 15: `TryM15EarlyEntry()` 的全局收紧试验已被回测否掉，当前更值得优先修的是 `merged_post_n` 状态机
+- 已做过一轮实验性收紧：
+  - 在 `TryM15EarlyEntry()` 中尝试给 `slot1 post_n` 做前移投影，并增加 `parent raw missing` 侧向门
+- 实盘口径 full tester 结果变差：
+  - `final balance: 3799.32 -> 3709.69 USD`
+  - `MT5 signals: 79 -> 78`
+  - 额外出现 `PARENT_RAW_MISSING = 7`，且全部落在 `pre_cross_m15_slot1`
+- 因此这条路当前不能直接并入主线：
+  - 它不只是压掉“问题 post_n”，也误伤了本来应该保留的 `M15 SLOT1 pre_cross`
+- 随后又新增脚本：
+  - `30m2H策略/scripts/validate/analyze_ea_merged_postn_approximation.py`
+- 本地复刻 EA 现有 `UpdateMergedPostNState()`（只看 merged 正负号）后，和 Python `merged_post_cross_n` 对比发现：
+  - `band_mismatch_rows = 6205`
+  - `python_signal_band_rows = 10610`
+  - `ea_signal_band_rows = 16815`
+  - `max_abs_counter_diff = 219`
+- 代表性样本：
+  - `2026-02-02 17:30 ~ 19:30` 这段里，Python `merged_post_cross_n = -92 .. -96`，早已不在 `post_n2~6` 信号带
+  - 但 EA 现有近似状态机会把它重新长成 `-2 .. -6`
+  - 这和当前日志里的：
+    - `2026-02-02 18:00 M15 SLOT1 post_n2`
+    - `2026-02-02 19:00 M30 CLOSE post_n5`
+    是同一种结构性误触发
+- **判断**:
+  - 当前更高优先级修复点不是继续全局收紧 `TryM15EarlyEntry()`
+  - 而是先把 EA 的 `merged_post_n` 从“按 merged sign 延续”改成“按 merged good/bad/up/down 状态机延续”，尽量贴回 Python `add_pre_cross_and_counter()`
+
+### 结论 16: `merged_post_n` 状态机改成按 `good/bad/up/down` 推进后，确实会定向砍掉一批 `MT5-only post_n`，但目前还不是可直接收口的主线版本
+- 已把 `UpdateMergedPostNState()` 改为：
+  - 不再只按 merged 正负号推进
+  - 而是按 merged `good/bad/up/down` 代码推进，并在方向不匹配时归零
+- 实盘口径 full tester（`2026-07-12`）结果：
+  - `final balance = 2956.23 USD`
+  - 对比上一版基线 `3799.32 USD`，收益明显回落
+- 但从对齐结构看，它不是“乱砍”：
+  - `MT5 signals: 79 -> 70`
+  - `Python executed: 60 -> 60`
+  - `shared: 34 -> 34`
+  - `MT5-only: 45 -> 36`
+- 也就是说：
+  - 这版没有破坏共享集合
+  - 主要是在删除 `MT5-only` 信号
+- 新旧 MT5 集合差显示：
+  - `removed = 10`
+  - `added = 1`
+  - 净减少 `9`
+- 被删掉的 `10` 笔里，几乎全部都是 `post_n` 类：
+  - `M30 CLOSE post_n2/4/5/6`
+  - `M15 SLOT1 post_n5`
+  - 包括此前重点盯住的：
+    - `2026-02-02 18:00 M15 SLOT1 post_n2`
+    - `2026-02-02 19:00 M30 CLOSE post_n5`
+- 同时它也带来一个新的 `MT5-only pre_cross`：
+  - `2025-10-20 03:00 M30 CLOSE pre_cross`
+- 新版 `MT5-only` 成因分布中，剩余近邻映射残差仍有 `5` 笔：
+  - `2023-03-15 14:30 post_n4`
+  - `2025-10-09 02:30 post_n5`
+  - 以及另外 `3` 笔同类样本
+- **判断**:
+  - 这次修改证明了方向是对的：问题里确实有一块来自 `merged_post_n` 状态机漂移
+  - 但它目前过宽，只是把 `MT5-only post_n` 压下去，并没有提升 `shared`
+  - 因此它更适合作为“已验证的中间实验”，还不适合作为最终主线收口版本
+### 结论 17: 窄口径 `M30 CLOSE post_n` strict-veto 可保留为当前实验主线，但不能宣称已经完成 EA/Python 对齐
+- 2026-07-12 重新设计后，没有再把 `UpdateMergedPostNState()` 全局改成 Python-style `good/bad/up/down` 推进；该全局方案已被 full tester 否决：
+  - `final balance = 2956.23 USD`
+  - `MT5 signals = 70`
+  - `shared = 34`
+  - `MT5-only = 36`
+- 当前保留的是更窄的实现：
+  - legacy `g_merged_post_n_counter` 仍按原 sign-based 逻辑推进，避免影响 M15 slot1 / cross / pre_cross 主路径
+  - 额外维护 `g_merged_strict_post_n_counter`
+  - 只在 `M30 CLOSE` 且 `signal_src` 为 `post_n*` 时，用 strict counter 做 veto
+- 初始化瑕疵已修正：
+  - `UpdateMergedPostNState()` 首次初始化 legacy counter 后不再提前 `return`
+  - strict counter 会在同一次调用里同步初始化
+- full tester 最终验证（2026-07-12 session 3）：
+  - `final balance = 3940.37 USD`
+  - `MT5 signals = 78`
+  - `Python executed = 60`
+  - `shared = 34`
+  - `MT5-only = 44`
+  - `Python-only = 26`
+- 对比稳定 baseline：
+  - baseline `final balance = 3799.32 USD`
+  - baseline `MT5 signals = 79`
+  - baseline `MT5-only = 45`
+  - 当前版收益更高，且 `MT5-only` 只减少 `1` 笔
+- 集合差异说明这不是“完全消除错误 post_n”，而是局部改变触发时点：
+  - removed `8` 笔，全部为 `M30 CLOSE post_n`
+  - added `7` 笔，全部为下一根附近的 `M15 SLOT1 post_n`
+  - 因此大多数被 veto 的 `M30 CLOSE post_n` 会被 EA 的 `M15 SLOT1` rescue/replace 机制补回
+- 当前判断：
+  - 这版可以作为“收益不回撤、范围更窄”的当前实验主线继续推进
+  - 但它并没有提高 `shared`，也没有大幅压缩 `MT5-only`
+  - 下一步要继续收口 `M15 SLOT1` 的 replace/rescue 归因，否则会把 M30 veto 的问题平移到 M15
+
+### 结论 18: 直接把 strict-veto 扩展到 `M15 SLOT1 post_n` 已被 full tester 否决
+- 为复核“M30 post_n 被 veto 后是否平移成 M15 post_n”，新增脚本：
+  - `30m2H策略/scripts/validate/analyze_m30_postn_to_m15_shift_cases.py`
+- 当前 M30-only strict-veto 版相对 baseline：
+  - removed `8` 个 `M30 CLOSE post_n`
+  - added `7` 个 `M15 SLOT1 post_n`
+  - `7` 个 added M15 post_n 全部能与 removed M30 post_n 配对，且全部是 `+30min`
+  - `same_mode_pairs = 7`
+  - `added_exact_raw_exists = 0`
+  - `added_exact_accepted_exists = 0`
+  - `added_exact_picked_exists = 0`
+  - `added_exact_exec_exists = 0`
+- 这说明新增的 M15 post_n 确实不是 Python 同锚点 raw/accepted/picked/executed 候选。
+- 但直接在 `TryM15EarlyEntry()` 的 post_n 分支加 strict counter veto 后，full tester 结果回到此前被否决的全局 strict 水平：
+  - `final balance = 2956.23 USD`
+  - `MT5 signals = 70`
+  - 与全局 strict `merged_post_n` 实验结果一致
+- 因此不能用“所有 M15 post_n 都套 strict counter”作为主线修复。
+- 已把源码和 terminal 恢复为 M30-only strict-veto，并用恢复版 full tester 验证：
+  - 最新恢复验证 session 5：`final balance = 3940.37 USD`
+  - `MT5 signals = 78`
+- 当前判断：
+  - `M15 SLOT1 post_n` 的确存在独立造信号问题
+  - 但修复必须比 strict counter 更细，优先考虑“依附附近 Python raw M30 候选 / rescue 条件”的约束
+  - 不能简单复用 strict counter，否则会误伤高收益 M15 post_n 路径
+
+### 结论 19: 当前 `Python基础版 / Python调用MT5数据版 / MT5单独版` 的资金结果不能横向直接比较，核心问题是三者不是同一个执行模型
+- 当前三版结果虽然都使用 `500 USD` 作为起始资金，但执行口径并不一致：
+  - `Python基础版`：`30m2H策略/data/signals/执行交易_Stage结果.csv`
+    - `118` 笔
+    - `final = 5178.62 USD`
+    - 属于 Python 理想化 Stage 回放；结果汇总按 `total_$ * 5.0` 放大
+  - `Python调用MT5数据版`：`30m2H策略/data/signals_mt5/执行交易_Stage结果.csv`
+    - `101` 笔
+    - `final = 5401.99 USD`
+    - 只替换了部分 MT5 指标/行情来源，执行仍然是 Python 模型，并不等于 MT5 EA
+  - `MT5单独版`：`mt5_log_session_compare_v326_full_20260712_restore_m30postn_strict_veto_ea_diag`
+    - `78` 笔
+    - `final = 3940.37 USD`
+    - 属于真实 EA 回测，包含真实订单生命周期、真实持仓占用、真实成交价/滑点/保证金约束
+- 当前三版差距大，不能先解读成“策略坏了”，而应解读成“三张表混了三种口径”：
+  - 第一层差异是 `信号层`
+    - Python基础版 `118` 笔
+    - Python调用MT5数据版 `101` 笔
+    - MT5 EA `78` 笔
+    - 当前 EA/Python 对齐仍停留在 `shared = 34 / MT5-only = 44 / Python-only = 26`
+  - 第二层差异是 `执行层`
+    - Python 两版都是研究/回放执行
+    - MT5 是真实 EA 执行，同一信号会受到真实入场价、止损锚定、保证金、持仓互斥影响
+  - 第三层差异是 `资金/仓位层`
+    - Python 当前主线汇总使用 `EXECUTION_PNL_MULTIPLIER = 5.0`
+    - MT5 当前回测配置为 `Deposit=500`、`Leverage=100`、`InpRiskPct=3.0`、`InpUseDynamicLots=true`
+    - 因此 MT5 不是固定 `0.01/0.02/0.03 lot` 主执行口径，而是“按余额 `3%` 风险 + 止损距离动态算总手数，再按 `0.5:1.0:1.5` 分到三段”；`0.01/0.02/0.03` 只是关闭动态手数时的 fallback 参数
+- 止损/胜率字段当前也不是完全同口径：
+  - Python 表里同时存在
+    - `Stage1 止损`
+    - `Stage2 含 SL`
+    - `Stage3 含 SL`
+    - `任一阶段止损`
+    - `三阶段均止损`
+  - 因此此前出现的 `95` 与旧文档里的“止损笔数 `53`”不是同一个定义
+  - MT5 当前尚未导出可靠的策略级交易汇总，胜率/止损次数不能与 Python 直接并表
+- 当前最大问题不是继续优化最终金额，而是先统一比较口径：
+  - 在同一时间窗、同一信号集合、同一止损定义下重建三版对比
+  - 在 MT5 侧补出交易级 ledger 或 tester report
+  - 在 Python 侧补一版与 MT5 一致的“动态风险手数”执行模拟
+- 当前判断：
+  - `M30-only strict-veto` 只是收益不回撤的中间修复，不是最终对齐完成版
+  - 在三版执行模型尚未统一前，继续拿最终金额驱动 EA 修复，容易把方向带偏
+
+### 结论 20: 三来源分层对比显示，差异已经前移到原始/计算数据和信号计算层，不能只从交易结果层解释
+- 已新增并运行：
+  - `30m2H策略/scripts/validate/compare_three_sources_layers.py`
+- 输出目录：
+  - `30m2H策略/data/validation/three_sources_layer_compare_20260712`
+- 本轮对比按三条链路拆开：
+  - `Python基础版`：`data/raw` + `m30_standardized/h2_context/m15_context` + `data/signals`
+  - `Python调用MT5数据版`：`H2_XAUUSDm_mt5/m30_mt5` + `data/signals_mt5`
+  - `MT5-only`：当前 tester 的 `30m2H_strategy_signals_export.csv` + EA 日志信号 diff
+- 原始/计算数据层结论：
+  - Python 基础版 raw/processed 与 Python MT5 processed 的 close 基本一致，`py_vs_py_mt5_close_diff` 只有 `1` 行超过 `1e-6`
+  - 但 Python 基础版与 Python MT5 数据版的 SMMA 已有系统差异：
+    - `py_vs_py_mt5_sma5_diff` mean abs `0.74699`
+    - `py_vs_py_mt5_sma13_diff` mean abs `0.43689`
+  - Python/Python-MT5 processed 与 MT5-only bar export 的 close/SMA 差异更大：
+    - `py_mt5_vs_mt5_close_diff` mean abs `3.89769`
+    - `py_mt5_vs_mt5_sma5_diff` mean abs `2.68781`
+    - `py_mt5_vs_mt5_sma13_diff` mean abs `1.79203`
+  - 因此下一轮不能直接把 MT5-only bar export 当作已经同时间语义的数据源；必须先确认 `bar_time/date`、client/server time、H2 decision bucket 的对齐
+- 信号计算层结论：
+  - Python基础版：accepted `341`，picked/executed `118`
+  - Python调用MT5数据版：accepted `373`，picked/executed `101`
+  - MT5-only EA 日志信号：`78`
+  - 当前 EA/Python 可比窗口：shared `34`，MT5-only `44`，Python-only `26`
+  - MT5-only 的 `MT5-only=44` 里，`post_n=30`、`pre_cross=11`、`cross=3`
+- MT5-only bar export 的限制：
+  - bar export 中 `decision=SIGNAL` 只有 `29` 行
+  - 但 EA 日志实际交易信号是 `78` 行
+  - 说明当前 bar export 主要覆盖 M30 close 计算路径，M15 SLOT1 信号仍主要只能从 tester log 侧还原
+- 交易/止损/资金层结论：
+  - Python基础版：`118` 笔，任一阶段止损 `95`，三阶段均止损 `44`，final `5178.62`
+  - Python调用MT5数据版：`101` 笔，任一阶段止损 `81`，三阶段均止损 `30`，final `5401.99`
+  - MT5-only 当前只有 `78` 个信号和 final `3940.37`
+  - 在补出 MT5 trade ledger 前，MT5 胜率、止损次数、逐笔资金曲线仍不能可靠与 Python 并表
+- 当前判断：
+  - 后续优先顺序应是：先修正/解释原始数据时间语义和计算数据差异，再重建 Python-MT5 数据版，再补 MT5 trade ledger，最后才比较资金曲线和继续修 EA 信号
+
+### 结论 21: MT5 bar export 与 Python M30 processed 的核心时间偏移是 `+90min`，但这只解决了 close 对齐，不等于信号链路已对齐
+- 已新增并运行：
+  - `30m2H策略/scripts/validate/diagnose_time_semantics.py`
+- 输出报告：
+  - `30m2H策略/data/validation/time_semantics_diagnosis_20260712.md`
+- 关键诊断结果：
+  - base/raw 核心文件中 `XAUUSDm30`、`XAUUSDm15`、`H2_XAUUSDm_39col` 三项完全同步
+  - `full_data_30m2h` 不同步：base 为 `97640` 行，时间 `2018-01-15 06:30:00 ~ 2026-07-03 16:30:00`；strategy raw 为 `97639` 行，时间 `2018-01-04 12:00:00 ~ 2026-06-25 01:00:00`
+  - MT5 bar export 对 Python M30 processed 的最佳 close 对齐为 `MT5 bar_time + 90min`
+  - 在 `+90min` 后，matched rows `95435`，close mean abs diff `0.000062`
+  - 在同一 `+90min` 下，SMA5 mean abs diff 仍有 `0.067395`，SMA13 mean abs diff 仍有 `0.134612`
+  - M15 覆盖窗口内，`m30_date + 0min` 在 M15 processed 中匹配 `99.99%`
+  - H2 `source_time -> decision_time` 中位偏移为 `240min`
+  - M30 映射最近 H2 decision 后仍有 `1082` 行超过常规 `0/30/60/90min` 桶，需要视为数据缺口/休市窗口，不应简单当成 H2 公式错误
+- 当前判断：
+  - 之前 MT5 export 与 Python processed 的 close 差异，主要来自 `bar_time` 时间语义未偏移
+  - `EA_ALIGN_DELTA=90` 继续得到数据层支持
+  - 但 SMA 残差、`full_data_30m2h` 不同步、M15 SLOT1 未完整导出仍会影响信号链路
+  - 下一步可以进入 Python-MT5 数据版重建，但必须明确使用 `MT5 bar_time + 90min` 后的时间语义
+
+### 结论 22: Python-MT5 shift90 诊断重建不能以“总笔数接近”判定成功，H2 decision context 仍比 MT5 bar-level H2 更接近当前 EA/Python 对齐口径
+- 已新增并运行：
+  - `30m2H策略/scripts/signals/rebuild_python_mt5_shift90.py`
+- 输出报告：
+  - `30m2H策略/data/validation/python_mt5_shift90_rebuild_report_20260712.md`
+- 本轮重建没有覆盖旧 `30m2H策略/data/signals_mt5`，而是输出到：
+  - `30m2H策略/data/signals_mt5_shift90_20260712`
+- 三个变体结果：
+  - `mt5_h2_barlevel_direct`：`77` 笔，final `5743.24`，shared `13`，Python-only `64`，MT5-only `65`
+  - `mt5_h2_barlevel_q2early`：`77` 笔，final `5743.24`，shared `13`，Python-only `64`，MT5-only `65`
+  - `python_h2_context_q2early`：`98` 笔，final `3188.77`，shared `37`，Python-only `61`，MT5-only `41`
+- 当前判断：
+  - MT5 bar-level H2 变体的总笔数接近 MT5 EA，但 shared 很低，不能作为对齐成功版本
+  - 当前 Python H2 decision context 仍比 MT5 bar-level H2 export 更接近 MT5 EA 信号集合
+  - Python-MT5 重建应保留为诊断分支，不能覆盖旧 `signals_mt5` 或作为正式资金对比基线
+  - 下一步优先补 MT5 trade ledger，因为仅凭 bar export 仍无法解释 M15 SLOT1、真实平仓原因和资金曲线
+
+### 结论 23: Python-only vs 旧版 Python-MT5 的详细 diff 已经补齐，Layer1/Layer2 差异很小，但 Layer3 与执行结果已经显著分叉
+- 已新增并运行：
+  - `30m2H策略/scripts/validate/compare_python_vs_python_mt5_detail.py`
+- 输出目录：
+  - `30m2H策略/data/validation/python_only_vs_python_mt5_detail_20260712`
+- 数据层结论：
+  - 两版共享的 base/raw M30 与 M15 仍是共同输入
+  - 真正变更的是 `H2_XAUUSDm_mt5.csv` 与 `m30_mt5.csv`
+  - `m30_standardized` vs `m30_mt5` 的 close 差异很小，但 SMA5/SMA13 会持续累计成后续信号分叉
+- 信号层结论：
+  - `accepted_L1_L2`：Python-only `341`，Python-MT5 `373`，shared `338`
+  - `picked_L3`：Python-only `118`，Python-MT5 `101`，shared `90`
+  - `executed_stage`：Python-only `118`，Python-MT5 `101`，shared `90`
+  - 这说明差异不是先发生在原始候选，而是在 Layer3 入选和后续执行链上被放大
+- 交易层结论：
+  - shared executed `90` 笔中，`total_$` 平均差值约 `-1.003920`
+  - `stage1_exit / stage2_exit / stage3_exit` 一致率都约 `96.67%`
+  - 任一阶段 SL：Python-only `95`，Python-MT5 `81`
+- 当前判断：
+  - Python-only vs Python-MT5 已经不是“有无信号”的粗差，而是“相同候选进入 Layer3 后如何被筛掉、如何被 Stage 回放放大”的细差
+  - 后续如果要继续收紧 Python-MT5 版本，优先关注 shared `90` 笔里的 pnl / exit 差异，而不是只看 `accepted 338 shared` 这个表面数字
+
+### 结论 24: MT5 trade ledger 已完成从实现、部署到 full tester 落盘的闭环验证，但它暴露出新的“信号数 vs 成交数”口径差异
+- 已在 `auto_trade/30m2H_Strategy_EA.mq5` 中加入：
+  - `InpExportTradeLedger`
+  - `30m2H_strategy_trade_ledger.csv`
+  - `LedgerRegisterOpen`
+  - `OnTradeTransaction` 平仓回填
+  - `LedgerTryFinalizeFromHistory` 被动补捞
+- 已同步到实际 MT5 工作目录并编译：
+  - `F:\\use_code\\MTA5\\auto_trade\\30m2H_Strategy_EA.mq5`
+  - `F:\\use_code\\MTA5\\auto_trade\\30m2H_Strategy_EA.ex5`
+  - 编译日志 `auto_trade/compile_trade_ledger.log` 为 `0 errors, 0 warnings`
+- 之后进一步确认，MT5 tester 实际使用的是 terminal 数据目录中的：
+  - `C:\Users\3762\AppData\Roaming\MetaQuotes\Terminal\B695BCB6C1E6864B6D96307B87B29F16\MQL5\Experts\Advisors\30m2H_Strategy_EA.ex5`
+- 最初没有 ledger 落盘的直接原因不是代码失败，而是这个 terminal 侧 `ex5` 仍是旧版：
+  - 旧版 `Length = 112892`，`LastWriteTime = 2026-07-12 15:24:21`
+  - 同步新编译 `ex5` 后变为 `Length = 121652`，`LastWriteTime = 2026-07-12 17:41:32`
+- smoke tester（`2026-06-20 ~ 2026-06-25`）验证：
+  - tester log 出现 `Trade ledger export: 30m2H_strategy_trade_ledger.csv`
+  - tester log 出现 `Trade ledger export closed`
+  - Agent `MQL5/Files` 成功生成 `30m2H_strategy_trade_ledger.csv`
+  - 本窗口 `final balance = 500.00 USD`，说明无成交，但文件导出链路正常
+- full tester（`2018-01-01 ~ 2026-07-07`）验证：
+  - `final balance = 3940.37 USD`
+  - `Trade ledger export closed`
+  - Agent 目录 `30m2H_strategy_trade_ledger.csv` 大小 `36511`
+  - 已归档到：
+    - `30m2H策略/data/validation/mt5_trade_ledger_full_20260712/30m2H_strategy_trade_ledger.csv`
+- full-run ledger 摘要：
+  - 总行数 `156`（含表头）
+  - stage close 记录 `155`
+  - 唯一成交信号 `66`
+  - stage 分布：`1:45`、`2:65`、`3:45`
+  - 主要退出原因：`deal_exit=149`、`position_gone=4`、`stage1_tp=1`、`stage3_cross_exit=1`
+- 当前判断：
+  - trade ledger 现在已经足够支撑下一步的 MT5 vs Python 逐笔资金/止损/退出原因对齐
+  - 但 ledger 记录的是“成交并完成 close 的 stage”，不是 EA 日志里的全部 `78` 条信号
+  - 因此下一步必须先解释 `78` 条信号日志 vs `66` 个 ledger 唯一成交信号的差异，再做 Python 动态风险手数版对齐
+
+### 结论 25: Python 动态风险版的输入链已经打通，`Layer3入选` 与 `Stage结果` 可以无损直连
+- 已新增并运行：
+  - `30m2H策略/scripts/validate/prepare_dynamic_risk_inputs.py`
+- 输出目录：
+  - `30m2H策略/data/validation/dynamic_risk_inputs_20260712`
+- 关键结果：
+  - `python_only`
+    - `Layer3 rows = 118`
+    - `Stage rows = 118`
+    - `matched rows = 118`
+    - `signal-only = 0`
+    - `stage-only = 0`
+    - `duplicate keys = 0`
+  - `python_mt5`
+    - `Layer3 rows = 101`
+    - `Stage rows = 101`
+    - `matched rows = 101`
+    - `signal-only = 0`
+    - `stage-only = 0`
+    - `duplicate keys = 0`
+- 这说明：
+  - Python 两版后续做动态风险手数模拟时，可以稳定使用 `date/mode/dir` 作为交易主键
+  - 不需要先额外修“信号表与 Stage 结果表配不上”的数据质量问题
+  - 下一步真正要解决的是：
+    - 按 EA `CalcLot()` / `StageLots()` 把 `stop_pts_mql5` 映射到三段动态手数
+    - 再把 Python 动态风险结果与 MT5 ledger 做逐笔对齐
+
+### 结论 26: MT5 ledger 的“可导出”已经验证，但“可作为最终真值”仍不成立；当前最大阻塞是 same-stage overlap 与 ledger 净利润不闭环
+- 已新增并运行：
+  - `30m2H策略/scripts/validate/simulate_dynamic_risk_alignment.py`
+- 首轮结果立即暴露：
+  - MT5 ledger 汇总 `net_profit` 不能复原 tester `final balance = 3940.37`
+- 随后对 ledger 实现做了 ticket-based 修复并 full tester 复跑，归档：
+  - `30m2H策略/data/validation/mt5_trade_ledger_full_20260712_v2`
+- v2 快照结论：
+  - ledger rows：`155 -> 162`
+  - 但 `net_profit sum = -1669.38`
+  - 与 tester 应有净盈利 `3440.37` 仍严重不符
+- 进一步对持仓区间做 stage overlap 检查后确认：
+  - `stage1 overlaps = 0`
+  - `stage2 overlaps = 9`
+  - `stage3 overlaps = 13`
+- 这说明：
+  - 当前 MT5 run 中，同一个 `stage id` 的持仓区间确实会重叠，尤其是 `stage2`、`stage3`
+  - 因而任何“按 stage 只有一个当前持仓 / 一个当前 ledger 状态”的假设都不再可靠
+  - 当前 blocker 已经从“怎么导出 CSV”升级成“EA 当前 stage 状态模型与 ledger 模型都不足以完整复原成交”
+- 当前判断：
+  - 不能把 `mt5_trade_ledger_full_20260712` 或 `..._v2` 直接当成 Python 动态风险对齐的最终真值
+  - 下一步必须先解决或解释 `MT5 ledger completeness`
+  - 若 EA 侧继续允许 same-stage overlap，则后续更稳的路线可能是：
+    - 继续改 EA 持仓/ledger 跟踪模型
+    - 或改成基于 tester 原始成交历史重建外部 ledger，而不是只依赖 EA 内部导出
+
+### 结论 27: 当前 ledger 问题已经不是“少导出几行”，而是“close 归属错配 + stage 单槽位模型”共同造成的结构性失真
+- 已新增并运行：
+  - `30m2H策略/scripts/validate/diagnose_mt5_ledger_completeness.py`
+- 输出目录：
+  - `30m2H策略/data/validation/mt5_ledger_completeness_diag_20260712`
+- v1 / v2 快照对比：
+  - `v1`: `155 rows / 66 unique signals / net -1627.15`
+  - `v2`: `162 rows / 73 unique signals / net -1669.38`
+- 关键异常：
+  - `v2` 比 `v1` 多出 `7` 行、唯一信号多出 `7` 个，但净利润没有向 tester `3440.37` 净盈利方向收敛
+  - `v2` 里仍然是 `162/162 rows = deal_reason=SL`
+  - `v2` 的正收益 rows 仍主要集中在 `stage2`；`stage1/stage3` 盈利退出没有形成可信闭环
+  - `v2` 已确认存在 same-stage overlap：
+    - `stage2 overlap_pairs = 4`
+    - `stage3 overlap_pairs = 5`
+- 对 EA 源码做静态诊断后，当前稳定判断是：
+  - `g_stage_tickets[4]` / `FindOurStagePos(stage)` 仍是单 stage 单槽位
+  - Stage 1/2 与 Stage 3 的退出管理都还是“一次只管理一个当前 stage 持仓”
+  - 因此即使 ledger 已改成多槽位，stage 管理层仍无法完整表达同 stage 重叠持仓
+- 当前判断：
+  - 继续只在 ledger 导出层修补，已经不够
+  - 下一轮应优先验证 `position_id` 跟踪补丁；若仍不能闭环，就要进入“stage 状态管理多持仓化”或“外部 trade history 重建 ledger”二选一
+
+### 结论 28: `position_id` 跟踪补丁已经被实测否决为“非主修复项”，当前应正式转向 stage 多持仓状态管理
+- 已完成：
+  - 将 `position_id` 跟踪补丁同步到真实工作区 `F:\use_code\MTA5\auto_trade\30m2H_Strategy_EA.mq5`
+  - 成功编译真实 EA：
+    - `F:\use_code\MTA5_l\auto_trade\compile_trade_ledger_v3_live.log`
+    - 结果 `0 errors, 0 warnings`
+  - 已部署到 terminal Experts 并重跑：
+    - smoke tester
+    - full tester `2018-01-01 ~ 2026-07-07`
+  - 新快照：
+    - `30m2H策略/data/validation/mt5_trade_ledger_full_20260713_v3`
+- v3 实测结果：
+  - `rows = 162`
+  - `unique_signals = 73`
+  - `net_profit_sum = -1669.38`
+  - `deal_reason=SL = 162/162`
+  - 与 `v2` 的共有列内容完全一致，仅新增 `position_id` 一列
+  - `ticket_eq_position_id_rows = 162/162`
+- 这说明：
+  - 当前 run 里 `ticket` 与 `position_id` 并不存在额外分叉
+  - 单纯补 `position_id` 不会改变 ledger 归属结果
+  - `ticket / position_id` 错配已不再是主怀疑点
+- 结合 overlap 样本，当前更稳的判断是：
+  - 真实 blocker 已经收敛为 `EA stage 状态模型仍按单 stage 单槽位管理`
+  - 即使 ledger 层可记录多槽位，退出管理层仍只会按“当前一笔 stage 持仓”推进
+- 当前判断：
+  - 下一轮主线不应再继续微调 `LedgerWriteClose...` 匹配条件
+  - 应正式转向：
+    - `stage2/stage3` 多持仓状态管理重构
+    - 或基于 tester 原始 trade history 的外部 ledger 重建
+
+### 结论 29: MT5 ledger 完整性已闭合，真实主因是 `magic=0` 平仓 deal 未按 `position_id` 归属，以及回测结束持仓未在 `OnDeinit` 补捞
+- 已新增 raw deal history 导出：
+  - `30m2H_strategy_deal_history.csv`
+  - 函数：`DumpRawDealHistory()`
+- raw deal history 首次验证：
+  - total rows `468`
+  - OUT rows `234`
+  - OUT net profit `3440.37`
+  - 这与 tester `500 -> 3940.37` 完全一致
+- 对旧 ledger 的缺口复盘：
+  - `magic=0` 的 EXPERT 平仓 deal 共 `72` 笔，净利润 `3311.08`
+  - 这些 deal 的 entry position 可以通过 `position_id` 追溯回 stage magic
+  - 当前旧 `OnTradeTransaction()` 先按 `StageFromMagic()` 过滤，导致这些平仓未进入 ledger
+  - 另有一笔 `end of test` / `CLIENT` 平仓，净利润 `1802.36`，发生在 `2026-07-06 23:59:59`
+- 已完成修复：
+  - `OnTradeTransaction()` 对 OUT deal 先用 `DEAL_POSITION_ID` 查 ledger slot，magic 只作为 fallback
+  - `LedgerFindLatestExitDealBySlot()` 允许用 position id 匹配 `magic=0` close deal
+  - `OnDeinit()` 关闭 ledger 前调用 `LedgerFinalizeAllOpenFromHistory("deinit_history")`
+- 修复后 full tester 快照：
+  - 目录：`30m2H策略/data/validation/mt5_ledger_deinitfix_full_20260713_v1`
+  - ledger rows `234`
+  - unique signals `78`
+  - ledger net profit `3440.37`
+  - raw deal history OUT net profit `3440.37`
+  - missing OUT deals `0`
+  - extra ledger deals `0`
+- 当前判断：
+  - MT5 ledger 现在可以作为 Python 动态风险对齐的可靠交易真值
+  - 下一步应重建 Python-vs-MT5 key mapping，而不是继续修 ledger 完整性
+
+### 结论 30: `+90min` 成交映射只能恢复少量可靠 shared，当前主差距已经转向信号构造层
+- 使用修复后 MT5 ledger 重建成交映射后，exact key overlap 从 `0` 变为可解释的分层匹配，但数量仍偏低：
+  - Python-only vs MT5：唯一匹配 `31 / 78` 个 MT5 信号，其中可靠层 `23`
+  - Python-MT5 vs MT5：唯一匹配 `30 / 78` 个 MT5 信号，其中可靠层 `15`
+- 可靠层要求同时满足：
+  - `MT5 signal_anchor_time + 90min`
+  - 方向一致
+  - trigger family 一致
+  - mode family 一致
+- 宽松层只能作为诊断，不应当作为“已经策略对齐”的证据。
+- 未匹配集中区说明主差距不再是 MT5 ledger 完整性问题：
+  - MT5 未匹配集中于 `M30 CLOSE / post_n` 与 `M15 SLOT1 / post_n`
+  - Python-only 未匹配集中于 `M30 CLOSE / post_n`
+  - Python-MT5 未匹配集中于 `M15 SLOT1 / post_n`、`M15 SLOT1 / pre_cross`
+- 当前判断：
+  - ledger 层已经可以作为交易真值
+  - 下一步应修 `M15 SLOT1` 与 `M30 CLOSE post_n` 的信号来源归属、raw-parent 依附、以及 post_n 编号/触发族漂移
+
+### 结论 31: 未匹配样本不是单一 `missing_raw_parent`，更主要是 Layer3 / Stage 执行 / trigger-family 漂移混合问题
+- 第一版未匹配归因已经把 MT5 未匹配分成若干 bucket：
+  - Python-MT5 vs MT5：
+    - `stage_execution_diff_or_family_drift = 18`
+    - `mapping_conflict_or_profit_diff = 11`
+    - `layer3_reject = 10`
+    - `trigger_family_drift = 5`
+    - `missing_raw_parent = 3`
+  - Python-only vs MT5：
+    - `mapping_conflict_or_profit_diff = 20`
+    - `stage_execution_diff_or_family_drift = 11`
+    - `layer3_reject = 8`
+    - `trigger_family_drift = 4`
+    - `missing_raw_parent = 2`
+- 这说明：
+  - 不能只做“无 parent 的 M15 post_n 一刀切删除”
+  - 很多样本附近存在 Python accepted/picked/executed 候选，只是 `post_n` 编号、trigger family 或执行阶段发生漂移
+  - 下一步应先对 `M30 CLOSE / post_n` 的 30/60 分钟错位和 `M15 SLOT1 / post_n` 的 parent 归属做原型验证，再移植 EA
+- 当前判断：
+  - Python 原型 gate 的通过标准应改为“减少错误 MT5-only，同时不误杀 mapping_conflict / layer3 附近候选”
+  - EA 侧不应直接按 `missing_raw_parent` 单条件修改，否则容易重演已否决的 strict counter 收益回撤
+
+### 结论 32: 简单 `M15 SLOT1 post_n 无 M30 parent 就拒绝` 已被 Python 原型判定为不安全
+- Python 原型已同时测试 `strict_parent`、`protect_reliable_parent`、`conservative_cause` 三类策略。
+- `strict_parent` 规则在 Python-MT5 口径下不安全：
+  - 对 `18` 个 MT5 `M15 SLOT1 / post_n` 信号，所有测试窗口 `0/30/60/90/120/180min` 都会误拒 `3` 笔 reliable matched
+  - 因此不能直接移植为 EA 规则
+- `conservative_cause` 规则当前是唯一可继续推进的方向：
+  - reliable matched rejected = `0`
+  - relaxed matched rejected = `0`
+  - Python-MT5 下可拒绝 unmatched `3~4` 笔
+  - Python-only 下可拒绝 unmatched `5~7` 笔
+- 这说明：
+  - M15 raw-parent gate 能减少部分 MT5-only，但不是解决全部差距的主刀
+  - 更大的差距仍来自 `M30 CLOSE / post_n` 的 30/60 分钟错位、post_n 编号漂移、Layer3 与 Stage 执行差异
+- 当前判断：
+  - EA 迁移前必须先做“规则可表达性复核”：`conservative_cause` 里的保护条件哪些能由 EA 内部日志/状态判断，哪些只是 Python 离线诊断才知道
+  - 若 EA 无法表达这些保护条件，就不能实施该 gate
+
+### 结论 33: `conservative_cause` 不能原样移植到 EA，M15 gate 当前只能做诊断增强
+- EA 当前能表达的本地状态包括：
+  - M15 slot1/slot2
+  - `signal_src`
+  - `g_merged_post_n_counter`
+  - Layer1/Layer3 pass/fail
+  - Stop/spec pass/fail
+- EA 当前不能表达离线比较标签：
+  - `reliable_matched`
+  - `relaxed_matched`
+  - `cause_bucket`
+  - Python accepted/picked/executed 最近邻
+  - `mapping_conflict_or_profit_diff`
+  - `layer3_reject`
+- 因此：
+  - `strict_parent` 已被否决
+  - `conservative_cause` 虽然离线安全，但依赖离线标签，不能直接变成 EA 交易过滤规则
+  - 当前不应改 EA 的 M15 执行行为
+- 当前判断：
+  - 若后续仍要处理 M15，应先加 parent-context 诊断字段，不拦截交易
+  - 主修复方向应转向 `M30 CLOSE / post_n` 的时间错位、编号漂移、Layer3/Stage 执行差异
+
+### 结论 34: `M30 CLOSE / post_n` 的主要矛盾是 30 分钟 anchor 与 post_n 编号偏移，不是简单缺失
+- 新的 M30 post_n 诊断显示，可靠匹配本身也带有系统性偏移：
+  - Python-only vs MT5 reliable：`<=30min / postn_diff=-1` 有 `6` 笔
+  - Python-MT5 vs MT5 reliable：`<=30min / postn_diff=-1` 有 `5` 笔
+- MT5 unmatched 中也出现同一形态：
+  - Python-only：`mapping_conflict_or_profit_diff / executed_nearby / <=30min / postn_diff=-1` 有 `8` 笔
+  - Python-MT5：`mapping_conflict_or_profit_diff / executed_nearby / <=30min / postn_diff=-1` 有 `4` 笔
+- 这说明：
+  - 很多 M30 post_n 不是缺少 Python raw/accepted 信号
+  - 它们更像 `MT5 post_nN` 对到 `Python post_n(N+1)`，且时间相差约 `30min`
+- EA 源码层面存在合理怀疑点：
+  - `new_m30_bar` 时先调用 `UpdateMergedPostNState()`
+  - 随后同一个 M30 CLOSE 分支立即使用更新后的 `g_merged_post_n_counter`
+  - 这可能让 post_n counter 与当前 `cur_bar` anchor 发生 off-by-one / 30min 漂移
+- 当前判断：
+  - 下一步应做 post_n counter/anchor 回放实验
+  - 不应先改收益或止损逻辑
+  - 不应把 M30 post_n unmatched 当成应删除信号
+
+### 结论 35: Python-only 的 M30 post_n 偏移已被 counter/anchor 回放解释，但 Python-MT5 当前混了旧信号口径
+- post_n counter / anchor 回放显示：
+  - Python-only 中 `MT5 post_nN -> Python post_n(N+1)` 且相差 `30min` 的样本共有 `14` 个
+  - 这 `14` 个全部满足：
+    - MT5 aligned time 的 M30 counter 对上 `MT5 post_nN`
+    - 下一根 M30 counter 对上 `Python post_n(N+1)`
+- 这说明 Python-only 侧的这类差异更像 anchor/counter 语义差，而不是缺 raw 信号或需要删除 MT5 信号。
+- 但 Python-MT5 侧同类样本共有 `9` 个，当前回放中 `counter_t` 和 `counter_t+30` 都无法对上，原因不是 EA 新问题，而是 Python-MT5 信号来源本身与 `processed/m30_mt5.csv` 不同口径。
+- 当前判断：
+  - 不应基于旧 Python-MT5 动态风险表继续评价 EA 差异
+  - 需要先修正 Python-MT5 输入来源，再重跑动态风险和映射诊断
+
+### 结论 36: 旧 `data/signals_mt5` 不适合作为后续 Python-MT5 对齐基准，应切到 shift90 版本化信号
+- Python-MT5 信号来源审计显示：
+  - 旧 `data/signals_mt5` 中 M30 post_n 信号 `57` 个
+  - 与 `data/processed/m30_mt5.csv` 同时刻 counter 对齐只有 `2` 个
+  - 与下一根 M30 counter 对齐有 `52` 个
+- 相比之下，`signals_mt5_shift90_20260712` 三个候选版本中：
+  - M30 post_n 信号均为 `54` 个
+  - 与 `m30_prepared_with_mt5_shift90.csv` 同时刻 counter 对齐均为 `54` 个
+- 旧 `data/signals_mt5` 的生成脚本虽然命名为 `export_with_mt5_data.py`，但核心仍调用当前 Python baseline 构建信号，没有把版本化 shift90 M30 处理数据作为动态风险输入。
+- 当前判断：
+  - 后续 Python-MT5 动态风险、交易映射、未匹配归因应改用 `signals_mt5_shift90_20260712/python_h2_context_q2early`
+  - 该版本在旧报告中 strict shared 为 `37`，高于当前旧 Python-MT5 映射结果，是优先候选
+  - 切换后再决定 EA 的 M30 post_n 是否需要改 counter 使用时点；现在直接改 EA 仍然过早
+
+### 结论 37: shift90 重跑后 Python-MT5 口径明显收敛，M30 post_n counter 不是当前首要 EA 修改点
+- 使用 `signals_mt5_shift90_20260712/python_h2_context_q2early` 重跑后：
+  - Python-MT5 交易数从旧口径 `101` 变为 `98`
+  - final balance 从旧口径 `15767.140913` 回落到 `1969.914099`
+  - unique matched 从 `30` 提升到 `34`
+  - reliable matched 从 `15` 提升到 `18`
+  - MT5 unmatched 从 `48` 降到 `44`
+- 这说明旧 Python-MT5 的高收益和部分错位来自信号来源混口径，不是策略真实优势。
+- shift90 后 M30 post_n counter/anchor 回放显示：
+  - Python-MT5 `M30 CLOSE / post_n` 共 `26` 笔
+  - `counter_t_matches_mt5_abs = 24`
+  - `observed_30min_n_plus_1 = 1`
+  - MT5 unmatched 中 `observed_30min_n_plus_1 = 0`
+- 当前判断：
+  - Python-MT5 侧的系统性 30min post_n 偏移已基本消失
+  - 当前不应修改 EA 的 M30 post_n counter 使用点
+  - 下一步应处理 shift90 后剩余的 Stage/family drift、M15 SLOT1 post_n 和 Layer3 差异
+
+### 结论 38: shift90 后剩余差距主要不是资金曲线公式，而是成交集合仍未一致
+- shift90 后三方关键数值为：
+  - Python-only：`118` 笔，final balance `9585.567726`
+  - Python-MT5 shift90：`98` 笔，final balance `1969.914099`
+  - MT5 ledger：`78` 笔，final balance `3940.37`
+- Python-MT5 shift90 的 MT5 unmatched 仍有 `44` 笔，主要归因为：
+  - `mapping_conflict_or_profit_diff = 14`
+  - `stage_execution_diff_or_family_drift = 14`
+  - `layer3_reject = 6`
+  - `trigger_family_drift = 6`
+  - `missing_raw_parent = 3`
+  - `missing_python_candidate = 1`
+- 这说明最终资金仍不可直接横比，因为三方成交集合和执行阶段仍不同。
+- 当前判断：
+  - 继续看最终金额会误导
+  - 下一步应按 unmatched bucket 分组处理：先 M15 SLOT1 post_n，再 Stage execution / trigger family drift，再 Layer3
+
+### 结论 39: shift90 后的 M15 SLOT1 post_n 不支持过滤修复，最多先做诊断增强
+- 对 Python-MT5 shift90 的 `11` 个 MT5-unmatched `M15 SLOT1 / post_n` 复核后：
+  - `layer3_reject = 3`
+  - `mapping_conflict_or_profit_diff = 3`
+  - `stage_execution_diff_or_family_drift = 3`
+  - `trigger_family_drift = 1`
+  - `missing_raw_parent = 1`
+- EA action 分类显示：
+  - `do_not_filter = 8`
+  - `diagnostic_only = 2`
+  - `diagnostic_only_possible_filter_candidate = 1`
+- 这说明：
+  - 剩余 M15 post_n 不是单纯无 parent 的坏信号集合
+  - 只有 `1` 笔像真正 missing parent 候选，不足以支撑行为过滤规则
+  - 继续实施 parent-only filter 会误伤 Layer3 / mapping / replace 相关样本
+- 当前判断：
+  - 不应修改 EA 交易过滤
+  - 若要动 EA，只能先加诊断字段，记录 M15 replace/rescue 的 parent/context
+
+### 结论 40: Stage/family drift 的主因是 M15 replace trigger-family 语义，不是出场资金公式
+- 对 Python-MT5 shift90 的 `20` 个 `stage_execution_diff_or_family_drift` / `trigger_family_drift` 样本复核后：
+  - `review_m15_replace_trigger_family_semantics = 17`
+  - `review_time_window_or_one_to_one_conflict = 3`
+- 主要形态是：
+  - MT5 侧标为 `M30 CLOSE`
+  - Python shift90 同时或近时间标为 `M15 SLOT1`
+  - Python variant 多为 `ea_slot1_replace`
+- 这说明：
+  - 当前 residual 的主线不是 Stage 出场规则先坏了
+  - 也不是 M30 post_n counter 需要立刻改
+  - 更可能是同一个可替换信号在 EA / Python / 映射层的 trigger family 标签不一致
+- 当前判断：
+  - 下一步应先做“trigger-family equivalence mapping”实验
+  - 如果把同时间或近 30min 的 `M30 CLOSE <-> M15 SLOT1 ea_slot1_replace` 视为等价后 shared 明显提升，则优先修 compare/mapping 口径
+  - 只有等价映射无法解释的样本，才进入 EA 行为修改候选
+
+### 结论 41: trigger-family equivalence 只能提升匹配可信度，不能减少剩余 unmatched
+- trigger-family equivalence 原型显示：
+  - baseline：unique matched `34`，reliable `18`，relaxed `16`，MT5 unmatched `44`
+  - `m30_to_m15_replace_30`：unique matched 仍为 `34`，reliable 提升到 `27`
+  - `bidirectional_m30_m15_90`：unique matched 仍为 `34`，reliable 提升到 `28`
+  - 加 `profit_diff <= 20` guard 后：reliable 为 `24`，equivalence matches 为 `6`
+- 这说明：
+  - M30/M15 replace 等价主要把原来的 relaxed match 升级成 structural reliable
+  - 它没有新增一对一匹配，也没有减少 `44` 个 MT5 unmatched
+  - 不加 profit guard 会把部分盈亏差很大的样本升为 reliable，因此不能直接作为最终 PnL 对齐口径
+- 当前判断：
+  - 可在报告中区分 `structural-equivalent` 与 `pnl-equivalent`
+  - 若要修 compare/mapping，建议使用 profit guard 或单独标签，不要把所有 trigger-equivalent 都算作完全可靠
+  - 下一步应处理剩余 unmatched 的 entry/exit/profit 差异，而不是继续扩大 trigger-family equivalence
+
+### 结论 42: 已匹配样本的 PnL 残差主因是 Stage exit 细节与分段手数，不是信号触发
+- 对 `bidirectional_m30_m15_90_profit20` 的 `34` 个已匹配样本做 profit / exit 分解后：
+  - `stage_exit_detail_diff = 18`
+  - `minor_or_mixed_diff = 7`
+  - `exit_reason_diff = 3`
+  - `stop_distance_diff = 3`
+  - `pnl_aligned = 3`
+- top profit diff 样本显示：
+  - Python 侧经常是 `2.0R TP`、`trail/SL hit`、`4.0R forced`、`M30 merged cross`
+  - MT5 侧对应 deal reason 常是 `SL` 或 `EXPERT`
+  - Python dynamic lots 与 MT5 实际 lots 经常不一致，例如 Python `0.05,0.10,0.15` 对 MT5 `0.01,0.01,0.01`
+- 这说明：
+  - 即使信号可以结构对齐，PnL 仍不能直接视为一致
+  - 当前最大残差来自 Stage exit 规则、分段手数和 MT5 deal exit reason 的执行差异
+  - 继续修 trigger-family mapping 只能改善标签可信度，不能解决资金曲线差异
+- 当前判断：
+  - 下一步应做 Stage exit 规则对齐专项
+  - 重点比较 Python Stage 的 `2.0R/1.5R trail/4.0R forced/M30 merged cross` 与 MT5 实际 `SL/EXPERT` 出场原因、exit price、lots
+  - 在 Stage exit 对齐前，不应根据最终资金差异修改 EA 信号逻辑
+
+### 结论 43: Stage exit 残差集中在 SELL，下一步应优先验证 EA Stage1/2 price-side
+
+- 对 `stage_exit_detail_diff` 的 `18` 笔已匹配样本展开到 `54` 行 stage 明细后，全部样本方向都是 `SELL`。
+- 主要分歧不是一个单纯的“手数不同”问题：
+  - Stage1 中 Python `2.0R TP` 对 MT5 `SL` 有 `7` 段，且对应 `win->loss`
+  - Stage2 中 Python `4.0R forced` 对 MT5 `SL` 有 `5` 段，且对应 `win->loss`
+  - Stage3 中 Python `M30 merged cross` 对 MT5 `SL` 有 `3` 段
+- 源码复核显示：
+  - Python Stage exit 以 M30 bar high/low/close 回放
+  - EA Stage1/2 以 tick 上的 `rr` 管理
+  - EA 当前在 Stage1/2 管理中统一使用 `SYMBOL_BID` 作为 `current_price`
+- 这说明：
+  - SELL 样本的 price-side / 出场时点差异是当前最强嫌疑
+  - Stage2 trailing 在 MT5 中经常会表现为 broker SL deal reason，不能直接与 Python `trail/SL hit` 文本等价
+  - Python 动态手数与 MT5 手数差异会放大 PnL，但不是唯一主因，因为已经出现多处 `win->loss`
+- 当前判断：
+  - 不应先做全局 EA Stage 行为修改
+  - 下一步应先补 EA Stage1/2 诊断字段并跑 SELL smoke tester，记录 `bid/ask/current_price/rr/action/local_exit_reason`
+  - 若 smoke 证明 SELL 使用 BID 导致提前 TP/forced/trail-on，再把 `CheckStageExit` 的 current price 改为按方向选择 close-side price，并重跑 full tester
+
+### 结论 44: 2026-01-26 smoke 否定了单一样本的 SELL BID 虚假 TP，确认了 ClosePos 失败清状态 bug
+
+- 对 `2026.01.26 20:30` SELL 样本做 Stage1/2 price-side smoke 后：
+  - Stage1 首次 TP 触发时 `legacy_abs_rr=2.010334`
+  - 按 SELL close-side 计算的 `close_profit_rr=2.002203`
+  - `legacy_action_text` 与 `profit_side_action_text` 同为 `stage1_tp`
+  - 没有出现 `legacy_abs_rr>=1.5` 但 `close_profit_rr<0` 的 SELL 行
+- 这说明该样本不是单纯由 `SYMBOL_BID`/`SYMBOL_ASK` price-side 错误造成的虚假 TP。
+- tester 日志确认了另一个真实 bug：
+  - EA 在市场关闭时尝试 Stage1 平仓失败
+  - 原逻辑仍清空 stage ticket / position id
+  - pending ledger intent 保留 `stage1_tp`
+  - 后续真实 SL 出场被 ledger 记录为 `stage1_tp + SL`
+- 已修复：
+  - `ClosePos` 返回 `bool`
+  - 只有平仓成功才清空 stage 状态
+  - 平仓失败时清空 pending exit intent，并保留 stage 状态等待后续 tick 重试
+- 当前判断：
+  - 这次修复主要修正状态一致性和 ledger 出场原因，不改变该 smoke 的最终 PnL
+  - 不能再把所有 SELL stage_exit_detail_diff 直接归因于 price-side
+  - 后续应继续用其他 SELL smoke 窗口验证 Stage2 trailing、Stage3 expert close 与 market-session 行为；若仍不能解释，再优先做 Python runtime-style Stage exit 原型
+
+### 结论 45: 三个 SELL smoke 不支持先做 EA price-side 行为修改
+
+- 已补齐三个 smoke 快照：
+  - `20260126_close_retry_fix`
+  - `20250422_close_retry_fix`
+  - `20260324_close_retry_fix`
+- 三个窗口合计：
+  - SELL 诊断行 `12070`
+  - legacy/profit-side action mismatch `5`
+  - Stage1 TP / Stage2 force / Stage2 trail-on 新触发且 close-side profit 为负：`0`
+- Stage2 trail-on 事件全部在 legacy 与 close-side 口径下同时为正盈利。
+- 这说明：
+  - `SYMBOL_BID` vs close-side price 确实会造成少量 Stage1 阈值边界行
+  - 但它不是当前 Stage exit 大残差的主因
+  - 现在直接修改 `CheckStageExit` 的交易行为，证据不足，容易把有效盈利边界也改掉
+- 新的优先级应调整为：
+  - 保留 ClosePos 失败状态保留修复
+  - 用修复版跑 full tester，确认全周期 ledger / tester balance 是否闭合
+  - 用新 full ledger 重跑 mapping、matched profit/exit diff、Stage exit alignment
+  - 若残差仍集中在 Stage exit，再做 Python runtime-style Stage exit 原型，显式模拟 tick、close-side、market closed、broker SL 与 deinit 行为
+
+### 结论 46: ClosePos 修复版 full tester 闭合，旧 MT5 `$3940.37` 不应再作为基准
+
+- ClosePos 修复版 full tester 结果：
+  - signal anchors `78`
+  - stage rows `234`
+  - ledger net profit `3311.35`
+  - raw deal OUT net profit `3311.35`
+  - final balance 应为 `$3811.35`
+- 旧闭合快照：
+  - ledger net profit `3440.37`
+  - final balance `$3940.37`
+- 差值为 `-129.02`，但不是 ledger 不闭合，而是修复后真实执行路径改变。
+- 最大变化来自 `2020.03.20 02:00` BUY Stage3：
+  - 原逻辑在 `2020.03.22 00:00:00` Stage3 cross close 因 `Market closed` 失败后清空状态
+  - 旧版持仓继续拖到 `2020.03.25 10:00:05`，获得 `138.59`
+  - 修复版保留 Stage3 状态，并在 `2020.03.22 22:05:00` 成功重试平仓，获得 `20.37`
+  - 单行差值 `-118.22`
+- 其他多笔差异主要是动态手数连锁影响，signal 数量和 stage 行数没有变化。
+- 当前判断：
+  - ClosePos 修复应保留
+  - 旧 MT5 `$3940.37` 含有平仓失败后丢状态带来的额外持仓收益，不能再作为“正确 EA 回测结果”
+  - 后续所有三方对齐应切到 `mt5_full_close_retry_fix_20260714`
+  - 下一步重跑 mapping / matched profit-exit / Stage exit alignment，评估新 ledger 下 shared、unmatched 和 PnL residual
+
+### 结论 47: 切到 ClosePos 修复版 ledger 后，差异主因仍是 Stage exit 执行模型
+
+- 使用 `mt5_full_close_retry_fix_20260714` 重跑 shift90 对齐链路后：
+  - Python-MT5 matched unique 仍为 `34`
+  - reliable 仍为 `18`
+  - relaxed 仍为 `16`
+  - MT5 unmatched 仍为 `44`
+- 说明 ClosePos 修复不改变信号集合映射结论。
+- matched profit 侧发生变化：
+  - matched MT5 profit 从旧 `-56.77` 变为新 `-91.13`
+  - matched profit diff 从旧 `301.533946` 变为新 `335.893946`
+- matched profit / exit 分类：
+  - `stage_exit_detail_diff = 18`
+  - `pnl_aligned = 4`
+  - `minor_or_mixed_diff = 6`
+  - `exit_reason_diff = 3`
+  - `stop_distance_diff = 3`
+- Stage exit alignment 仍显示：
+  - 全部 `18` 笔 stage_exit_detail_diff 都是 SELL
+  - Stage1 `py_tp_mt5_sl = 7`
+  - Stage2 `py_forced_mt5_sl = 5`
+  - Stage3 `py_cross_mt5_sl = 3`
+- 当前判断：
+  - signal mapping 不是下一步主修方向
+  - price-side 行为修改证据不足
+  - 后续应优先做 Python runtime-style Stage exit 原型，把 Python 的 M30 bar 回放改成可对照 EA 的 tick/close-side/market-session/broker-SL/deinit 语义
+
+### 结论 48: runtime-style Stage 原型应先覆盖 21 个 Priority 1 stage case
+
+- 已从 ClosePos 修复版 Stage exit alignment 生成 `54` 行 runtime input cases。
+- Priority 1 共 `21` 行，主要包含：
+  - Stage1 `py_tp_mt5_sl = 7`
+  - Stage2 `py_forced_mt5_sl = 5`
+  - Stage2 `both_stop_or_trail` 但 `win->loss = 3`
+  - Stage2 `py_cross_mt5_sl = 2`
+  - Stage3 `py_cross_mt5_sl = 3`
+  - Stage3 cross-like `win->loss = 1`
+- 这组 case 能直接覆盖当前最有价值的问题：Python 显示盈利/主动退出，MT5 实际变成 broker SL 或亏损。
+- 当前判断：
+  - 原型第一版不应追求全量资金曲线
+  - 应先逐 case 复现 Stage1 TP、Stage2 trail/forced、Stage3 cross 的触发顺序和 broker SL 优先级
+  - 如果没有 tick 数据，必须明确标记为 M15/M30 近似，不能把结果当作真实 EA tick 等价
+
+### 结论 49: Priority 1 的多数 Stage exit 差异可由 broker SL 优先解释
+
+- Python runtime-style Stage exit 第一版使用 M30 OHLC 近似重放了 `21` 个 Priority 1 stage case。
+- 结果：
+  - MT5 SL case 共 `20`
+  - M30 近似可解释 MT5 SL 的 case 共 `19`
+  - 需要 tick/order detail 判断同一根 M30 bar 内先后顺序的 case 共 `18`
+  - 未完全解释的 MT5 SL case 为 `runtime_stage_case_004`
+  - 另有 `runtime_stage_case_007` 是 MT5 `EXPERT`，但 M30 近似在 partial open bar 看到 broker SL，不能按 M30 粗粒度直接判错
+- 这说明：
+  - 当前 Stage1/2/3 的 `win->loss` 残差，很大部分不是 EA price-side bug，也不是 signal mapping bug
+  - 更可能是 Python 原始 Stage 回放把 bar-level TP/forced/cross 当成优先出场，而 MT5 broker SL 在真实订单生命周期里先发生
+  - 旧 Python Stage 资金曲线因此偏乐观，特别是 Python 动态手数大于 MT5 实际手数时，偏差会被放大
+- 当前判断：
+  - 暂不建议修改 EA Stage1/2 price-side 行为
+  - 下一步应做 M15/tick 增强复核，优先处理 `runtime_stage_case_004` 和所有 `partial_open_bar=True` 的同 bar 顺序问题
+  - 若增强复核仍解释不了，再回到 EA 行为修改门
+
+### 结论 50: M15 增强复核缩小了不确定性，剩余问题应转向 tick/log 与 Stage2 trail ledger
+
+- M15 增强复核处理了 `19` 个 case：
+  - M15 覆盖 `14`
+  - 无 M15 覆盖 `5`
+  - 由 M15 bar ordering 直接 resolved `5`
+  - 仍需 tick/log `14`
+- M15 细分结果：
+  - `mt5_sl_before_python_event = 6`
+  - `mt5_sl_before_no_python_event = 2`
+  - `mt5_sl_before_stage2_trail_on = 2`
+  - `stage3_m15_sl_seen_cross_not_refined = 3`
+  - `python_event_before_mt5_sl = 1`
+- 解释：
+  - 2020/2021 与 2022-03-08 的样本不在当前 M15 processed 覆盖内，不能靠 M15 复核，只能补 tick/deal 日志或接受 tick-needed
+  - Stage3 的 M30 reverse cross chronology 不能用 M15 重算，M15 只能确认 broker SL 是否触达
+  - Stage2 trailing 需要真实记录 trail_on、SMA13 trail SL、修改成功/失败时间，否则 M15 只能判断 trail_on 之前/之后
+  - `runtime_stage_case_020` 是少数 Python event 早于最终 SL 的样本，结合 2026-01-26 smoke，更像 market closed 下 close retry / session 行为，而不是 price-side 错误
+- 当前判断：
+  - M15 复核后仍不支持直接修改 EA price-side
+  - 下一步最有价值的是补 Stage2 trailing ledger 增强，或为无覆盖样本获取 MT5 tick/deal 级日志
+  - Python runtime-style 原型后续应加入 market-session / close-failure 维度
+
+### 结论 51: Stage2 trailing 原型解释了一个关键残差，但多数 open-bar case 仍需 tick/log
+
+- Stage2 trailing 原型复核了 Priority 1 中的 `10` 个 Stage2 case。
+- 结果：
+  - `9` 个 case 的 M30 近似首个事件是 initial SL before force
+  - `1` 个 case 是 trail SL touch before/at MT5 SL bar
+  - `0` 个 case 能证明 `4R force` 先于 MT5 SL
+  - `8` 个 case 的首个事件落在建仓所在 M30 bar，因此仍需 tester log 或 tick 确认开仓后顺序
+- `runtime_stage_case_004` 原先因无 M15 覆盖无法解释；加入 Stage2 trail SL 路径后，可解释为 trail SL touch，而不是 Python cross/forced 逻辑必然早于 MT5 SL。
+- 这进一步支持当前主判断：
+  - Stage2 残差不是优先改 EA price-side 的证据
+  - Python 原始 Stage 回放偏乐观，主要因为没有完整模拟 broker SL、trail SL 修改路径、open-bar 先后与订单生命周期
+  - 后续应先补 partial-open tick/log 或 EA Stage2 trail ledger，再决定是否改策略执行逻辑
+
+### 结论 52: Stage2 partial-open 复核缩小了缺口，但仍需要真实 tick/log 或 trail ledger
+
+- 对 `8` 个 Stage2 partial-open case 做了可用证据复核：
+  - close-retry MT5 ledger / deal comment
+  - M15 refine 输出
+  - 已有 EA stage price smoke diag
+- 结果：
+  - `2` 个 case 可先降级为已解释
+  - `6` 个 case 仍需要 exported tick / tester log / Stage2 trail ledger
+  - `3` 个 case 有匹配 stage-price diag
+- 可降级样本：
+  - `runtime_stage_case_017`：initial SL after open，M15 ordering 已足够解释
+  - `runtime_stage_case_021`：不是 initial SL 问题，而是 modified/trailing SL；diag 显示 Stage2 trail activity，且 deal SL 价与 diag/current SL 对齐
+- 仍需证据样本：
+  - `runtime_stage_case_003/006/009/012/015`：deal 已确认开仓后 initial SL，但没有足够 tick/log 证明 opening bar 内首触顺序
+  - `runtime_stage_case_019`：deal SL 价更像 modified/trailing SL，但缺真实 SL modify 路径，不能仅靠 M15 判定完成
+- 当前判断：
+  - Stage2 差异主线继续指向 broker SL / trailing SL / order lifecycle，而不是优先改 EA price-side
+  - 下一步应做 EA Stage2 trail ledger 增强或导出目标 case 的 MT5 tick/tester log
+
+### 结论 53: 增强后的 EA Stage2 trail ledger 已解除剩余 6 个 Stage2 partial-open case 的当前对齐阻塞
+
+- EA 已补充 Stage2 trail ledger 字段，能记录：
+  - trail_on 时间、RR、价格、当时 SL
+  - SL modify 成功/失败次数
+  - 首次/末次 modify 时间、修改前后 SL、SMA13、retcode/comment
+  - `stage2_sl_kind` 与 `deal_sl_price`
+- 完整 tester 复跑后，ClosePos 修复版基准未被破坏：
+  - anchors `78`
+  - stage rows `234`
+  - ledger net profit `3311.35`
+  - final balance `3811.35`
+- 对此前剩余的 `6` 个 Stage2 partial-open case：
+  - `runtime_stage_case_019` 由真实 trail ledger 解释为 `trail_sl`，末次修改后 SL 与 deal SL 均为 `4684.45400`
+  - `runtime_stage_case_003/006/009/012/015` 由 broker deal ledger 确认为开仓后 initial SL close
+  - 当前 `remaining_alignment_blocker` 已降为 `0`
+- 仍保留的限制：
+  - `case_003/006/009/012/015` 若要做严格 tick 级 first-touch replay，仍需要 raw tick
+  - 但这已经不再阻塞当前 Stage2 exit/PnL ledger-level 分类
+- 当前判断：
+  - Stage2 残差可继续按 broker SL / trailing SL / order lifecycle 解释
+  - 现阶段仍不支持直接修改 EA Stage1/2 price-side 行为
+  - 下一步应把 Python runtime-style Stage exit 原型接入这个增强 ledger，而不是继续扩大 EA 行为改动
+
+### 结论 54: runtime Stage exit 接入增强 ledger 后，Priority 1 blocker 从 21 个 stage case 降到 2 个
+
+- 将 Python runtime-style Stage exit 原型接入增强后的 EA Stage2 full ledger 后：
+  - 原始 `stage_exit_detail_diff` trade 数：`18`
+  - Priority 1 stage rows：`21`
+  - remaining Priority 1 blockers：`2`
+  - 仍需严格 tick/journal replay 的 Priority 1 rows：`13`
+- Stage2 侧结果最明确：
+  - Priority 1 Stage2 rows 已全部由 enhanced ledger / deal ledger 解释为 `initial_sl` 或 `trail_sl`
+  - 因此 Stage2 不再是当前 Stage exit/PnL 对齐的阻塞点
+- trade 级状态：
+  - `priority1_resolved = 3`
+  - `priority1_explained_but_strict_replay_pending = 5`
+  - `has_priority1_blocker = 2`
+  - `no_priority1_stage = 8`
+- 剩余两个 blocker：
+  - `runtime_stage_case_007`：Stage3 `EXPERT` close 与 broker-SL 候选冲突，需要 tester journal/session close 证据
+  - `runtime_stage_case_020`：Stage1 `python_event_before_mt5_sl`，更像 session / close-retry 行为候选，需要单独复核
+- 当前判断：
+  - 目前证据仍不支持直接修改 EA Stage1/2 price-side
+  - 下一步应补 `case_007/case_020` 的 tester journal / session / close-retry 证据
+  - Python 侧资金曲线后续应引入 runtime-style broker SL / trail SL / close retry 优先级，而不是继续使用原始理想化 Stage 出场口径
+
+### 结论 55: tester journal 复核后，当前 Priority 1 Stage exit blocker 已降为 0
+
+- 对 integrated alignment 剩余的两个 blocker 做 tester journal 复核后：
+  - `runtime_stage_case_007` 已解释为 EA Stage3 cross 主动平仓成功
+  - `runtime_stage_case_020` 已解释为 Stage1 TP 触发后 market closed，close retry 保留状态，最终 broker SL
+- `case_007` 的关键证据：
+  - `2022.03.08 02:30:34` 出现 `[STAGE3 CROSS EXIT] ticket=166`
+  - 同一时间 `Closed ticket=166`
+  - 没有 market closed、没有 broker SL trigger
+  - 说明之前的 M30 broker-SL 候选是 open-bar 粗粒度误判，不是真实平仓路径
+- `case_020` 的关键证据：
+  - `2026.01.26 21:31:50` 起多次 `[STAGE1 TP] ticket=367`
+  - 同时多次 `Market closed` 和 `[EXIT RETRY] stage 1 ticket=367 close failed; keeping state`
+  - `2026.01.27 01:14:45` 由 broker SL 触发
+- 当前判断：
+  - 当前 Priority 1 Stage exit blocker 可降为 `0`
+  - EA price-side 行为修复门仍不应打开
+  - 下一步应实现 Python runtime-style 资金曲线重算，把 broker SL、Stage2 trail ledger、market-closed close retry 纳入执行模型
+
+### 结论 56: runtime-style 资金曲线已解释 matched Stage-exit PnL 残差，但不能解释整体最终资金差距
+
+- Python-MT5 close-retry 原始动态资金曲线：
+  - `98` 笔
+  - final balance `1969.914099`
+  - profit `1469.914099`
+- 只对已解释的 matched `stage_exit_detail_diff` 做 runtime-style PnL 替换后：
+  - `98` 笔
+  - final balance `1684.404097`
+  - profit `1184.404097`
+  - adjusted trades `18`
+  - final Priority 1 blocker `0`
+- matched 子集收敛明显：
+  - all matched trades `34` 笔的绝对残差合计从 `1806.190278` 降到 `129.310294`
+  - `stage_exit_detail_diff` `18` 笔的 residual sum 从 `285.510002` 降到 `0.000000`
+  - `stage_exit_detail_diff` 绝对残差合计从 `1676.879984` 降到 `0.000000`
+- 这说明此前最大的 matched PnL 差异不是 EA price-side 必改证据，而是 Python 原始 Stage 出场模型没有模拟：
+  - broker SL 优先级
+  - Stage2 initial/trail SL ledger 归因
+  - close retry 保留状态
+  - market closed 后主动平仓失败再被 SL 平仓
+- 但 adjusted 后的全局最终资金仍不能与 MT5 ledger 横向比较：
+  - Python-MT5 仍是 `98` 笔
+  - MT5 ledger reference 是 `78` 笔
+  - 这一步没有重新生成信号，也没有按调整后余额反推后续手数
+- 当前判断：
+  - Stage-exit 执行层已基本收口
+  - 下一步主线应转向剩余非 Stage-exit matched residual 与 unmatched signal-set drift
+  - EA Stage1/2 price-side 修复门继续保持关闭，除非后续 smoke 给出新的直接证据
+
+### 结论 57: runtime 后的大差距已被定位到 signal-set drift，尤其 MT5-only M15 SLOT1/post_n
+
+- runtime-style adjusted 后，Python-MT5 与 MT5 reference 的 profit gap 为 `-2126.945903`。
+- 该 gap 已可被组件精确重构：
+  - remaining matched residual sum：`50.383944`
+  - signal-set gap effect sum：`-2177.329847`
+  - 合计：`-2126.945903`
+- 这说明当前主要问题已经不是 matched Stage-exit PnL，而是未匹配信号集。
+- remaining matched residual 规模较小：
+  - `stop_distance_diff`：`3` 笔，abs residual `31.755157`
+  - `exit_reason_diff`：`3` 笔，abs residual `29.457776`
+  - `minor_or_mixed_diff`：`6` 笔，abs residual `64.298172`
+  - `pnl_aligned`：`4` 笔，abs residual `3.799189`
+- signal-set drift 的主导项是 MT5-only 正收益缺失：
+  - `mt5_unmatched / mapping_conflict_or_profit_diff`：`14` 笔，gap `-2313.73`
+  - `mt5_unmatched / stage_execution_diff_or_family_drift`：`14` 笔，gap `-722.98`
+  - `python_unmatched / unique_match_conflict`：`32` 笔，gap `881.930278`
+- trigger/mode 影响最大的是：
+  - `mt5_unmatched / M15 SLOT1 / post_n`
+  - `11` 笔
+  - gap `-2563.57`
+  - abs gap `2976.95`
+- Top case 已明确：
+  - `mt5_0031`：MT5-only profit `1842.78`
+  - `mt5_0049`：MT5-only profit `541.15`
+  - `mt5_0068`：MT5-only profit `230.63`
+- 当前判断：
+  - 下一步优先级应切到 close-retry 口径的 unmatched cause 重算和 P1 top case 复核
+  - 旧 `unmatched_signal_cause_shift90_20260713` 只能作为参考层，因为它不是 close-retry 后重算出的 cause
+  - EA price-side 行为修复门继续关闭
+
+### 结论 58: BUY 方向归一化修复后，原最大 MT5-only 缺口转为 matched runtime PnL，当前差距缩小到 477.153976
+
+- `map_python_mt5_ledger_trades.py` 的方向归一化遗漏了 Python 的 `L=BUY`。
+- 修复为 `B/BUY/L/LONG/1 -> BUY` 后，close-retry mapping 结果大幅变化：
+  - Python-MT5 matched：`34 -> 57`
+  - Python-MT5 MT5-unmatched：`44 -> 21`
+  - Python-only matched：`31 -> 58`
+  - Python-only MT5-unmatched：`47 -> 20`
+- 原先最大 MT5-only top case 已不再是 signal-set drift：
+  - `mt5_0031` 已匹配 `python_mt5_0039`，`exact_align90_all`，runtime residual `0`
+  - `mt5_0049` 已匹配 `python_mt5_0067`，`nearby_7d_all`，runtime residual `0`
+  - `python_mt5_0092` 已匹配 `mt5_0075`，不再是 Python-unmatched
+- runtime-style 资金曲线刷新后：
+  - Python-MT5 runtime adjusted profit：`3788.503976`
+  - MT5 reference profit：`3311.350000`
+  - direct gap：`477.153976`
+  - remaining matched residual sum：`42.738057`
+  - signal-set gap effect sum：`434.415919`
+  - reconstructed gap：`477.153976`
+- Stage-exit 侧刷新后：
+  - `stage_exit_detail_diff` 为 `29` 笔
+  - runtime adjusted trades 为 `28`
+  - journal review 后剩余 Priority 1 blocker 为 `1`
+  - 剩余 blocker 是 `python_mt5_0061 / mt5_0045`：BUY Stage3，Python cross 盈利，MT5 broker SL，journal scan 未解释
+- 当前最大 signal-set drift：
+  - `mt5_0068`
+  - `2026-02-03 01:00:00`
+  - BUY `M15 SLOT1/pre_cross`
+  - cause：`layer3_reject`
+  - gap：`-230.63`
+- 当前判断：
+  - 旧结论中“大额 MT5-only 正收益缺失”主要由验证 mapping 方向归一化 bug 放大
+  - 修复后主线应聚焦两个点：`python_mt5_0061` 的 runtime Stage-exit blocker、`mt5_0068` 的 Layer3 reject
+  - EA price-side 行为修复门继续关闭
+
+### 结论 59: 当前剩余 P1 已细化为一个映射策略风险和一个 StopSpec/rescue 口径问题，仍不支持打开 EA price-side 修复门
+
+- 对当前两个最高优先级剩余点逐笔复核后：
+  - `python_mt5_0061 / mt5_0045` 归类为 `mapping_policy_risk_plus_unresolved_stage3_cross`
+  - `mt5_0068` 归类为 `target_window_raw_candidates_all_spec_reject`
+- `python_mt5_0061 / mt5_0045` 的核心风险不只是出场顺序：
+  - 当前 matched 关系来自 `nearby_60_trigger_relaxed`
+  - Python 侧为 `M15 SLOT1/post_n`
+  - MT5 侧为 `M30 CLOSE/post_n`
+  - 两者触发族不一致，且 aligned time 相差约 30 分钟
+- 因此该样本不能直接当作 EA Stage3 行为错误。
+- 如果后续继续保留这类 relaxed M15-vs-M30 match 作为 runtime PnL 调整依据，才需要补 `2025-04-22 15:00:00` first M30 cross 到 `2025.04.22 22:04:38` MT5 SL 之间的 EA tick/journal 证据。
+- `mt5_0068` 不应继续笼统写成 Layer3 reject：
+  - `2026-02-03 01:00:00` 目标窗口 180 分钟内有 5 条同向 raw 候选
+  - raw StopSpec 通过数为 0
+  - 最近候选是 `2026-02-03 01:30:00` 的 BUY `cross`
+  - 拒绝原因为 `too_wide`
+  - accepted / picked / executed 同 trigger/mode 候选均为 0
+- 所以 `mt5_0068` 当前更像 Python StopSpec / M15 SLOT1 rescue 口径缺口，而不是已经进入 Layer3 后才被过滤。
+- 这条结论细化并更新结论 57/58 后的 P1 排序：当前不再优先追“大额 MT5-only post_n 缺失”，而应先复核：
+  - `mt5_0068` 的 StopSpec 与 M15 SLOT1 rescue 是否应按 EA runtime 口径接收
+  - `python_mt5_0061 / mt5_0045` 这类 relaxed M15-vs-M30 match 是否允许驱动 runtime 资金调整
+- 当前判断：
+  - EA price-side 行为修复门继续关闭
+  - 下一步应先修验证/信号口径，而不是直接改 EA 出场价格侧
+
+### 结论 60: mt5_0068 的首要问题是 Python-MT5 时间轴/slot1 bridge 缺口，python_mt5_0061 不应继续作为 runtime 行为修复证据
+
+- 对 `mt5_0068` 补充 MT5 signal log、EA ledger、signals export、processed M30/M15 后，当前归因从 StopSpec/rescue 进一步细化为：
+  - `time_axis_gap_plus_mt5_runtime_slot1_entry`
+- 关键证据：
+  - MT5 raw anchor：`2026-02-02 23:30:00`
+  - MT5 shifted anchor：`2026-02-03 01:00:00`
+  - MT5 log/open time：`2026-02-02 23:15:00`
+  - ledger signal entry：`4718.614`
+  - ledger signal stop：`4683.84825`
+  - ledger stop distance：`34.7657`
+  - ledger net profit：`230.63`
+- 但 Python processed 数据在关键 shifted 时间上缺 bar：
+  - processed M30 没有 `2026-02-03 01:00:00`
+  - processed M30 前后是 `2026-02-02 23:30:00` 与 `2026-02-03 01:30:00`
+  - processed M15 没有 `2026-02-03 00:45:00`
+  - processed M15 前后是 `2026-02-02 23:45:00` 与 `2026-02-03 01:15:00`
+- 因此 Python 当前 nearest raw 被迫落到 `2026-02-03 01:30:00`，sd `72.996742`，`too_wide`；这不是同一根 M15 SLOT1 runtime entry 的公平对比。
+- 当前不应把 `mt5_0068` 当成普通 Layer3 reject 或 EA 行为 bug。
+- 下一步应新增 Python-MT5 专用的 M15 SLOT1 time-axis bridge：
+  - 对 shifted anchor 落在 processed bar 空洞里的 MT5 M15 SLOT1 样本，保留 raw anchor / log time / slot1 runtime entry 证据
+  - 再判断是否可在 Python-MT5 诊断口径中生成同锚点候选
+- `python_mt5_0061 / mt5_0045` 的结论也同步收紧：
+  - selected policy 是 `bidirectional_m30_m15_90_profit20`
+  - effective match tier 是 `nearby_60_trigger_relaxed`
+  - effective reliable 为 `False`
+  - trigger pair 为 `M15 SLOT1 -> M30 CLOSE`
+  - 该 policy 中 relaxed matched 为 `18`，其中同 tier `nearby_60_trigger_relaxed` 为 `10`
+- 所以 `python_mt5_0061 / mt5_0045` 只能用于 accounting diff 或 signal-set drift 归因，不应继续作为 runtime Stage3 行为修复证据。
+- 当前判断：
+  - EA price-side 行为修复门继续关闭
+  - 下一步优先实现 Python-MT5 time-axis / M15 SLOT1 bridge 原型，然后重跑 `mt5_0068` 与剩余 gap 拆解
+
+### 结论 61: M15 SLOT1 time-axis bridge 原型将 6 个 current remaining drift 样本重新归因，mt5_0068 不再是普通 Layer3 reject
+
+- M15 SLOT1 time-axis bridge 原型只改变归因，不改变信号、成交、PnL 或资金曲线。
+- 全量 MT5 M15 SLOT1 信号扫描结果：
+  - MT5 M15 SLOT1 signals：`29`
+  - shifted M30 anchor 缺 bar：`3`
+  - shifted M15 log time 缺 bar：`16`
+  - 任一 time-axis gap：`16`
+  - current remaining drift 中命中 bridge gap：`6`
+- 6 个 current remaining drift 样本被重新归因：
+  - `mt5_0068`：`layer3_reject -> time_axis_bridge_candidate`
+  - `mt5_0005`：`stage_execution_diff_or_family_drift -> time_axis_bridge_candidate`
+  - `mt5_0019`：`trigger_family_drift -> time_axis_bridge_candidate`
+  - `mt5_0070`：`layer3_reject -> time_axis_bridge_candidate`
+  - `mt5_0021`：`missing_raw_parent -> time_axis_bridge_candidate`
+  - `mt5_0036`：`missing_raw_parent -> time_axis_bridge_candidate`
+- `mt5_0068` 的关键点是：
+  - MT5 ledger entry/stop/stop distance 为 `4718.614 / 4683.84825 / 34.7657`
+  - shifted anchor `2026-02-03 01:00:00` 在 processed M30 中不存在
+  - log time + 90 `2026-02-03 00:45:00` 在 processed M15 中不存在
+  - nearest same-dir any-mode Python raw 只能落到 `2026-02-03 01:30:00`，sd `72.996742`，`too_wide`
+- 因此 `mt5_0068` 之前的 `layer3_reject` 不是最终修复方向，只是缺少 bridge 前的表层归因。
+- 当前判断：
+  - 不应为这些样本修改 EA
+  - 也不应直接修改 Layer3
+  - 下一步应把 bridge cause 接入 remaining P1 排序，重新看真正还需要 Python 信号/映射修复的样本
+  - EA price-side 行为修复门继续关闭
+
+### 结论 62: bridge 后 P1 重排显示最大有效缺口已转向 Python-unmatched unique-match conflict，EA price-side 修复门仍关闭
+
+- bridge 后重排不会改变资金曲线：
+  - signal-set gap effect 仍为 `434.415919`
+  - `time_axis_bridge_candidate` 共 `6` 行，signed gap sum 为 `-403.06`
+  - 这些样本只从 cause 层隔离，不直接增加或删除成交
+- `mt5_0068` 已退出普通 Layer3 reject P1：
+  - 它现在属于 `time_axis_bridge_candidate`
+  - 不应继续作为 Layer3、StopSpec 或 EA 行为修复证据
+- `python_mt5_0061 / mt5_0045` 也不再作为 runtime behavior blocker：
+  - post-bridge status 为 `accounting_only_nonreliable_relaxed_mapping`
+  - 它只能保留在 accounting diff / signal-set drift 归因中
+- 剔除 bridge 与非可靠 relaxed behavior 证据后：
+  - remaining P1 signal-set cases 为 `49`
+  - policy 后 matched behavior candidates 只有 `2` 个小残差
+  - EA price-side repair gate 继续 `closed`
+- 当前最大有效 signal cause 变为：
+  - side：`python_unmatched`
+  - cause：`unique_match_conflict`
+  - rows：`17`
+  - gap sum：`636.020283`
+  - abs gap sum：`751.257189`
+- 下一步优先级应从 `mt5_0068` / `python_mt5_0061` 切到：
+  - `python_mt5_0079`：`unique_match_conflict`，gap `201.851360`
+  - `python_mt5_0073`：`unique_match_conflict`，gap `189.621100`
+  - `python_mt5_0075`：`unique_match_conflict`，gap `150.916950`
+  - `mt5_0074`：非 bridge `layer3_reject`，gap `-171.900000`
+- 当前判断：
+  - 下一步不是改 EA price-side
+  - 也不是继续围绕 `mt5_0068` 改 Layer3
+  - 应先解决 Python-unmatched unique-match conflict：判断它们是映射唯一性问题、同簇竞争问题、Python 多打一笔，还是 MT5 ledger/bridge 仍缺证据
+
+### 结论 63: unique-match conflict 的 top3 不支持改 EA；其中 top2 是 stale spec metadata 加远距离弱候选，top3 是 continuation 重复
+
+- 对 `python_unmatched / unique_match_conflict` 的 `17` 个样本专项展开后，最大分类不是 EA 行为问题：
+  - `stale_spec_metadata_plus_low_confidence_far_candidate`：`2` 行，abs gap `391.472460`
+  - `duplicate_python_continuation_after_exact_mt5_match`：`7` 行，abs gap `221.352703`
+  - `low_confidence_far_candidate_conflict`：`7` 行，abs gap `134.699204`
+  - `occupied_mt5_candidate_mapping_conflict`：`1` 行，abs gap `3.732822`
+- `python_mt5_0079` 和 `python_mt5_0073` 不能按旧 `spec_pass=False` 直接过滤：
+  - `python_mt5_0079` 当前 `sd=32.326030`，实际在 `5~35` StopSpec 内，但旧标签仍是 `too_wide`
+  - `python_mt5_0073` 当前 `sd=10.367720`，实际在 `5~35` StopSpec 内，但旧标签仍是 `too_tight`
+  - 说明 `ea_slot1_runtime_rescue` / reanchor 后没有重算 `spec_pass/spec_reason`
+- 这两笔也不能当成高置信 shared mapping：
+  - `python_mt5_0079` 的 best candidate 是 `mt5_0056`，相距 `5490` 分钟，且该 MT5 已被 `python_mt5_0074` exact match 占用
+  - `python_mt5_0073` 的 best candidate 是 `mt5_0055`，相距 `1650` 分钟，且该 MT5 已被 `python_mt5_0072` exact match 占用
+  - 因此旧 cause `unique_match_conflict` 对 top2 过宽，后续应改成 stale metadata + low-confidence far candidate / Python-only signal review
+- `python_mt5_0075` 是另一类问题：
+  - 它实际 StopSpec 通过，best candidate `mt5_0056` 为 `nearby_60_all`
+  - 但 `mt5_0056` 已被 `python_mt5_0074` exact match 占用
+  - 更像同一 M15 SLOT1 post_n 簇中 Python 多保留了一根 continuation，需要做 one-cluster/one-trade 或 continuation suppression 原型
+- 当前判断：
+  - 先修 Python-MT5 rescue 后的诊断元数据与 cause 分桶
+  - 再做 M15 SLOT1 duplicate continuation/cluster 抑制原型
+  - 仍不打开 EA price-side 行为修复门
+
+### 结论 64: rescue metadatafix 已验证为纯归因修复，真正近邻 unique-match 入口收敛到 duplicate continuation
+
+- `ea_slot1_runtime_rescue` 在 reanchor 后没有重算 `spec_pass/spec_reason`：
+  - 修复前 rescue rows 为 `8`
+  - `spec_pass=False` 标签为 `8`
+  - 但实际 `sd` 全部在 `5~35` 内，actual spec fail 为 `0`
+- 修复 `recalc_trade()` 后：
+  - rescue rows 仍为 `8`
+  - `spec_pass=False` 标签降为 `0`
+  - actual spec fail 仍为 `0`
+- 该修复不改变交易集合和资金：
+  - Python-MT5 trade count 仍为 `98`
+  - Python-MT5 final balance 仍为 `1969.914099`
+  - MT5 ledger final balance 仍为 `3811.35`
+  - Python-MT5 matched_unique 仍为 `57`
+  - Python-MT5 python_unmatched / mt5_unmatched 仍为 `41 / 21`
+- 同时收紧 unmatched cause：
+  - same-trigger/mode 但相距超过 `24h` 的 MT5 candidate 不再归为普通 `unique_match_conflict`
+  - `python_mt5_0079` 从 `unique_match_conflict` 改为 `low_confidence_far_candidate_conflict`
+  - `python_mt5_0073` 从 `unique_match_conflict` 改为 `low_confidence_far_candidate_conflict`
+  - `python_mt5_0075` 仍为 `unique_match_conflict`
+- 当前判断：
+  - `python_mt5_0079 / 0073` 不再是 mapping 唯一性修复入口，而是 Python-only signal / far candidate accounting 问题
+  - 当前真正需要原型验证的是 `python_mt5_0075` 这类 exact MT5 match 后的 M15 SLOT1 post_n continuation 重复
+  - EA price-side 行为修复门继续关闭
+
+### 结论 65: duplicate continuation 原型能命中 0075，但必须接入 runtime-style 链路复验后才能改信号生成
+
+- M15 SLOT1 duplicate continuation 原型使用了收窄条件：
+  - Python-unmatched 仍为近邻 `unique_match_conflict`
+  - trigger 为 `M15 SLOT1`
+  - mode family 为 `post_n`
+  - 对应 MT5 已被另一个 Python exact match 占用
+  - continuation 在 owner 后 `0~180` 分钟内，且同向同 trigger/mode family
+- 原型只命中 `2` 笔：
+  - `python_mt5_0075`：owner `python_mt5_0074 / mt5_0056`，间隔 `30` 分钟，candidate dynamic `150.91695`
+  - `python_mt5_0089`：owner `python_mt5_0088 / mt5_0072`，间隔 `30` 分钟，candidate dynamic `-15.517923`
+- 原型效果有两种口径：
+  - raw dynamic final balance 从 `1969.914099` 降到 `1784.708531`
+  - post-bridge signal-set gap 预计减少 `135.399027`
+- 因为当前主差距判断来自 runtime-style adjusted gap，而不是 raw dynamic final balance，所以该原型不能直接作为主线修改。
+- 当前判断：
+  - `python_mt5_0075` 已有足够 cluster 证据进入下一轮验证
+  - 下一步应把 filtered prototype 接入 mapping / runtime-style remaining diff，确认是否减少当前 `477.153976` runtime gap
+  - 在 full-chain 验证前，不改 EA，也不直接修改主信号生成
+
+### 结论 66: duplicate filter full-chain 投影可降低 runtime gap，但剩余最大缺口转向 far-candidate runtime_rescue
+
+- duplicate continuation filtered prototype 的 mapping 结果：
+  - Python-MT5 trades 从 `98` 降到 `96`
+  - matched_unique 保持 `57`
+  - python_unmatched 从 `41` 降到 `39`
+  - mt5_unmatched 保持 `21`
+- runtime gap 投影：
+  - current runtime direct gap：`477.153976`
+  - current signal-set gap：`434.415919`
+  - suppressed signal gap effect：`135.399027`
+  - projected signal-set gap：`299.016892`
+  - projected runtime gap：`341.754949`
+- 这说明 duplicate filter 有收敛价值，但它不是最终解：
+  - 它只处理近邻 continuation 重复
+  - 不会增加 shared/matched_unique
+  - 不会处理 MT5-only 或 time-axis bridge
+- filtered 后最大 Python-unmatched 仍是两个 far-candidate runtime_rescue 样本：
+  - `2025-10-21 10:00:00` SELL `M15 SLOT1/post_n6`
+  - `2025-10-17 11:00:00` SELL `M15 SLOT1/pre_cross`
+- 当前判断：
+  - one-cluster/one-trade 可以作为候选信号规则继续保留
+  - 下一步应复核 far-candidate runtime_rescue 样本的准入逻辑，判断是否是 Python 过度 rescue、MT5 持仓占用差异、还是需要 tester 证据
+  - 仍不打开 EA price-side 行为修复门
+
+### 结论 67: far-candidate runtime_rescue top2 与 MT5 活跃持仓重叠，下一步应查生命周期/position gate
+
+- duplicate filter 后剩余最大的两个 Python-unmatched far-candidate 样本为：
+  - `2025-10-21 10:00:00` SELL `M15 SLOT1/post_n6`，原 `python_mt5_0079`
+  - `2025-10-17 11:00:00` SELL `M15 SLOT1/pre_cross`，原 `python_mt5_0073`
+- 两个样本在 ±240min 内都没有 MT5 same trigger/mode signal。
+- 但在 MT5 原始时间 `target - 90min`，两者均有 `2` 个 active stage rows：
+  - `2025.10.14 18:30` BUY `[M15 SLOT1] post_n5...` Stage3，直到 `2025.10.21 14:29:38` SL
+  - `2022.11.08 16:30` BUY `[M15 SLOT1] post_n5...` Stage1，持有到 end of test
+- 当前证据把这两笔从“mapping 唯一性冲突”推进到“MT5 position occupancy / lifecycle 差异候选”。
+- 但 active position 本身还不是充分证明：
+  - EA 可能允许有 active position 时继续开新信号
+  - 需要查 EA 的 skip/gate 逻辑和目标窗口日志，确认是否由持仓、max positions、stage slot 或 signal gate 阻止
+- 当前判断：
+  - 下一步应查 EA signal skip / position gate / max-position 生命周期
+  - 不应改 EA price-side
+  - 不应仅凭最终金额删除这两笔 Python runtime_rescue
+
+### 结论 68: far-candidate top2 暂不支持直接归因为 EA max_pos，真实缺口在 M15 early-entry 静默路径
+
+- 对两个目标 anchor 复核 EA gate 证据后，当前“持仓占用”解释需要降级：
+  - `2025-10-21 10:00:00` Python target / `2025-10-21 08:30:00` MT5 raw anchor，在 M15 slot1 评估时刻只有 `2` 个 active stage rows
+  - `2025-10-17 11:00:00` Python target / `2025-10-17 09:30:00` MT5 raw anchor，在 M15 slot1 评估时刻也只有 `2` 个 active stage rows
+  - 当前 EA `InpMaxPos=3`，`TryM15EarlyEntry()` 只有在 `OurStageCount() >= InpMaxPos` 时才会 `SKIP_MAX_POS`
+- 两个 raw anchor 的 `signals_export` 都是 `SKIP / no_cross_m30_or_h2`：
+  - 这说明没有成功登记该 anchor 的交易
+  - 但它只是 M30 bar 粗粒度导出，不能解释 M15 early-entry 的具体失败原因
+- EA 代码中 `TryM15EarlyEntry()` 存在多处静默返回：
+  - slot 不成立
+  - same anchor
+  - `signal_dir == 0`
+  - Layer/stop/spec 前后的部分返回只进 tester/journal，不进当前 CSV
+- 当前判断：
+  - 不能直接把这两笔 Python runtime_rescue 删除为“MT5 max_pos 挡掉”
+  - 也不能据此打开 EA price-side 修复门
+  - 下一步必须先补 EA M15 early-entry 非交易诊断导出，让每个目标 anchor 明确落到 `NO_SLOT / SAME_ANCHOR / NO_SIGNAL_DIR / LAYER1_FAIL / LAYER3_FAIL / STOP_FAIL / SPEC_FAIL / EXECUTE_FAIL / EXECUTED` 之一
+
+### 结论 69: full-history M15 entry diag 已把 far-candidate top2 拆成两个不同修复分支
+
+- full-history tester 在新增 M15 early-entry 诊断导出后，交易账本保持基线不变：
+  - trade ledger rows `234`
+  - unique signal anchors `78`
+  - net profit `3311.35`
+  - final balance `3811.35`
+  - deal history net 也为 `3311.35`
+- 这证明新增诊断字段没有改变当前 EA 交易行为，`3811.35` 仍是当前 MT5 close-retry/stage2-trail 基线。
+- `2025-10-21 10:00:00` Python target / `2025-10-21 08:30:00` MT5 raw anchor：
+  - EA M15 slot1 诊断行存在
+  - `signal_dir=-1`
+  - `signal_src=post_n5_m15_slot1`
+  - `layer1_pass=true`
+  - `layer3_pass=true`
+  - `stop_pts_spec=84.189`
+  - 结果为 `SPEC_FAIL / SPEC_FAIL_PROXY`
+  - `stage_count=2 < max_pos=3`
+- 因此这笔不是“没有信号”，也不是 max_pos；它是候选形成后被 EA symbol/stop spec gate 拦截。下一步应对齐 Python raw anchor 的 stop/spec 计算，而不是先改 EA 下单行为。
+- `2025-10-17 11:00:00` Python target / `2025-10-17 09:30:00` MT5 raw anchor：
+  - EA M15 slot1 诊断行存在
+  - `pre_cross=false`
+  - `is_cross=false`
+  - `merged_post_n_counter=121`
+  - `signal_dir=0`
+  - 结果为 `NO_SIGNAL_DIR`
+  - `stage_count=2 < max_pos=3`
+- 因此这笔是 Python-MT5 M15 mode / counter / time-axis 计算与 EA 不一致；下一步应逐字段对比 Python 与 EA 在 `completed_m15_open=2025-10-17 09:00:00`、`anchor_time=2025-10-17 09:30:00` 的 `pre_cross/is_cross/post_n` 计算。
+- 两个目标周边的 `signals_export` 均为 `SKIP / no_cross_m30_or_h2`，说明 M30 粗粒度导出不能替代 M15 entry diag；后续这类问题必须以 `30m2H_strategy_m15_entry_diag.csv` 为证据源。
+- 当前修复优先级：
+  - 先修 Python-MT5 对 EA stop/spec gate 的模拟缺口，处理 `2025-10-21 SPEC_FAIL`
+  - 再修 Python-MT5 对 EA M15 mode/counter/time-axis 的模拟缺口，处理 `2025-10-17 NO_SIGNAL_DIR`
+  - duplicate continuation filter 可保留为后续 full-chain 候选规则
+  - EA Stage1/2 price-side 行为修复门继续关闭
+
+### 结论 70: `2025-10-21 SPEC_FAIL` 的主因是 Python-MT5 slot1 选 bar 语义偏离 EA
+
+- Python-MT5 当前接受的目标行是：
+  - `date=2025-10-21 10:00:00`
+  - `entry_time=2025-10-21 09:45:00`
+  - `mode=post_n6`
+  - `variant=ea_slot1_runtime_rescue`
+  - `entry=4298.449`
+  - `stop=4330.77503`
+  - `sd=32.32603`
+  - `spec_reason=ok`
+- EA full-history M15 diag 对应 raw anchor 是：
+  - `anchor_time=2025.10.21 08:30`
+  - `completed_m15_open=2025.10.21 08:00`
+  - `m15_close=4244.872`
+  - `stop_price=4329.06119`
+  - `stop_pts_spec=84.189`
+  - `result=SPEC_FAIL / SPEC_FAIL_PROXY`
+- 使用同一 Python stop `4330.77503` 复算，EA 等价 latest completed M15 bar 的距离是 `85.90303`，仍然 `too_wide`。
+- 因此这不是 EA stop/spec gate bug；EA 按其真实 completed M15 bar 拦截是合理的。
+- 当前 Python `_m15_early_entry_test.py` 的问题：
+  - `m15_window()` 返回 `(anchor_time-30m, anchor_time]` 两根 M15，按时间升序
+  - `choose_slot1_by_distance()` 使用 `seg.iloc[0]`
+  - 在当前 shifted M15 数据中，这会选 `09:45/raw 07:45`，而 EA slot1 对应的是 latest completed `10:00/raw 08:00`
+- latest-completed prototype 的关键结果：
+  - `2025-10-21 10:00` 从 accepted / picked / stage 中消失
+  - Layer1/2 accepted `379 -> 367`
+  - runtime_rescue rows `40 -> 28`
+  - layer3 picked / stage results `98 -> 107`
+  - prototype final balance python multiplier5 `1981.560799`
+- 这说明目标 SPEC_FAIL 的修复方向成立，但全局影响不是单纯删一笔；latest-completed 会改变 Layer3 排名和 max-pos 后的交易集合。
+- 当前判断：
+  - 不改 EA
+  - 不直接把 latest-completed prototype 合并到主线
+  - 下一步必须做 full-chain 验证：dynamic risk、Python-MT5 vs MT5 mapping、remaining diff、runtime gap
+  - 如果 full-chain 收敛，再把 latest-completed slot1 语义回推到 Python-MT5 信号生成层
+
+### 结论 71: latest-completed broad rule 不能直接合并，需先做 strict spec recalc/filter
+
+- latest-completed prototype full-chain 验证结果：
+  - trade count：`98 -> 107`
+  - matched_unique：`57 -> 63`
+  - reliable_tier_matched：`29 -> 33`
+  - python_unmatched：`41 -> 44`
+  - mt5_unmatched：`21 -> 15`
+- 该 prototype 确实移除了目标假阳性：
+  - current 中 `2025-10-21 10:00` 有 `1` 行 dynamic trade，profit `201.85136`
+  - latest-completed prototype 中该目标 dynamic/mapping rows 为 `0`
+- 但全局资金口径明显恶化：
+  - Python-MT5 dynamic final balance：`1969.914099 -> 651.150709`
+  - Python-MT5 dynamic profit：`1469.914099 -> 151.150709`
+  - direct dynamic gap：`-1841.435901 -> -3160.199291`
+  - matched_profit_diff：`-2088.128719 -> -2926.638582`
+- 同时发现 prototype 放大了 spec metadata stale 问题：
+  - current metadatafix picked/dynamic 中 actual `stop_pts_spec` 超出 `[5,35]` 的 rows 为 `2`
+  - latest-completed prototype picked/dynamic 中超出 `[5,35]` 的 rows 为 `14`
+  - latest-completed prototype accepted 层 actual `sd` 超出 `[5,35]` 的 rows 为 `30`
+  - 这些 rows 仍显示 `spec_pass=True / spec_reason=ok`
+- 当前判断：
+  - latest-completed 作为“解释 `2025-10-21 SPEC_FAIL` 的诊断”成立
+  - latest-completed 作为全局规则不成立，至少当前 broad prototype 不可合并
+  - 下一步不能改 EA，也不能直接改主线 chooser
+  - 下一步应先做 `latest-completed + strict spec recalc/filter` prototype：在 reanchor/chooser 后按 actual `sd` 重算 `spec_pass/spec_reason`，并在 Layer3/max-pos 前过滤超出 `[5,35]` 的行，再重跑 full-chain
+
+### 结论 72: strict-spec 修复了 metadata stale，但 latest-completed 仍不适合作为全局规则
+
+- strict-spec prototype 规则：
+  - 保留 latest-completed M15 bar 语义
+  - 在 `apply_m30_close_proxy` 后强制重算 `sd/spec_pass/spec_reason`
+  - 在 Layer3/max-pos 前过滤 actual `sd < 5` 或 `sd > 35` 的行
+- 它解决了 broad latest-completed 的 spec-invalid 问题：
+  - broad picked/dynamic invalid spec rows：`14`
+  - strict-spec picked/dynamic invalid spec rows：`0`
+  - strict-spec accepted invalid spec rows：`0`
+- 它也保留了单点修复效果：
+  - `2025-10-21 10:00` 在 broad 和 strict-spec 中均从 dynamic/mapping 消失
+- 但 full-chain 结果仍不支持合并：
+  - current Python-MT5 final balance：`1969.914099`
+  - strict-spec Python-MT5 final balance：`807.262434`
+  - current direct dynamic gap：`-1841.435901`
+  - strict-spec direct dynamic gap：`-3004.087566`
+  - current matched_unique：`57`
+  - strict-spec matched_unique：`59`
+  - current matched_profit_diff：`-2088.128719`
+  - strict-spec matched_profit_diff：`-2618.433774`
+- 当前判断：
+  - `2025-10-21 SPEC_FAIL` 的局部原因已解释：Python-MT5 使用了与 EA 不一致的 M15 slot bar
+  - 但“全局改成 latest-completed”会破坏更多交易路径，即使 strict spec 后仍不收敛
+  - 因此不应修改 EA，也不应把 latest-completed chooser 作为主线规则
+  - 下一步应转向 `2025-10-17 NO_SIGNAL_DIR`：逐字段对比 Python 与 EA 的 `pre_cross/is_cross/merged_post_n_counter/signal_dir`，判断是 time-axis bridge 过度准入、pre_cross 定义差异，还是 post_n counter 生命周期差异
+
+### 结论 73: `2025-10-17 NO_SIGNAL_DIR` 的主因是 Python runtime_rescue 准入过宽，不是 EA 漏信号
+
+- 专项输出：
+  - `30m2H策略/data/validation/m15_slot1_no_signal_dir_review_20260715/m15_slot1_no_signal_dir_review.md`
+  - `python_runtime_rescue_mechanics_20251017.csv`
+  - `m15_window_mode_comparison_20251017.csv`
+  - `root_cause_evidence_20251017.csv`
+- Python raw candidate：
+  - `date=2025-10-17 11:00:00`
+  - `mode=pre_cross`
+  - `dir=S`
+  - `entry=4335.419`
+  - `stop=4337.43228`
+  - `sd=2.01328`
+  - `spec_reason=too_tight`
+- Python accepted/picked 后的 row：
+  - `variant=ea_slot1_runtime_rescue`
+  - `entry_time=2025-10-17 10:45:00`
+  - `entry=4347.800`
+  - `stop=4358.16772`
+  - `sd=10.36772`
+  - `trigger=M15 SLOT1`
+  - Stage 结果 `total_$=30.812264`
+- 关键机械过程：
+  - `choose_slot1_by_distance()` 用 M15 selected entry `4347.800` 到 raw stop `4337.43228` 的绝对距离 `10.36772` 判定 spec 可接受
+  - 这个 raw stop 对 SELL 的 selected entry 实际在无效侧；随后 `reanchor_stop_by_distance=True` 把 stop 镜像到 `4358.16772`
+  - 该流程没有要求 selected M15 bar 本身满足 EA-like `pre_cross/cross/post_n` 信号模式
+- EA full-history M15 diag：
+  - raw anchor `2025-10-17 09:30:00`
+  - `completed_m15_open=2025.10.17 09:00`
+  - `m15_close=4341.859`
+  - `m15_sma13=4348.52609`
+  - `pre_cross=False`
+  - `is_cross=False`
+  - `merged_post_n_counter=121`
+  - `signal_dir=0`
+  - `result=NO_SIGNAL_DIR`
+- M15 窗口证据：
+  - Python 当前 first choice：`processed=2025-10-17 10:45:00 / raw=08:45`
+  - EA-equivalent latest completed：`processed=2025-10-17 11:00:00 / raw=09:00`
+  - 两者 EA-like `pre_cross=0`、`is_cross=False`
+  - 因此这笔不是单纯 latest-completed chooser 问题，而是 runtime_rescue 允许继承 M30 `pre_cross` 并用 M15 entry/stop reanchor 造出可执行 row
+- 当前判断：
+  - 不改 EA
+  - 不把该样本归因到 EA mode/counter bug
+  - 下一步应在 Python-MT5 做 admission guard prototype：
+    - 至少测试 `runtime_rescue_wide_only`
+    - 测试 `no_stop_side_mirror`
+    - 测试 `require_selected_m15_mode`
+  - 每个 prototype 必须重跑 dynamic risk、mapping、gap components 后再决定是否合并
+
+### 结论 74: runtime_rescue admission guard 可删除 `2025-10-17`，但不能单独合并
+
+- 专项输出：
+  - `30m2H策略/data/validation/runtime_rescue_admission_guard_full_chain_review_20260715/runtime_rescue_admission_guard_full_chain_review.md`
+  - `decision_matrix.csv`
+  - `dynamic_risk_summary.csv`
+  - `mapping_summary.csv`
+  - `target_cases.csv`
+- 测试的四个 Python-only prototype：
+  - `runtime_rescue_wide_only`
+  - `no_stop_side_mirror`
+  - `require_selected_m15_mode`
+  - `combined_runtime_guard`
+- 所有变体均能删除：
+  - `2025-10-17 11:00:00`
+  - `pre_cross`
+  - `ea_slot1_runtime_rescue`
+  - 原 dynamic contribution `189.621100`
+- 但所有变体均不能删除：
+  - `2025-10-21 10:00:00`
+  - `post_n6`
+  - `ea_slot1_runtime_rescue`
+  - 变体后仍有 dynamic contribution `182.251`
+- 相对 current metadatafix 的 full-chain 结果：
+  - current：`98` trades，final `1969.914099`，matched_unique `57`，direct gap `-1841.435901`
+  - `runtime_rescue_wide_only`：`94` trades，final `1875.679894`，matched_unique `56`，direct gap `-1935.670106`
+  - `no_stop_side_mirror`：`97` trades，final `1812.759835`，matched_unique `57`，direct gap `-1998.590165`
+  - `require_selected_m15_mode`：`97` trades，final `1814.038812`，matched_unique `57`，direct gap `-1997.311188`
+  - `combined_runtime_guard`：`94` trades，final `1870.373437`，matched_unique `56`，direct gap `-1940.976563`
+- invalid spec 结果没有恶化：
+  - current dynamic invalid spec rows：`2`
+  - 四个 prototype dynamic invalid spec rows：均为 `2`
+- 当前判断：
+  - `require_selected_m15_mode` 是局部诊断最优，因为它删除 `2025-10-17` 且 matched_unique 不下降
+  - 但它仍让 direct dynamic gap 恶化 `-155.875287`，且不处理 `2025-10-21 SPEC_FAIL`
+  - 因此 admission guard 不能单独合并
+  - 下一步不能再做“一刀切 runtime_rescue 收紧”
+  - 下一步应做 targeted split：
+    - `pre_cross/cross` 分支保留 M15 selected-mode guard 作为候选
+    - `post_n` 分支单独测试 runtime_rescue-only latest-completed + strict spec recalc/filter
+    - 只比较 split 后的 full-chain 是否同时删除 `2025-10-17` 与 `2025-10-21`，且不显著恶化 matched/gap
+
+### 结论 75: targeted split 与 spread-stop 都不能直接合并
+
+- 专项输出：
+  - `30m2H策略/data/validation/targeted_split_runtime_rescue_spread_review_20260715/targeted_split_runtime_rescue_spread_review.md`
+  - `decision_matrix.csv`
+  - `dynamic_risk_summary.csv`
+  - `mapping_summary.csv`
+  - `gap_components.csv`
+  - `invalid_spec_counts.csv`
+- spread-stop 测试口径：
+  - 在原始 entry/stop 距离上追加当前 bar 的点差
+  - M15/M30 `spread=200` 时，按 `200 * 0.001 = 0.2` 的价格差扩宽止损
+  - BUY stop 向下扩宽，SELL stop 向上扩宽
+- spread-only 结果：
+  - `current_spread_stop_nofilter`：trade count 不变 `98`，matched_unique 不变 `57`，但 final balance 从 `1969.914099` 降至 `1893.198761`
+  - `current_spread_stop_strict`：invalid spec rows 降为 `0`，但 trade count 降至 `96`，matched_unique 降至 `56`
+  - 两个 spread-only 变体均未删除 `2025-10-17 11:00` 与 `2025-10-21 10:00`
+- targeted split 结果：
+  - `targeted_split_strict` 同时删除两个目标 false positive，但 trade count 降至 `89`，matched_unique 降至 `55`，direct gap 恶化到 `-2440.878359`
+  - `targeted_split_spread_stop_strict` 同时删除两个目标 false positive，但 direct gap 进一步恶化到 `-2483.200513`
+  - `targeted_split_spread_stop_nofilter` 保持 matched_unique `57`，但 invalid spec rows 增至 `6`，direct gap 恶化到 `-2470.590087`
+- 当前判断：
+  - 点差扩宽止损不是当前主差距来源，不能作为修复项合并
+  - targeted split 证明了两个 false positive 的删除路径，但删除后资金差距明显扩大，说明当前缺口不能只靠删除 Python-only false positive 解决
+  - 后续必须做双向修正：一边拆解被删除 Python rows 的资金影响，一边补 MT5-only/time-axis bridge 正向信号
+  - 下一步应进入 row-level impact decomposition，而不是继续叠加全局过滤规则
+
+### 结论 76: split 恶化来自非目标删除与动态风险联动，下一步必须做双向修正
+
+- 专项输出：
+  - `30m2H策略/data/validation/row_level_split_spread_impact_20260715/row_level_split_spread_impact_review.md`
+  - `variant_trade_diff_summary.csv`
+  - `variant_gap_delta_decomposition.csv`
+  - `two_sided_seed_python_removals.csv`
+  - `two_sided_seed_mt5_recoveries.csv`
+- spread-only 拆解：
+  - `current_spread_stop_nofilter` 无删增交易
+  - `67` 笔 common trade 的 PnL 发生变化
+  - 总 delta `-76.715338` 全部来自 common trade PnL 改变
+  - 因此点差扩宽止损是执行/PnL 诊断，不是信号修复
+- targeted split strict 拆解：
+  - 删除 `10` 笔，新增 `1` 笔，`55` 笔 common trade PnL 改变
+  - 总 delta `-599.442458`
+  - 删除交易贡献 `-491.508226`
+  - 新增交易贡献 `+38.576250`
+  - common trade PnL 联动 `-146.510482`
+  - 两个已确认目标 false positive 只解释 `391.472460`
+  - 非目标删除盈利还有 `100.035766`
+- targeted split spread nofilter 拆解：
+  - 删除 `8` 笔，新增 `6` 笔，`59` 笔 common trade PnL 改变
+  - 总 delta `-629.154186`
+  - 删除交易贡献 `-542.074298`
+  - 新增交易贡献 `+57.616062`
+  - common trade PnL 联动 `-144.695950`
+  - 非目标删除盈利扩大到 `150.601838`
+- two-sided seed：
+  - P0 Python 删除：`2025-10-21 10:00`、`2025-10-17 11:00`
+  - P1 Python 删除复核：`2025-09-30 09:30`、`2025-04-21 02:30`
+  - P0 MT5 补回：`mt5_0068`、`mt5_0005`、`mt5_0019`
+  - P1 MT5 补回：`mt5_0074`、`mt5_0069`
+- 当前判断：
+  - 不能把 targeted split 作为主线合并，因为它会误删 matched rows 和未证实的正收益 Python rows
+  - 下一步 prototype 应只删除 P0 Python false positive，并优先补 P0/P1 MT5-only candidates
+
+### 结论 77: two-sided accounting bridge 通过诊断门，但还不是可合并修复
+
+- 专项输出：
+  - `30m2H策略/data/validation/two_sided_correction_prototype_20260715/two_sided_correction_prototype_review.md`
+  - `decision_matrix.csv`
+  - `gap_components.csv`
+  - `mapping_summary.csv`
+- current metadatafix：
+  - direct gap `-1841.435901`
+  - matched_unique `57`
+  - python_unmatched `41`
+  - mt5_unmatched `21`
+- 只删除 P0 Python false positive：
+  - 删除 `2025-10-17 11:00` 与 `2025-10-21 10:00`
+  - 删除盈利合计 `391.472460`
+  - direct gap 恶化到 `-2232.908361`
+  - 结论：单向过滤不能继续
+- 删除 P0 + 补 P0 MT5 bridge：
+  - bridge rows：`mt5_0068`、`mt5_0005`、`mt5_0019`
+  - bridge net profit 合计 `520.570000`
+  - direct gap 改善到 `-1712.338361`
+  - 相对 current 改善 `+129.097540`
+  - matched_unique `57 -> 60`
+  - mt5_unmatched `21 -> 18`
+- 删除 P0 + 补 P0/P1 MT5 bridge：
+  - 额外加入 `mt5_0074`、`mt5_0069`
+  - bridge net profit 合计 `742.870000`
+  - direct gap 改善到 `-1490.038361`
+  - 相对 current 改善 `+351.397540`
+  - matched_unique `57 -> 62`
+  - mt5_unmatched `21 -> 16`
+- 当前判断：
+  - two-sided 方向有效，值得继续
+  - 但该 prototype 使用 MT5 ledger net profit 构造 accounting bridge，不是策略信号真实生成路径
+  - 下一步必须逐笔证明 P0/P1 bridge candidates 能在 Python-MT5 数据轴上生成 raw/accepted/picked/stage row，否则不能合并
+
+### 结论 78: P0 是数据轴 backfill 问题，P1 是 M15 entry/stop 重构问题
+
+- 专项输出：
+  - `30m2H策略/data/validation/mt5_bridge_signal_chain_feasibility_20260715/mt5_bridge_signal_chain_feasibility_review.md`
+  - `bridge_signal_chain_feasibility.csv`
+  - `bridge_feasibility_decision_matrix.csv`
+- current Python-MT5 链路结果：
+  - `mt5_0068`：`no_raw_missing`
+  - `mt5_0005`：`no_raw_same_time_mode_but_trigger_diff_or_reject`
+  - `mt5_0019`：`no_raw_missing`
+  - `mt5_0074`：`no_raw_same_time_mode_but_trigger_diff_or_reject`
+  - `mt5_0069`：`no_raw_same_time_mode_but_trigger_diff_or_reject`
+- P0 判断：
+  - `mt5_0068 / mt5_0005 / mt5_0019` 都是 `time_axis_bridge_candidate`
+  - 共同问题是 processed M15 `log_time+90` 缺失
+  - `mt5_0068` 还缺 processed M30 shifted anchor
+  - 当前 Python-MT5 无法真实生成这些 row
+  - 但 ledger stop spec 均有效，可作为 `data_axis_bridge_or_backfill_required` 的中等风险候选
+- P1 判断：
+  - `mt5_0074 / mt5_0069` 的 processed M30/M15 时间轴都存在
+  - 当前 raw 同时刻存在，但均为 `M30 CLOSE/pre_cross` 且 StopSpec `too_wide`
+  - ledger stop spec 分别为 `10.1966` 与 `17.3731`
+  - 这不是普通数据缺口，而是 M15 SLOT1 entry/stop 与 raw parent 重构问题
+- 当前判断：
+  - 下一步只推进 P0 data-axis backfill/bridge prototype
+  - P1 暂缓进入修复，先保留为高风险重构候选
+
+### 结论 79: P0 data-axis prototype 只证明 2/3 可进入 picked bridge，mt5_0068 仍需单独审计
+
+- 专项输出：
+  - `30m2H策略/data/validation/p0_data_axis_bridge_prototype_20260715/p0_data_axis_bridge_prototype_review.md`
+  - `p0_bridge_raw_candidates.csv`
+  - `p0_bridge_acceptance_matrix.csv`
+  - `p0_bridge_layer3_matrix.csv`
+  - `p0_bridge_missing_data_requirements.csv`
+- raw/accepted 层：
+  - `mt5_0068 / mt5_0005 / mt5_0019` 的 ledger signal entry/stop 均可构造为 bridge raw candidate
+  - 三笔 StopSpec 均在 `[5,35]` 内，且 Layer1 `Bias_55 > 3.0`
+  - 这一步未使用 MT5 ledger net profit，因此仍是信号链验证，不是 accounting bridge
+- Layer3 层：
+  - `mt5_0005`：`Bias_5=1.91755`，rolling threshold `0.42853`，通过
+  - `mt5_0019`：`Bias_5=0.95291`，rolling threshold `0.33732`，通过
+  - `mt5_0068`：`Bias_5=0.71206`，rolling threshold `0.91684`，未通过
+- 数据缺口：
+  - 三笔均缺 M15 entry window
+  - `mt5_0068` 额外缺 `2026-02-03 01:00` M30 aligned row
+  - `mt5_0005 / mt5_0019` 的 M30 aligned row 存在，主要缺历史 M15 window
+- 当前判断：
+  - 不能把三笔 P0 全部推进到 full-chain dynamic risk prototype
+  - `mt5_0005 / mt5_0019` 可作为“数据回补后 full-chain replay”的候选
+  - `mt5_0068` 必须先单独复核 Layer3 eval_time、H2 source_bar 与 M30/M15 数据轴缺口，否则只能保留为 accounting-only diagnostic
+
+### 结论 80: mt5_0068 不是可单笔放宽的 Layer3 问题，而是 +90/+120 时间轴分叉
+
+- 专项输出：
+  - `30m2H策略/data/validation/mt5_0068_layer3_time_axis_boundary_20260715/mt5_0068_layer3_time_axis_boundary_review.md`
+  - `mt5_0068_layer3_eval_matrix.csv`
+  - `mt5_0068_presence_matrix.csv`
+  - `mt5_0068_boundary_decision.csv`
+- 当前 `+90` M15 SLOT1 口径：
+  - eval_time `2026-02-03 01:00`
+  - Layer3：`Bias_5=0.71206 < threshold=0.91684`
+  - 判定：不通过
+  - processed M15 `2026-02-03 00:45` 不存在
+  - shift M30 `2026-02-03 01:00` 不存在
+- `+120` / Python processed 口径：
+  - M15 `2026-02-03 01:15` 存在
+  - M30 `2026-02-03 01:30` 存在
+  - eval_time `2026-02-03 01:30`
+  - Layer3：`Bias_5=1.05559 >= threshold=0.91684`
+  - 判定：通过
+- 关键解释：
+  - `+120` 通过不能直接作为合并依据，因为这等于改变 M15 SLOT1 的时间轴语义
+  - 这不是“Layer3 应该对 mt5_0068 放宽”的证据
+  - 也不能把 `mt5_0068` 注入当前 `+90` full-chain prototype
+- 当前判断：
+  - `mt5_0068` 在当前 `+90` 口径下应排除出 P0 full-chain
+  - 后续 P0 full-chain 只能先做 `mt5_0005 / mt5_0019` subset
+  - 若要重新接纳 `mt5_0068`，必须先做全体 M15 SLOT1 bridge candidates 的 `+90/+120` 时间轴规范化门禁
+
+### 结论 81: P0 subset bridge 的信号恢复成立，但收益合并门不通过
+
+- 专项输出：
+  - `30m2H策略/data/validation/p0_subset_full_chain_bridge_20260715/p0_subset_full_chain_bridge_review.md`
+  - `decision_matrix.csv`
+  - `bridge_stage_replay_rows.csv`
+  - `bridge_stage_vs_mt5_ledger.csv`
+- 本次只纳入：
+  - `mt5_0005`
+  - `mt5_0019`
+- 排除：
+  - `mt5_0068`，因为当前 `+90` Layer3/time-axis 审计未通过
+- 信号层结果：
+  - Python-MT5 trades `98 -> 100`
+  - matched_unique `57 -> 59`
+  - reliable tier `29 -> 31`
+  - MT5 unmatched `21 -> 19`
+  - invalid spec rows 保持 `2`
+  - direct gap `-1841.435901 -> -1733.686040`，改善 `+107.749861`
+- 收益层结果：
+  - matched_profit_diff `-2088.128719 -> -2319.979190`，恶化 `-231.850471`
+  - `mt5_0005`：Python Stage fixed total `$27.964158`，MT5 ledger net `$161.09`，差 `-$133.125842`
+  - `mt5_0019`：Python Stage fixed total `$25.525528`，MT5 ledger net `$128.85`，差 `-$103.324472`
+- 当前判断：
+  - Signal admission gate 通过
+  - Merge gate 不通过
+  - 这两笔是有效信号恢复候选，但不能直接进入主线规则
+  - 下一步必须审计 Stage/PnL 执行口径差异，包括 Stage exit、dynamic lot sizing、MT5 实际 lot、tick/SL/TP/trailing/close retry 影响
+
+### 结论 82: P0 bridge 的收益差异已闭合为执行模型差异，不是继续调信号门的问题
+
+- 专项输出：
+  - `30m2H策略/data/validation/p0_bridge_stage_pnl_divergence_20260715/p0_bridge_stage_pnl_divergence_review.md`
+  - `p0_bridge_trade_pnl_gap_attribution.csv`
+  - `p0_bridge_stage_pnl_divergence.csv`
+  - `p0_bridge_execution_scenario_matrix.csv`
+- `mt5_0005`：
+  - Python dynamic total `$17.332879`
+  - MT5 net profit `$161.09`
+  - 差额 `$143.757121`
+  - 差额可拆为：contract value `+155.996987`、lot sizing `-33.508208`、exit price `+21.268342`、cost `0`
+- `mt5_0019`：
+  - Python dynamic total `$32.856868`
+  - MT5 net profit `$128.85`
+  - 差额 `$95.993132`
+  - 差额可拆为：contract value `+295.736666`、lot sizing `-200.956240`、exit price `+4.572706`、cost `-3.36`
+- 核心口径差：
+  - Python dynamic 当前使用 `VALUE_PER_SPEC_PT_PER_LOT=10.0`
+  - 两笔 MT5 ledger 推断每 1.00 lot 每 1.0 价格点约 `$100`
+  - Python bridge stage lots 为 `0.01/0.01/0.02` 与 `0.01/0.02/0.04`
+  - MT5 两笔实际 stage lots 均为 `0.01/0.01/0.01`
+- 时间轴补充证据：
+  - 两笔 MT5 实际 open_time 均比 bridge entry_time 早 `90` 分钟
+  - `mt5_0005` 的 MT5 Stage3 exit 比 Python Stage3 time 早 `841.283333` 分钟
+  - `mt5_0019` 的 MT5 Stage3 exit 比 Python Stage3 time 早 `57.333333` 分钟
+- 当前判断：
+  - P0 subset bridge 不应继续从信号门方向调参
+  - 下一步应做 MT5-compatible execution-model normalization prototype，验证 Python-MT5 dynamic-risk 是否应按 EA `CalcLot()/StageLots()`、MT5 tick/contract value 重算
+  - 在 full-sample execution-model prototype 通过前，`mt5_0005 / mt5_0019` 只能作为 signal recovery diagnostic，不能合并到主线
+
+### 结论 83: MT5-compatible execution-model 原型通过，但仍需拆 full-sample residual
+
+- 专项输出：
+  - `30m2H策略/data/validation/execution_model_normalization_20260715/execution_model_normalization_review.md`
+  - `execution_model_decision_matrix.csv`
+  - `execution_model_p0_target_gap_summary.csv`
+  - `dynamic_risk_alignment_exec_model_metadatafix_20260715`
+  - `mapped_trade_alignment_exec_model_metadatafix_20260715`
+  - `dynamic_risk_alignment_exec_model_p0_subset_bridge_20260715`
+  - `mapped_trade_alignment_exec_model_p0_subset_bridge_20260715`
+- 原型口径：
+  - 不改 EA
+  - 不改信号集合
+  - Python dynamic-risk 改用 MT5-compatible value：每 1.0 price point / 1.00 lot = `$100`
+  - Stage lots 按 EA `CalcLot()/StageLots()` 近似重算
+- metadatafix full-sample：
+  - Python-MT5 final balance `1969.914099 -> 4039.572270`
+  - direct gap `-1841.435901 -> +228.222270`
+  - absolute direct gap 改善 `1613.213631`
+  - matched_profit_diff `-2088.128719 -> -1282.869102`
+  - absolute matched_profit_diff 改善 `805.259617`
+  - matched_unique / reliable tier 保持 `57 / 29`
+- P0 subset full-sample：
+  - Python-MT5 final balance `2077.663960 -> 4433.963575`
+  - direct gap `-1733.686040 -> +622.613575`
+  - absolute direct gap 改善 `1111.072465`
+  - matched_profit_diff `-2319.979190 -> -1286.844607`
+  - absolute matched_profit_diff 改善 `1033.134583`
+  - matched_unique / reliable tier 保持 `59 / 31`
+- P0 目标行：
+  - `mt5_0005` abs profit diff `143.757121 -> 21.269210`
+  - `mt5_0019` abs profit diff `95.993132 -> 1.222360`
+  - 两笔 exec-model stage lots 均变为 `0.01/0.01/0.01`，与 MT5 ledger 一致
+- 当前判断：
+  - execution-model prototype gate 通过
+  - 这证明此前 Python-MT5 资金曲线混用了错误估值/手数口径
+  - 但 full-sample residual matched_profit_diff 仍约 `$1283`，不能直接把该原型合并为最终主线
+  - 下一步应拆 exec-model residual：Stage exit price/time、swap、tick ordering、mapping tier、signal-set gap
+
+### 结论 84: exec-model residual 的首要问题是 mt5_0031 deinit_history 异常，不是普通 Stage exit 调参
+
+- 专项输出：
+  - `30m2H策略/data/validation/exec_model_residual_pnl_decomposition_20260715/exec_model_residual_pnl_decomposition_review.md`
+  - `exec_model_residual_gap_components.csv`
+  - `exec_model_residual_trade_decomposition.csv`
+  - `exec_model_residual_stage_decomposition.csv`
+  - `exec_model_residual_group_summary.csv`
+  - `exec_model_residual_exit_reason_summary.csv`
+  - `exec_model_residual_primary_driver_summary.csv`
+- gap components：
+  - metadatafix exec-model：direct gap `+228.222270`，matched_profit_diff `-1282.869102`，signal-set gap `+1511.091372`
+  - P0 subset exec-model：direct gap `+622.613575`，matched_profit_diff `-1286.844607`，signal-set gap `+1909.458182`
+  - matched rows 均能找到 MT5 stage ledger，missing stage groups 为 `0`
+- matched residual 分解：
+  - metadatafix residual MT5-minus-Python 总和 `+1282.869102`
+  - lot sizing effect `-346.450225`
+  - stage exit points effect `+2333.091326`
+  - swap/commission effect `-703.68`
+  - rounding unexplained `-0.092`
+- 最大单笔：
+  - `python_mt5_0039 / mt5_0031`
+  - reliable exact match：`M15 SLOT1 / post_n / BUY`
+  - Python profit `$49.421740`
+  - MT5 profit `$1842.78`
+  - profit_diff `-$1793.358260`
+- 关键异常：
+  - `mt5_0031` Stage1 是 `deinit_history / CLIENT / end of test`
+  - open_time `2022-11-08 16:15:06`
+  - exit_time `2026-07-06 23:59:59`
+  - Python Stage1 是 `2.0R TP`
+  - MT5 Stage1 单独 residual `+1738.164260`
+  - 其中 stage_exit_points_effect `+2379.442260`，swap effect `-641.28`
+- 当前判断：
+  - 不能直接把 residual 归因为普通 tick ordering 或 Stage exit 参数
+  - `mt5_0031` 的 end-of-test 持仓异常单笔主导 residual
+  - 下一步必须先审 `mt5_0031` 的 close lifecycle / position tracking / deinit export 归因
+  - 在 `mt5_0031` 归因前，不应修改 EA Stage exit 行为，也不应把 execution-model 原型合并为主线
+
+### 结论 85: mt5_0031 是 Stage1 状态被后续开仓覆盖后的 unmanaged 持仓，不是有效策略收益
+
+- 专项输出：
+  - `30m2H策略/data/validation/mt5_0031_deinit_history_audit_20260715/mt5_0031_deinit_history_audit_review.md`
+  - `mt5_0031_decision.csv`
+  - `mt5_0031_trade_ledger_rows.csv`
+  - `mt5_0031_deal_history_rows.csv`
+  - `mt5_0031_raw_m30_touch_summary.csv`
+  - `mt5_0031_next_stage1_opens.csv`
+  - `mt5_0031_code_evidence.csv`
+- 交易事实：
+  - `mt5_0031` Stage1 open_time `2022-11-08 16:15:06`
+  - Stage1 exit_time `2026-07-06 23:59:59`
+  - local_exit_reason `deinit_history`
+  - deal_reason `CLIENT`
+  - deal_comment `end of test`
+  - Stage1 net profit `$1802.36`
+  - Stage1 residual MT5-minus-Python `$1738.164260`
+- Stage1 2R 触达证据：
+  - entry `1713.734`
+  - stop `1680.817590`
+  - R `32.916410`
+  - 2R TP `1779.566820`
+  - raw M30 首次触达 2R TP：`2022-11-15 07:30:00`
+- 状态覆盖证据：
+  - 在首次 2R TP 触达前，已出现两笔新的 Stage1 IN：
+    - `2022-11-10 14:00:09`，ticket/position `186`
+    - `2022-11-14 16:00:01`，ticket/position `192`
+  - EA 代码中 `g_stage_tickets[stage]`、`g_stage_pos_ids[stage]`、`g_stage_entry[stage]`、`g_stage_orig_sl[stage]` 是单槽状态
+  - 新 stage 开仓会覆盖同 stage 的旧 ticket / position_id / entry / stop
+- 当前判断：
+  - `mt5_0031` Stage2 / Stage3 通过正常 EA path 关闭，Stage1 未关闭
+  - 最合理归因是：Stage1 在 TP 触达前被后续 Stage1 开仓覆盖状态，旧 Stage1 持仓失去 lifecycle 管理，最终由 deinit history 补捞
+  - `mt5_0031` Stage1 不应作为有效策略收益参与当前 residual 对齐
+  - 下一步先做 deinit-history isolation impact prototype，确认隔离后 residual 结构，再进入 EA stage state tracking / overwrite 修复门
+
+### 结论 86: deinit/end-of-test artifact 单笔主导 exec-model residual，下一步必须先修 EA stage state tracking
+
+- 专项输出：
+  - `30m2H策略/data/validation/deinit_history_isolation_impact_20260715/deinit_history_isolation_impact_review.md`
+  - `deinit_isolation_gap_summary.csv`
+  - `deinit_ledger_rows.csv`
+  - `deinit_matched_stage_rows.csv`
+  - `deinit_trade_flags.csv`
+  - `deinit_top_residual_trades_after_trade_isolation.csv`
+  - `deinit_top_residual_stages_after_stage_isolation.csv`
+- ledger 事实：
+  - 当前 MT5 close-retry/stage2-trail baseline ledger 中仅有 `1` 个 `deinit_history / end of test` stage row
+  - 该 row 是 `mt5_0031` Stage1：open `2022-11-08 16:15:06`，exit `2026-07-06 23:59:59`
+  - net profit `$1802.36`，swap `-$641.28`
+- 隔离影响：
+  - metadatafix exec-model 原始 residual MT5-minus-Python `+1282.869102`
+  - metadatafix 隔离该 deinit stage 后 residual 变为 `-455.295158`
+  - P0 subset exec-model 原始 residual MT5-minus-Python `+1286.844607`
+  - P0 subset 隔离该 deinit stage 后 residual 变为 `-451.319653`
+  - 两个场景中该 deinit stage 的 residual 贡献均为 `+1738.164260`
+- 当前判断：
+  - `mt5_0031` 的 end-of-test profit 不是普通 Stage exit/tick-ordering residual
+  - 不能用这笔异常去调 Stage exit 参数，也不能把它算作有效策略收益
+  - 下一步应优先修 EA 的 stage runtime state 单槽覆盖问题，再回到普通 Stage exit/tick-ordering residual review
+
+### 结论 87: EA stage-state 多槽修复消除了 mt5_0031 deinit，但 full 回归未达到可合并标准
+
+- 专项输出：
+  - `30m2H策略/data/validation/mt5_stage_state_smoke_20221108_20221116_20260716`
+  - `30m2H策略/data/validation/mt5_stage_state_smoke_20221108_20221125_20260716`
+  - `30m2H策略/data/validation/mt5_stage_state_full_2018_20260707_20260716`
+  - `30m2H策略/data/validation/stage_state_fix_regression_review_20260716/stage_state_fix_regression_review.md`
+- 代码结论：
+  - EA 已从每个 stage 单槽 `g_stage_tickets[stage]` 管理，改为遍历 active ledger slot，并用 ticket / position_id 精确管理每个持仓
+  - 编译通过：`0 errors, 0 warnings`
+- smoke 结论：
+  - 目标 `2022.11.08 16:30` 的 Stage1 不再持到 deinit
+  - 旧版 full 中该 Stage1 为 `deinit_history / CLIENT / end of test`，net `$1802.36`
+  - 修复后该 Stage1 在 `2022-11-15 07:40:45` 以 `stage1_tp / EXPERT` 正常关闭，net `$62.55`
+  - extended smoke `2022.11.08~2022.11.25` 中 `deinit_rows = 0`，ledger net `173.54` 与 final balance `673.54` 闭合
+- full 回归结论：
+  - close-retry baseline：final balance `$3811.35`，ledger rows `234`，anchors `78`，deinit rows `1`
+  - stage-state full：final balance `$1649.84`，ledger rows `246`，anchors `82`，deinit rows `0`
+  - stage-state full 的 ledger net、deal OUT net、final net 均为 `$1149.84`，账面闭合
+  - 最大回撤来源是移除无效 `mt5_0031` deinit profit：`$1802.36 -> $62.55`，delta `-$1739.81`
+  - 额外约 `-$421.70` 回撤来自其他 lifecycle 变化，需继续拆解
+- 当前判断：
+  - 这个修复证明了原 `mt5_0031` 是 EA 状态管理 bug，不是策略真实收益
+  - 但 full final balance 大幅下降，不能直接把 stage-state 多槽修复合并为新基线
+  - 下一步必须用新 full ledger 重跑 Python-MT5 mapping/residual，并拆新增/变化 anchors，决定这是“正确去除虚假收益后的新基准”还是“多槽管理引入的额外副作用”
+
+### 结论 88: stage-state full remap 后 deinit 已清零，但 Python-MT5 差距扩大，merge gate 继续阻塞
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_full_remap_residual_20260716.py`
+  - `30m2H策略/data/validation/stage_state_full_remap_residual_review_20260716/stage_state_full_remap_residual_review.md`
+  - `30m2H策略/data/validation/exec_model_residual_stage_state_20260716`
+  - `30m2H策略/data/validation/dynamic_risk_alignment_exec_model_stage_state_metadatafix_20260716`
+  - `30m2H策略/data/validation/mapped_trade_alignment_exec_model_stage_state_metadatafix_20260716`
+- ledger 事实：
+  - stage-state full ledger rows `246`
+  - unique anchors `82`
+  - deinit rows `0`
+  - ledger net `$1149.84`
+  - MT5 final balance `$1649.84`
+- metadatafix remap 结果：
+  - Python-MT5 exec-model final balance `$4039.572270`
+  - MT5 final balance `$1649.84`
+  - direct gap Python-minus-MT5 `+$2389.732270`
+  - matched unique `60`
+  - reliable tier matched `29`
+  - relaxed tier matched `31`
+  - Python unmatched `38`
+  - MT5 unmatched `22`
+  - matched_profit_diff Python-minus-MT5 `+$654.894778`
+  - signal-set gap Python-minus-MT5 `+$1734.837492`
+  - missing stage groups `0`
+- 相比 close-retry exec-model：
+  - Python final 不变
+  - MT5 final 下降 `$2161.51`
+  - direct gap 扩大 `$2161.51`
+  - matched unique 增加 `3`，但新增均为 relaxed，reliable tier 未增加
+  - matched_profit_diff 恶化约 `$1937.76`
+- 当前判断：
+  - `mt5_0031` 的 deinit artifact 已不再主导 matched residual
+  - stage-state 多槽修复解决了状态覆盖 bug，但 full-sample 结果仍不能合并
+  - 下一步不能回到 broad signal rule 或 Stage exit 参数调整；必须先拆 close-retry 与 stage-state full 的 anchor/lifecycle/profit delta，解释新增 `4` 个 MT5 anchors 和额外回撤来源
+
+### 结论 89: stage-state 回撤已闭合到 lifecycle buckets，剩余风险集中在 2025-09-05 Stage3 与新增 anchors
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_lifecycle_delta_20260716.py`
+  - `30m2H策略/data/validation/stage_state_lifecycle_delta_localization_20260716/stage_state_lifecycle_delta_localization_review.md`
+  - `stage_state_delta_bucket_summary.csv`
+  - `stage_state_largest_non_target_stage_deltas.csv`
+  - `stage_state_new_anchor_audit.csv`
+  - `stage_state_top_residual_ledger_join.csv`
+- delta bucket：
+  - close-retry baseline net `$3311.35`
+  - stage-state net `$1149.84`
+  - total delta `-$2161.51`
+  - `mt5_0031` target Stage1 deinit 修正：`$1802.36 -> $62.55`，delta `-$1739.81`
+  - 目标 Stage2/3 delta：`-$6.88`
+  - 新增 anchors delta：`-$247.22`
+  - shared anchors 其它 lifecycle 净 delta：`-$167.60`
+  - 去除目标 Stage1 后剩余 delta：`-$421.70`
+- 最大非目标单项：
+  - `2025-09-05 14:30`
+  - `[M15 SLOT1] / post_n5_m15_slot1_replace_or_rescue / BUY / Stage3`
+  - close-retry：net `$429.02`，exit `2025-10-09 05:00:00`
+  - stage-state：net `$47.79`，exit `2025-09-10 05:00:00`
+  - delta `-$381.23`
+- 新增 anchors：
+  - 共 `4` 个 anchor / `12` 个 stage rows
+  - 合计 net `-$247.22`
+  - 新增时 close-retry baseline active stage rows 均为 `3`
+  - baseline active examples 均包含旧 `2022-11-08 16:30` deinit Stage1
+  - stage-state 下 active rows 降为 `1~2`
+- top residual 归类：
+  - metadatafix top10 residual 中 `7` 个是 relaxed match，应先按 mapping policy risk 处理
+  - 只有 `3` 个 reliable residual 可进入执行模型 / Stage exit 审计
+- 当前判断：
+  - `$3811.35 -> $1649.84` 不是账面不闭合，已完整分解到 lifecycle bucket
+  - 目标 deinit 修正解释 `80.49%` 的总绝对差额
+  - 剩余 `-$421.70` 还不能直接接受为新基线
+  - 下一步优先审 `2025-09-05` Stage3 是否也是旧单槽状态造成的虚假长期收益，再审新增 anchors 是否只是释放旧无效持仓占用后的预期交易
+
+### 结论 90: 2025-09-05 Stage3 旧长持收益同样是单槽状态覆盖后的无效收益，新增 anchors 是容量释放副作用
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_20250905_stage3_and_new_anchor_gate_20260716.py`
+  - `30m2H策略/data/validation/stage3_20250905_new_anchor_gate_audit_20260716/stage3_20250905_new_anchor_gate_audit_review.md`
+  - `target_20250905_stage3_before_after.csv`
+  - `target_20250905_first_opposite_cross_window.csv`
+  - `target_20250905_later_stage3_opens_before_first_cross.csv`
+  - `new_anchor_gate_audit.csv`
+  - `stage3_new_anchor_gate_decision.csv`
+- `2025-09-05` Stage3 事实：
+  - target：`2025-09-05 14:30` / `[M15 SLOT1]` / `post_n5_m15_slot1_replace_or_rescue` / BUY / Stage3
+  - close-retry：open `2025-09-05 14:15:04`，exit `2025-10-09 05:00:00`，net `$429.02`
+  - stage-state：open `2025-09-05 14:15:04`，exit `2025-09-10 05:00:00`，net `$47.79`
+  - first opposite M30 cross：`2025-09-09 19:00:00`，`DEAD`
+  - close-retry 在 first cross 后约 `706` 小时才退出
+  - stage-state 在 first cross 后约 `10` 小时退出
+  - first cross 前存在后续 Stage3：`2025-09-09 15:00` / `[M30 CLOSE]` / `pre_cross` / SELL / Stage3
+- 判定：
+  - 后续 Stage3 在 first opposite cross 前开仓，符合旧 `g_stage_tickets[3]` 单槽状态覆盖目标 Stage3 的机制
+  - 目标 Stage3 旧版 `2025-10-09` 长持收益不应作为有效策略收益
+  - stage-state 的 `2025-09-10` 退出更符合 Stage3 opposite-cross lifecycle
+- 新增 anchors 事实：
+  - stage-state 新增 `4` 个 anchor / `12` 个 stage rows
+  - 合计 net `-$247.22`
+  - `4 / 4` 个新增 anchors 在 close-retry baseline 的 active rows 均达到 `InpMaxPos=3`
+  - `4 / 4` 个新增 anchors 的 baseline active examples 均包含旧 `2022-11-08 16:30` deinit Stage1
+  - stage-state 下对应 active rows 降为 `1~2`，有可用容量
+- 当前判断：
+  - `2025-09-05` Stage3 和 4 个新增 anchors 都支持“stage-state 修复清理旧无效生命周期并释放容量”的解释
+  - merge gate 仍不直接通过，因为需要明确把 stage-state `$1649.84` 作为新的 MT5 基线，不能继续混用旧 `$3811.35`
+  - 下一步进入 stage-state 新 MT5 baseline / PnL reset 决策
+
+### 结论 91: MT5 当前 reference baseline 正式切换为 stage-state full，旧 close-retry 只保留为历史证据
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_new_baseline_decision_20260716.py`
+  - `30m2H策略/data/validation/stage_state_new_baseline_decision_20260716/stage_state_new_baseline_decision_review.md`
+  - `stage_state_new_baseline_decision.csv`
+  - `current_mt5_baseline_manifest.csv`
+  - `deprecated_vs_accepted_baseline_summary.csv`
+  - `python_mt5_gap_rebase_after_stage_state.csv`
+- 决策：
+  - `accept_stage_state_as_current_mt5_baseline = True`
+  - `alignment_merge_gate_pass = False`
+  - 当前 MT5 baseline：`mt5_stage_state_full_2018_20260707_20260716`
+  - 旧 `mt5_full_close_retry_fix_20260714` 不再允许作为 future direct-gap baseline
+- 当前 MT5 baseline 指标：
+  - initial deposit `$500.00`
+  - leverage `1:100`
+  - final balance `$1649.84`
+  - net profit `$1149.84`
+  - unique anchor trades `82`
+  - stage rows `246`
+  - win count `33`
+  - win rate `40.243902%`
+  - any-stage SL `75`
+  - all-stage SL `40`
+  - deinit rows `0`
+  - ledger/deal/final net gap `0`
+- 接受证据：
+  - stage-state full ledger、deal history、tester final balance 完全闭合
+  - deinit rows 已清零
+  - `mt5_0031` Stage1 已从 invalid deinit profit 改为 `stage1_tp / EXPERT`
+  - `2025-09-05` Stage3 旧长持收益已判定为单槽覆盖后的无效收益
+  - `4 / 4` 个新增 anchors 已解释为旧 deinit Stage1 占用释放后的容量副作用
+  - close-retry -> stage-state total delta `-$2161.51` 已完整 bucket 化
+- gap 重定基：
+  - metadatafix Python-MT5 final `$4039.572270`
+  - 对旧 close-retry `$3811.35` 的 direct gap 为 `+$228.222270`
+  - 对当前 stage-state `$1649.84` 的 direct gap 为 `+$2389.732270`
+  - P0 subset 对当前 stage-state 的 direct gap 为 `+$2784.123575`
+- 当前判断：
+  - 以后所有 MT5 对齐、资金曲线、胜率/止损、direct gap 必须使用 stage-state full 作为 MT5 reference
+  - Python-MT5 对齐并未完成，下一步继续做 +90/+120 time-axis normalization，但必须基于 stage-state baseline 重新评估
+
+### 结论 92: +90/+120 time-axis normalization 不能作为当前可合并规则，mt5_0068 仍只能作诊断样本
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_python_mt5_time_axis_normalization_stage_state_20260716.py`
+  - `30m2H策略/data/validation/python_mt5_time_axis_normalization_stage_state_20260716/python_mt5_time_axis_normalization_stage_state_review.md`
+  - `time_axis_candidate_recheck_stage_state.csv`
+  - `time_axis_layer3_eval_matrix_stage_state.csv`
+  - `time_axis_changed_case_review_stage_state.csv`
+  - `time_axis_normalization_summary_stage_state.csv`
+  - `time_axis_normalization_gate_decision_stage_state.csv`
+- 当前 stage-state baseline 口径：
+  - MT5 baseline：`stage_state_full_2018_20260707_20260716`
+  - MT5 final balance `$1649.84`
+  - MT5 trades `82`
+  - metadatafix direct gap vs MT5 `+$2389.732270`
+  - metadatafix matched `60`，Python unmatched `38`，MT5 unmatched `22`
+  - signal-set gap `+$1734.837492`
+- M15 SLOT1 time-axis 复核结果：
+  - 复用旧 bridge 视图候选 `29` 个；stage-state ledger 中同 anchor 均仍存在
+  - 任一 time-axis gap `16` 个
+  - `+90` 数据完整候选 `13` 个
+  - `+120` 数据完整候选 `15` 个
+  - time-axis gap 中只有 `2` 个具备 `+120` 完整数据
+  - 旧 remaining bridge 的 `6` 个 changed cases 中只有 `1` 个具备 `+120` 完整数据
+  - `+90` Layer3 pass `8` 个，`+120/date+30min` Layer3 pass `14` 个
+  - `+120` 会让 `7` 个样本从 fail 变 pass，但也会让 `1` 个当前 pass 变 fail
+- `mt5_0068`：
+  - 当前 `+90` Layer3 不通过，`+120/date+30min` Layer3 通过
+  - `+120` 数据完整，但这是单笔边界证据，不是全局时间轴规则
+  - 状态保持为 `accounting_only_time_axis_diagnostic`
+- 当前判断：
+  - `global_plus120_rule_merge_gate_pass = False`
+  - `date_plus30_rule_merge_gate_pass = False`
+  - `stable_subset_rule_proven = False`
+  - 不能为了 `mt5_0068` 单笔改变全局时间轴
+  - 后续不要直接进入 EA price-side 行为修改；下一步应先做 stage-state signal-set residual triage / mapping-policy-first gate，或另开非破坏性 full-chain time-axis prototype 后再谈合并
+
+### 结论 93: stage-state signal-set gap 已闭合到 unmatched accounting，但下一修复入口是 mapping policy / unique conflict，不是 EA 行为
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_signal_set_residual_triage_20260716.py`
+  - `30m2H策略/data/validation/stage_state_signal_set_residual_triage_20260716/stage_state_signal_set_residual_triage_review.md`
+  - `stage_state_signal_set_case_triage.csv`
+  - `stage_state_signal_set_bucket_summary.csv`
+  - `stage_state_matched_residual_action_triage.csv`
+  - `stage_state_matched_residual_bucket_summary.csv`
+  - `stage_state_signal_set_residual_triage_decision.csv`
+- gap 闭合：
+  - metadatafix direct gap `+$2389.732270`
+  - matched_profit_diff `+$654.894778`
+  - signal_set_gap `+$1734.837492`
+  - Python unmatched 合计 `$2302.177492`
+  - MT5 unmatched 合计 `$567.34`
+  - 重新计算 signal_set_gap `+$1734.837492`，误差 `0`
+- signal-set 分桶：
+  - `mapping_policy_first_unique_conflict / python_unmatched`：`28` 行，gap `+$1615.610864`，abs `2492.468356`
+  - `mapping_policy_first_unique_conflict / mt5_unmatched`：`4` 行，gap `-$160.96`，abs `308.70`
+  - `python_only_signal_gap_no_mt5_candidate`：`10` 行，gap `+$686.566628`，abs `1042.659952`
+  - `mt5_only_signal_gap_no_python_candidate`：`12` 行，gap `-$9.43`，abs `804.75`
+  - `time_axis_diagnostic_only`：`6` 行，gap `-$396.95`，abs `644.19`
+- top signal-set cases：
+  - `python_mt5_0079`：`+$389.955180`，`mapping_policy_first_unique_conflict`
+  - `python_mt5_0073`：`+$379.242200`，`mapping_policy_first_unique_conflict`
+  - `python_mt5_0091`：`+$346.215160`，`python_only_signal_gap_no_mt5_candidate`
+  - `python_mt5_0075`：`+$301.833900`，`mapping_policy_first_unique_conflict`
+  - `python_mt5_0090`：`+$246.083160`，`python_only_signal_gap_no_mt5_candidate`
+  - `mt5_0070`：`-$230.63`，`time_axis_diagnostic_only`
+- matched residual 分桶：
+  - relaxed matched residual abs `2025.618316`，全部归类为 `mapping_policy_first_relaxed_match`
+  - reliable execution residual abs `916.375646`
+  - reliable 中 lot sizing / balance path abs `466.857970`
+  - reliable 中 Stage exit / tick-ordering abs `447.698896`
+  - cost/rounding abs `1.818780`
+- P0 subset bridge：
+  - direct gap `+$2784.123575`
+  - signal_set_gap `+$2120.236272`
+  - 均弱于 metadatafix 当前口径，因此不作为当前合并路线
+- 当前判断：
+  - `mapping_policy_gate_pass = False`
+  - `ea_price_side_gate_open = False`
+  - 不能把 relaxed matched residual 或 unique-conflict unmatched 直接当 EA 行为 bug
+  - 下一步应先审 mapping unique conflict 簇：确认是映射唯一性/窗口策略问题、重复 continuation、还是 Python-only 真信号缺口
+
+### 结论 94: stage-state unique-conflict 最大项是远距离 accounting-only，只有近距同族重复值得做非破坏性 suppression 原型
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_mapping_unique_conflicts_20260716.py`
+  - `30m2H策略/data/validation/stage_state_mapping_unique_conflict_review_20260716/stage_state_mapping_unique_conflict_review.md`
+  - `stage_state_unique_conflict_case_review.csv`
+  - `stage_state_unique_conflict_candidate_occupancy.csv`
+  - `stage_state_unique_conflict_cluster_summary.csv`
+  - `stage_state_unique_conflict_action_summary.csv`
+  - `stage_state_unique_conflict_decision.csv`
+- 审核范围：
+  - 输入 unique-conflict rows `32`
+  - abs gap `2801.168356`
+  - 只读审计，不修改 mapping、Python 信号、资金曲线或 EA
+- 分桶结果：
+  - `far_candidate_accounting_only / python_unmatched`：`10` 行，gap `+$940.672104`，abs `1231.173836`
+  - `far_candidate_accounting_only / mt5_unmatched`：`2` 行，gap `+$73.87`，abs `73.87`
+  - `relaxed_mapping_policy_review / python_unmatched`：`10` 行，gap `+$303.862300`，abs `764.063060`
+  - `relaxed_mapping_policy_review / mt5_unmatched`：`2` 行，gap `-$234.83`，abs `234.83`
+  - `duplicate_continuation_suppression_candidate / python_unmatched`：`8` 行，gap `+$371.076460`，abs `497.231460`
+- top clusters：
+  - `mt5:mt5_0057`：`3` 行，abs gap `765.959`，混合 `far_candidate_accounting_only` 与 `duplicate_continuation_suppression_candidate`
+  - `mt5:mt5_0056`：`2` 行，abs gap `466.503`，均为 far candidate
+  - `mt5:mt5_0031`：`3` 行，abs gap `202.033`，均为 far candidate
+- top cases：
+  - `python_mt5_0079`：gap `+$389.955180`，best candidate `nearby_7d_all`，距离 `5490` 分钟，归类 `far_candidate_accounting_only`
+  - `python_mt5_0073`：gap `+$379.242200`，best candidate `nearby_7d_all`，距离 `1650` 分钟，归类 `far_candidate_accounting_only`
+  - `python_mt5_0075`：gap `+$301.833900`，best candidate `nearby_60_all`，距离 `30` 分钟，归类 `duplicate_continuation_suppression_candidate`
+  - `python_mt5_0065`：gap `+$191.769340`，best candidate `nearby_60_trigger_relaxed`，归类 `relaxed_mapping_policy_review`
+  - `python_mt5_0062`：gap `+$185.728470`，best candidate `nearby_60_trigger_relaxed`，归类 `relaxed_mapping_policy_review`
+- 当前 stage-state 下 spec metadata：
+  - top unique-conflict rows 的 `spec_pass` 均为 `True / ok`
+  - 旧 close-retry 时代的 stale spec 结论不能直接沿用为当前主因
+- 当前判断：
+  - `mapping_rule_change_gate_pass = False`
+  - `python_signal_change_gate_pass = False`
+  - `ea_behavior_gate_open = False`
+  - 远距离候选保持 accounting-only；relaxed trigger/mode conflict 继续作为 mapping policy 风险
+  - 下一步只适合做 `duplicate_continuation_suppression` 非破坏性原型，评估 8 行近距同族重复是否能降低当前 stage-state gap
+
+### 结论 95: duplicate continuation suppression 一阶原型有改善但不具备合并条件
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prototype_stage_state_duplicate_continuation_suppression_20260716.py`
+  - `30m2H策略/data/validation/stage_state_duplicate_continuation_suppression_prototype_20260716/stage_state_duplicate_continuation_suppression_prototype_review.md`
+  - `duplicate_suppression_candidates.csv`
+  - `duplicate_suppression_cluster_impact.csv`
+  - `duplicate_suppression_before_after_summary.csv`
+  - `duplicate_suppression_decision.csv`
+- 原型范围：
+  - 只筛 `review_action_bucket = duplicate_continuation_suppression_candidate`
+  - 只做一阶估算：从 Python-MT5 trade list 中剔除 duplicate rows 的利润
+  - 不重跑 dynamic risk、mapping、Stage exit 或 EA
+- suppression candidates：
+  - `8` 行
+  - removed profit sum `+$371.076460`
+  - abs removed profit `497.231460`
+  - 最大单项：`python_mt5_0075`，`2025-10-17 15:00`，SELL `M15 SLOT1/post_n`，profit `+$301.833900`
+- before/after 一阶估算：
+  - current Python-MT5 trades `98`
+  - current Python-MT5 final `$4039.572270`
+  - current direct gap `+$2389.732270`
+  - after suppression trades `90`
+  - after suppression Python final `$3668.495810`
+  - after suppression direct gap `+$2018.655810`
+  - direct gap improvement `+$371.076460`
+  - signal-set gap `+$1734.837492 -> +$1363.761032`
+- 当前判断：
+  - `merge_gate_pass = False`
+  - `full_chain_rerun_required_before_merge = True`
+  - 一阶结果说明 duplicate continuation suppression 方向有诊断价值
+  - 但剩余 direct gap 仍过大，而且 balance path / dynamic lot / mapping 未重跑，不能直接改主信号
+  - 下一步若继续降 gap，应做 filtered dynamic + mapping full-chain rerun 原型；若目标是优先修真实执行，则可转向 reliable lot sizing / Stage exit 残差
+
+### 结论 96: duplicate suppression 过滤后重跑 mapping 仍只能作为诊断，不能定型或合并主信号
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_duplicate_suppression_full_chain_20260717.py`
+  - `30m2H策略/data/validation/stage_state_duplicate_suppression_full_chain_20260717/stage_state_duplicate_suppression_full_chain_review.md`
+  - `filtered_dynamic/python_mt5_dynamic_risk_trades.csv`
+  - `filtered_mapping/unique_match_summary.csv`
+  - `filtered_duplicate_suppression_removed_rows.csv`
+  - `stage_state_duplicate_suppression_full_chain_before_after.csv`
+  - `stage_state_duplicate_suppression_full_chain_decision.csv`
+- 执行范围：
+  - 删除一阶原型确认的 `8` 个 duplicate-continuation candidate
+  - 重算过滤后 Python-MT5 trade list 的可见余额路径
+  - 调用现有 unique mapper 重跑 Python-MT5 vs stage-state MT5 mapping
+  - 不重跑 signal engine，不从修改后的信号流重新计算 dynamic lot
+- 结果：
+  - Python-MT5 trades：`98 -> 90`
+  - Python-MT5 final：`$4039.572270 -> $3668.495810`
+  - direct gap：`+$2389.732270 -> +$2018.655810`
+  - signal-set gap：`+$1734.837492 -> +$1363.761032`
+  - matched unique：`60 -> 60`
+  - reliable tier matched：`29 -> 29`
+  - relaxed tier matched：`31 -> 31`
+  - Python unmatched：`38 -> 30`
+  - MT5 unmatched：`22 -> 22`
+  - matched_profit_diff 保持 `+$654.894778`
+- 当前判断：
+  - `direct_gap_improved = True`
+  - `signal_set_gap_improved = True`
+  - `unmatched_count_reduced = True`
+  - `mapping_quality_improved = False`
+  - `merge_gate_pass = False`
+  - 改善来自删除已定手数的 Python unmatched 行，而不是 shared/matched/reliable 质量提升
+  - duplicate suppression 仍是有价值诊断方向，但不能作为最终版本定型依据
+  - 下一步应优先 triage 真正 no-candidate 的 Python-only / MT5-only 信号缺口，再决定是否做信号级 suppression prototype
+
+### 结论 97: no-candidate 信号缺口已闭合并分桶，当前最大项是 outside-7d accounting/window，不是 EA 行为修复入口
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_no_candidate_signal_gap_20260717.py`
+  - `30m2H策略/data/validation/stage_state_no_candidate_signal_gap_triage_20260717/stage_state_no_candidate_signal_gap_review.md`
+  - `stage_state_no_candidate_signal_gap_cases.csv`
+  - `stage_state_no_candidate_signal_gap_bucket_summary.csv`
+  - `stage_state_no_candidate_trigger_mode_summary.csv`
+  - `stage_state_no_candidate_signal_gap_decision.csv`
+- 闭合结果：
+  - reviewed rows `22`
+  - Python-only rows `10`
+  - MT5-only rows `12`
+  - expected gap `+677.136628`
+  - recomputed gap `+677.136628`
+  - recompute error `0`
+  - expected abs gap `1847.409952`
+  - recomputed abs gap `1847.409952`
+- 分桶结果：
+  - `outside_7d_same_family_mapping_window_review / python_unmatched`：`3` 行，gap `+364.509168`，abs `455.357752`
+  - `outside_7d_same_direction_mapping_window_review / python_unmatched`：`1` 行，gap `+346.215160`，abs `346.215160`
+  - `outside_7d_same_family_mapping_window_review / mt5_unmatched`：`3` 行，gap `-210.33`，abs `234.27`
+  - `outside_7d_same_direction_mapping_window_review / mt5_unmatched`：`1` 行，gap `-54.33`，abs `54.33`
+  - outside-7d 合计 abs gap `1090.172912`
+  - `nearby_opposite_direction_signal_divergence` 合计 `7` 行，abs `416.102670`
+  - `python_before_first_mt5_trade_gap`：`4` 行，gap `+3.063970`，abs `198.203370`
+  - 真 signal-level 候选暂为 `142.931000` abs gap，明显小于 outside-7d accounting/window
+- top cases：
+  - `python_mt5_0091`：`+346.215160`，BUY `M15 SLOT1/cross`，nearest same direction `15690` 分钟，归类 outside-7d same-direction
+  - `python_mt5_0090`：`+246.083160`，BUY `M15 SLOT1/pre_cross`，nearest same direction `15750` 分钟，归类 outside-7d same-family
+  - `mt5_0077`：`-171.90`，SELL `M15 SLOT1/pre_cross`，nearest same direction `12840` 分钟，归类 outside-7d same-family
+  - `python_mt5_0068`：`+163.850300`，SELL `M15 SLOT1/pre_cross`，nearest same direction `12540` 分钟，归类 outside-7d same-family
+- 当前判断：
+  - `ea_behavior_gate_open = False`
+  - `main_signal_change_gate_open = False`
+  - `signal_level_prototype_required = True`
+  - `merge_gate_pass = False`
+  - no-candidate 是真实 signal-set residual，但最大项先是 mapping/accounting window 口径问题
+  - 下一步应先做 outside-7d mapping window accounting audit，再进入信号级 replay；不能直接改 EA 或 Python 主信号
+
+### 结论 98: outside-7d 窗口放宽只能作为 accounting 诊断，当前 7 天 mapping 规则不能全局放宽
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_outside_7d_mapping_window_20260717.py`
+  - `30m2H策略/data/validation/stage_state_outside_7d_mapping_window_audit_20260717/outside_7d_mapping_window_audit_review.md`
+  - `outside_7d_mapping_window_case_review.csv`
+  - `outside_7d_mapping_window_case_summary.csv`
+  - `outside_7d_window_candidate_summary.csv`
+  - `outside_7d_window_sensitivity_summary.csv`
+  - `outside_7d_window_added_matches.csv`
+  - `outside_7d_mapping_window_decision.csv`
+- outside-7d 桶闭合：
+  - reviewed rows `8`
+  - gap effect sum `+446.064328`
+  - abs gap effect sum `1090.172912`
+  - P1 rows `4`
+  - missing P1 candidate context `0`
+- 逐笔 case 审计：
+  - `outside_candidate_already_occupied_accounting_only / python_unmatched`：`4` 行，gap `+710.724328`，abs `801.572912`
+  - `outside_candidate_already_occupied_accounting_only / mt5_unmatched`：`3` 行，gap `-210.33`，abs `234.27`
+  - `outside_relaxed_family_window_risk / mt5_unmatched`：`1` 行，gap `-54.33`，abs `54.33`
+  - 结论：P1 case 都有候选上下文，但 nearest outside candidate 已被当前 unique match 占用，不是可直接合并的新 shared 证据
+- 窗口敏感性：
+  - `7d` 复现当前 mapping：matched unique `60`，reliable `29`，matched_profit_diff `+654.894778`
+  - `10d same_family_extension`：无新增 match
+  - `10d family_plus_relaxed_extension`：新增 `2` 个 outside relaxed match，但 reliable 仍 `29`，profit_diff delta `-29.957050`
+  - `14d same_family_extension`：新增 `1` 个 outside same-family match，matched unique `61`，reliable 仍 `29`，profit_diff delta `+293.463160`
+  - `30d same_family_extension`：新增 `2` 个 outside same-family match，matched unique `62`，reliable 仍 `29`，profit_diff delta `+373.414200`，且已有 `1` 个 far-over-14d 风险
+  - `30d family_plus_relaxed_extension`：新增 `4` 个 outside match，其中 relaxed 风险 `2` 个，far-over-14d 风险 `2` 个
+- 当前判断：
+  - `mapping_window_rule_gate_pass = False`
+  - `main_mapping_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `signal_level_replay_required = True`
+  - `merge_gate_pass = False`
+  - 不能因为 direct/accounting gap 看起来改善就放宽全局 mapping window
+  - 下一步应保持 7 天 mapping 规则，针对 top outside/no-candidate moments 做 signal-level replay，确认是信号构造差异、生命周期差异，还是纯 accounting residual
+
+### 结论 99: targeted signal-level replay 将主缺口继续收敛到 raw signal replay，仍不能改 Python/EA 主逻辑
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_targeted_signal_replay_20260717.py`
+  - `30m2H策略/data/validation/stage_state_targeted_signal_replay_20260717/targeted_signal_replay_review.md`
+  - `targeted_signal_replay_selected_cases.csv`
+  - `targeted_signal_replay_case_review.csv`
+  - `targeted_signal_replay_context_rows.csv`
+  - `targeted_signal_replay_classification_summary.csv`
+  - `targeted_signal_replay_decision.csv`
+- replay 范围：
+  - outside-7d 全部 `8` 行
+  - no-candidate 中 abs gap `>= 75` 的 P1/P2 行
+  - 合计 reviewed rows `13`
+  - P1/P2 rows `9`
+  - reviewed abs gap `1516.631802`
+- 分类结果：
+  - `accounting_only_occupied_outside_candidate / python_unmatched`：`4` 行，gap `+710.724328`，abs `801.572912`
+  - `accounting_only_occupied_outside_candidate / mt5_unmatched`：`3` 行，gap `-210.33`，abs `234.27`
+  - `accounting_only_relaxed_window_risk / mt5_unmatched`：`1` 行，gap `-54.33`，abs `54.33`
+  - accounting-only 合计 abs `1090.172912`
+  - `directional_signal_divergence_needs_raw_replay / mt5_unmatched`：`3` 行，gap `+112.09`，abs `274.01`
+  - `mt5_only_true_signal_needs_python_replay / mt5_unmatched`：`1` 行，gap `+75.19`，abs `75.19`
+  - `boundary_window_gap / python_unmatched`：`1` 行，gap `-77.258890`，abs `77.258890`
+- top case 判断：
+  - `python_mt5_0091`、`python_mt5_0090`、`mt5_0077`、`python_mt5_0068` 均保持 accounting-only；nearest outside candidate 已被当前 unique match 占用
+  - `mt5_0076`、`mt5_0067`、`mt5_0044` 归类为 directional signal divergence，需要 raw replay
+  - `mt5_0026` 归类为 MT5-only true signal candidate，需要 Python raw/Layer3 replay
+  - `python_mt5_0001` 是 early boundary gap，不作为策略行为修复证据
+- 当前判断：
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `lifecycle_prototype_required = False`
+  - `raw_signal_replay_required = True`
+  - `merge_gate_pass = False`
+  - 下一步应只针对 `mt5_0076`、`mt5_0067`、`mt5_0044`、`mt5_0026` 做 raw signal replay；仍不能改 Python 信号、EA 行为或 mapping 规则
+
+### 结论 100: targeted raw signal replay 已定位 4 个 MT5-only/directional 目标的 Python 链路丢失点
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_targeted_raw_signal_replay_20260717.py`
+  - `30m2H策略/data/validation/stage_state_targeted_raw_signal_replay_20260717/targeted_raw_signal_replay_review.md`
+  - `targeted_raw_signal_replay_targets.csv`
+  - `targeted_raw_signal_replay_case_review.csv`
+  - `targeted_raw_signal_replay_window_counts.csv`
+  - `targeted_raw_signal_replay_context_rows.csv`
+  - `targeted_raw_signal_replay_summary.csv`
+  - `targeted_raw_signal_replay_decision.csv`
+- 审计范围：
+  - `mt5_0076`
+  - `mt5_0067`
+  - `mt5_0044`
+  - `mt5_0026`
+  - reviewed abs gap `349.200000`
+- 丢失点分类：
+  - `mt5_0076`：BUY `M15 SLOT1/post_n`，abs `104.70`
+    - raw exact equivalent `1`
+    - Layer1/2 exact same-family `1`
+    - Layer3 exact same-family `0`
+    - dynamic exact same-family `0`
+    - 归类：`layer3_displaced_by_nearby_opposite_selection`
+  - `mt5_0067`：BUY `M15 SLOT1/post_n`，abs `88.35`
+    - raw exact equivalent `0`
+    - raw 60m equivalent `0`
+    - Layer1/2 / Layer3 / dynamic exact same-family 均为 `0`
+    - 归类：`raw_absent_nearby_opposite_selected`
+  - `mt5_0044`：SELL `M30 CLOSE/post_n`，abs `80.96`
+    - raw exact equivalent `1`
+    - Layer1/2 exact same-family `0`
+    - Layer3 / dynamic exact same-family 均为 `0`
+    - 归类：`layer12_trigger_family_drift_after_raw_parent`
+  - `mt5_0026`：BUY `M30 CLOSE/post_n`，abs `75.19`
+    - raw exact equivalent `0`
+    - raw 60m equivalent `0`
+    - Layer1/2 / Layer3 / dynamic exact same-family 均为 `0`
+    - 归类：`raw_absent_for_mt5_signal`
+- 汇总：
+  - raw absent abs gap `163.540000`
+  - Layer1/2 trigger-family drift abs gap `80.960000`
+  - Layer3 displacement abs gap `104.700000`
+  - execution/lifecycle abs gap `0`
+- 当前判断：
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `targeted_signal_prototype_required = True`
+  - `merge_gate_pass = False`
+  - 这一步提供了信号链丢失点证据，但仍不能直接修改 Python/EA 主逻辑
+  - 下一步应做非破坏性的 targeted signal prototype feasibility audit，分别验证 raw generation、Layer1/2 trigger-family transform、Layer3 gate 是否能解释并改善这些目标
+
+### 结论 101: targeted signal prototype feasibility audit 选定 Layer3 M15 SLOT1 post_n same-family rescue 作为下一步唯一原型
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_targeted_signal_prototype_feasibility_20260717.py`
+  - `30m2H策略/data/validation/stage_state_targeted_signal_prototype_feasibility_20260717/targeted_signal_prototype_feasibility_review.md`
+  - `targeted_signal_prototype_feasibility_case_review.csv`
+  - `targeted_signal_prototype_candidate_summary.csv`
+  - `targeted_signal_prototype_blast_radius_details.csv`
+  - `targeted_signal_prototype_decision.csv`
+- 审计范围：
+  - reviewed targets `4`
+  - reviewed abs gap `349.200000`
+- 候选原型排序：
+  - `layer3_m15_slot1_postn_same_family_rescue`：目标 `mt5_0076`，target abs gap `104.700000`，历史波及 `29` 行，选为下一步
+  - `preserve_m30_parent_before_slot1_replace`：目标 `mt5_0044`，target abs gap `80.960000`，历史波及 `126` 行，暂缓
+  - `audit_m15_slot1_postn_raw_absent`：目标 `mt5_0067`，target abs gap `88.350000`，Python raw 缺失，先做 source audit
+  - `audit_m30_close_postn_raw_absent`：目标 `mt5_0026`，target abs gap `75.190000`，Python raw 缺失，先做 source audit
+- 当前判断：
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+  - 下一步只允许跑 `prototype_layer3_m15_slot1_postn_same_family_rescue` 的非破坏性 full-chain prototype
+
+### 结论 102: Layer3 M15 SLOT1 post_n rescue full-chain 证明 target-only replacement 有效，但 all29 规则不能合并
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prototype_stage_state_layer3_m15_slot1_postn_rescue_full_chain_20260717.py`
+  - `30m2H策略/data/validation/stage_state_layer3_m15_slot1_postn_rescue_full_chain_20260717/stage_state_layer3_m15_slot1_postn_rescue_full_chain_review.md`
+  - `prototype_signal_variant_summary.csv`
+  - `prototype_full_chain_before_after.csv`
+  - `prototype_target_mt5_0076_review.csv`
+  - `prototype_layer3_rescue_decision.csv`
+- 原型子口径：
+  - `add_then_maxpos_all29`
+  - `replace_nearest_opposite_all29`
+  - `target_mt5_0076_replace_nearest_opposite`
+- 关键判断：
+  - `add_then_maxpos_all29`：max-pos 后只保留 `9/29` 个候选，`mt5_0076` 未进入 dynamic/mapping；direct gap 恶化 `+456.305`，signal-set gap 恶化 `+291.932`，不能合并
+  - `replace_nearest_opposite_all29`：保留 `12/29` 个候选，移除 `7` 个 nearest opposite；`mt5_0076` 只被 nearby `2026-03-24 10:00` 匹配，不是 exact target；direct gap 恶化 `+270.693`，不能合并
+  - `target_mt5_0076_replace_nearest_opposite`：
+    - `mt5_0076` 转为 `exact_align90_all`
+    - Python target profit `-92.7121` vs MT5 `-104.70`，profit diff `+11.9879`
+    - matched unique `+1`
+    - reliable tier `+1`
+    - Python unmatched `-1`
+    - MT5 unmatched `-1`
+    - direct gap 改善 `-86.243`
+    - signal-set gap 改善 `-98.2309`
+- 当前结论：
+  - all29 add/replace 均不能合并
+  - target-only replacement 是有效的原型候选，但仍可能是单点过拟合
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - 下一步必须做 target-only replacement generalization audit，不能直接改主信号或 EA
+
+### 结论 103: target-only replacement 泛化失败，`mt5_0076` 只能作为 source/provenance 审计对象，不能合并为主规则
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_layer3_target_only_replacement_generalization_20260717.py`
+  - `30m2H策略/data/validation/stage_state_layer3_target_only_replacement_generalization_20260717/layer3_target_only_replacement_generalization_review.md`
+  - `layer3_target_only_generalization_candidate_features.csv`
+  - `layer3_target_only_generalization_signal_summary.csv`
+  - `layer3_target_only_generalization_before_after.csv`
+  - `layer3_target_only_generalization_target_review.csv`
+  - `layer3_target_only_generalization_rule_decisions.csv`
+  - `layer3_target_only_generalization_final_decision.csv`
+- 审计范围：
+  - reviewed candidates `29`
+  - same-family-opposite candidates `8`
+  - strict target-like candidates `1`
+  - tested rules `4`
+- 规则结果：
+  - `gen_same_family_opposite_all8`：`mt5_0076` 只到 `nearby_180_all`，direct gap 恶化 `+1478.49`，否决
+  - `gen_same_family_buy_negative_all5`：matched/reliable 各 `+1`，direct gap 改善 `-11.227`，但 `mt5_0076` 仍只是 `nearby_180_all`，否决
+  - `gen_same_family_cluster_latest2`：`mt5_0076` 转 exact，但 matched/reliable 无提升，direct gap 恶化 `+1024.94`，否决
+  - `gen_target_like_strict1`：`mt5_0076` 转 `exact_align90_all`，matched/reliable 各 `+1`，direct gap 改善 `-86.243`，signal-set gap 改善 `-98.2309`，但只有 `1` 个历史支持样本
+- 当前判断：
+  - `generalization_gate_pass_count = 0`
+  - `single_support_pass_count = 1`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+  - 不能把 `target_mt5_0076_replace_nearest_opposite` 合并为主信号规则；下一步只做 `mt5_0076` Layer3 displacement source/provenance audit
+
+### 结论 104: `mt5_0076` displacement 主因是 Python Layer3 当前 24h max-pos 生命周期口径，不是 raw/data/time-axis 或 accounting
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_layer3_displacement_source_mt5_0076_20260717.py`
+  - `30m2H策略/data/validation/stage_state_layer3_displacement_source_mt5_0076_20260717/layer3_displacement_source_audit_mt5_0076.md`
+  - `layer3_displacement_source_decision.csv`
+  - `layer3_displacement_maxpos_probe.csv`
+  - `layer3_displacement_maxpos_summary.csv`
+  - `layer3_displacement_mt5_lifecycle.csv`
+  - `layer3_displacement_timeline_mt5_0076.csv`
+- 关键证据：
+  - raw exact equivalent `1`
+  - Layer1/2 exact same-family `1`
+  - Layer3 exact same-family `0`
+  - dynamic exact same-family `0`
+  - MT5 exact same-family `1`
+  - 12:00 BUY target 在 Python raw 与 Layer1/2 存在，说明不是原始数据缺失或时间轴缺失
+  - `add_target_no_removal` 被当前 24h max-pos 拒绝，blockers 为：
+    - `2026-03-24 02:00 SELL M30 CLOSE/pre_cross`
+    - `2026-03-24 04:30 SELL M30 CLOSE/post_n`
+    - `2026-03-24 05:00 SELL M15 SLOT1/post_n`
+  - `add_target_remove_nearest_opposite` 后 target 可以通过当前 24h max-pos
+  - MT5 `mt5_0076` 原始锚点为 `2026-03-24 10:30`，对齐时间为 `2026-03-24 12:00`，开仓 `2026-03-24 10:15`，最晚平仓 `2026-03-24 11:01:39`
+- 当前归因：
+  - `source_bucket = maxpos_lifecycle_gap`
+  - `secondary_bucket = layer3_selection_policy_gap`
+  - 当前 Python Layer3/max-pos 用固定 24h active occupancy；MT5 stage-state ledger 是实际订单生命周期，两者不是同一执行约束
+- 当前门禁：
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `prototype_lifecycle_aware_maxpos_probe_for_layer3_rescue_candidates`
+  - 只做非破坏性 prototype，验证 29 个 rescue candidates 的整体影响；不能根据 `mt5_0076` 单点直接修改主信号或 EA
+
+### 结论 105: lifecycle-aware max-pos 原型不可合并，`mt5_0076` 仍被同簇较早 post_n 候选挤出
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prototype_stage_state_lifecycle_aware_maxpos_20260717.py`
+  - `30m2H策略/data/validation/stage_state_lifecycle_aware_maxpos_probe_20260717/stage_state_lifecycle_aware_maxpos_probe_review.md`
+  - `lifecycle_maxpos_signal_summary.csv`
+  - `lifecycle_maxpos_full_chain_before_after.csv`
+  - `lifecycle_maxpos_target_mt5_0076_review.csv`
+  - `lifecycle_maxpos_variant_decisions.csv`
+  - `lifecycle_maxpos_final_decision.csv`
+  - `lifecycle_maxpos_trace.csv`
+- 原型变体：
+  - `lifecycle_add_all29_stage3time`
+  - `lifecycle_replace_nearest_all29_stage3time`
+  - `lifecycle_replace_same_family8_stage3time`
+- 关键结果：
+  - `variants_tested = 3`
+  - `target_exact_variant_count = 0`
+  - `lifecycle_probe_gate_pass_count = 0`
+  - `decision = lifecycle_probe_not_mergeable`
+  - `lifecycle_add_all29_stage3time`：`mt5_0076` 只到 `nearby_60_all`，matched/reliable 各提升 `+7/+4`，但 direct gap 恶化 `+3483.507195`，signal-set gap 恶化 `+3726.713500`
+  - `lifecycle_replace_nearest_all29_stage3time`：`mt5_0076` 只到 `nearby_60_all`，matched/reliable 各提升 `+5/+3`，但 direct gap 恶化 `+3038.135589`，signal-set gap 恶化 `+3310.849560`
+  - `lifecycle_replace_same_family8_stage3time`：`mt5_0076` 只到 `nearby_60_all`，matched/reliable 各提升 `+1/+1`，但 direct gap 恶化 `+2173.475570`，signal-set gap 恶化 `+2129.009870`
+- 失败原因：
+  - lifecycle-aware active-until 确实释放了固定 24h 占用，但同一 M15 SLOT1/post_n 簇仍按 earliest greedy 接受 `2026-03-24 10:00/10:30/11:00`
+  - `2026-03-24 12:00 post_n6` 在 lifecycle trace 中 active count 仍为 `3`，因此不是 exact target
+  - 问题从“24h 生命周期过粗”进一步收窄为“同簇 post_n 候选排序/取舍”问题
+- 当前门禁：
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state M15 SLOT1 post_n cluster priority/ranking audit`
+  - 只审计同簇候选排序，不因单点 latest/post_n6 命中而修改主信号或 EA
+
+### 结论 106: M15 SLOT1/post_n 排序规则只有单簇 MT5 支持，不能作为泛化规则
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_m15_slot1_postn_cluster_priority_20260717.py`
+  - `30m2H策略/data/validation/stage_state_m15_slot1_postn_cluster_priority_audit_20260717/m15_slot1_postn_cluster_priority_audit.md`
+  - `cluster_priority_candidate_rows.csv`
+  - `cluster_priority_cluster_summary.csv`
+  - `cluster_priority_rule_choices.csv`
+  - `cluster_priority_rule_summary.csv`
+  - `cluster_priority_lifecycle_trace.csv`
+  - `cluster_priority_final_decision.csv`
+- 审计范围：
+  - same-family cluster count `2`
+  - MT5 exact-supported cluster count `1`
+  - ranking rules tested `8`
+  - rules selecting `mt5_0076` target `6`
+  - ranking rule gate pass count `0`
+- 关键证据：
+  - `2025-10-20 14:00:00|M15 SLOT1|post_n|SELL` 簇有 `3` 根：`post_n2/post_n4/post_n5`；exact same-family MT5 candidate count 为 `0`
+  - `2026-03-24 05:00:00|M15 SLOT1|post_n|BUY` 簇有 `5` 根：`post_n2/post_n3/post_n4/post_n5/post_n6`；只有 `2026-03-24 12:00 post_n6` exact 对应 `mt5_0076`
+  - `latest`、`max_mode_n`、`min_source_profit`、`latest_negative`、`max_mode_negative`、`nearest_same_family_mt5` 都能选中 `mt5_0076` target，但都是单个 MT5-supported cluster 的证据
+  - `earliest` 与 `max_source_profit` 不能选中 `mt5_0076`
+- 当前判断：
+  - `decision = ranking_rule_not_proven_single_mt5_supported_cluster`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 先做 `mt5_0076` M15 SLOT1/post_n counter/anchor source audit
+  - 需要解释 MT5 `post_n5_m15_slot1_replace_or_rescue`、原始锚点 `2026-03-24 10:30`、对齐时间 `2026-03-24 12:00` 与 Python `2026-03-24 12:00 post_n6` 的 counter/anchor 差异
+  - 不能先用 latest/max-mode/post_n6 排序规则改主信号
+
+### 结论 107: `mt5_0076` 的 `12:00 post_n6 exact` 主要是 `+90 mapping` 对齐产物，真实 EA 锚点是 `10:30 post_n5`
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_mt5_0076_postn_counter_anchor_20260717.py`
+  - `30m2H策略/data/validation/stage_state_mt5_0076_postn_counter_anchor_audit_20260717/mt5_0076_postn_counter_anchor_audit.md`
+  - `postn_counter_anchor_summary.csv`
+  - `postn_counter_anchor_candidate_alignment.csv`
+  - `postn_counter_anchor_combined_timeline.csv`
+  - `postn_counter_anchor_mt5_target_ledger_rows.csv`
+- 关键证据：
+  - MT5 real signal anchor：`2026-03-24 10:30`
+  - MT5 `+90` aligned target：`2026-03-24 12:00`
+  - MT5 open time：`2026-03-24 10:15`
+  - MT5 signal src：`post_n5_m15_slot1_replace_or_rescue`
+  - Python 在 MT5 real anchor `10:30` 的 Layer1/2 mode 是 `post_n3`，entry_time 同为 `10:15`
+  - Python 在 `+90` aligned target `12:00` 的 Layer1/2 mode 是 `post_n6`
+  - Python same mode-label `post_n5` 在 `2026-03-24 11:30`
+  - Python `12:00 post_n6` 与 MT5 signal_stop 差距很小，但这是 mapper 对齐后的候选，不是 MT5 实际信号锚点
+- 当前分类：
+  - `primary_classification = mapping_alignment_artifact`
+  - `classifications = counter_anchor_shift;mode_label_drift;mapping_alignment_artifact;python_slot1_counter_gap;ea_signal_source_gap`
+- 当前判断：
+  - 不能把 `2026-03-24 12:00 post_n6` 当成直接可合并的信号排序目标
+  - 先要解释 EA 为何在真实锚点 `10:30` 标成 `post_n5`，而 Python 同锚点是 `post_n3`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state EA/Python SLOT1 counter generation audit for mt5_0076`
+  - 对照 EA 日志/源码与 Python Layer1/2 的 SLOT1 replace/rescue counter 来源，再决定是否需要低波及 prototype
+
+### 结论 108: `mt5_0076` 的 EA `post_n5` 来自 legacy merged counter，Python `post_n3` 来自 raw M30 label 保留
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_ea_python_slot1_counter_generation_mt5_0076_20260717.py`
+  - `30m2H策略/data/validation/stage_state_ea_python_slot1_counter_generation_mt5_0076_20260717/slot1_counter_generation_audit.md`
+  - `slot1_counter_generation_final_decision.csv`
+  - `slot1_counter_generation_code_hits.csv`
+  - `slot1_counter_generation_log_hits.csv`
+  - `slot1_counter_generation_candidate_alignment.csv`
+- 关键证据：
+  - EA `TryM15EarlyEntry()` 使用 `merged_post_n = g_merged_post_n_counter` 生成 `post_nN_m15_slot1`，之后才追加 `_replace_or_rescue`
+  - `2026.03.24 10:15` 目标窗口日志显示 EA candidate 为 `post_n5_m15_slot1`，且 `post_n_counter=5`、`merged_post_n_counter=5`
+  - 同一窗口随后执行 `post_n5_m15_slot1_replace_or_rescue`，anchor 为 `2026.03.24 10:30`
+  - Python 在 actual anchor `2026-03-24 10:30` 的 Layer1/2 mode 是 `post_n3`，这是 raw M30 `merged_post_cross_n` 标签经过 SLOT1 replace/rescue 后保留下来的 mode
+  - Python same-label `post_n5` 发生在 `2026-03-24 11:30`，不是 MT5 真实锚点
+- 当前分类：
+  - `primary_classification = merged_postn_counter_offset`
+  - `classifications = merged_postn_counter_offset;python_slot1_relabel_gap`
+- 当前判断：
+  - 这一步证明了 counter source，不证明可以直接改 EA 或 Python 主逻辑
+  - 直接改 `g_merged_post_n_counter` 风险很高，因为此前全局 Python-style `merged_post_n` 与 M15 strict-counter 扩展均已被 full tester 否决
+  - `low_blast_prototype_gate_open = True` 只表示可以进入 cohort 级量化/低波及原型设计，不表示主信号门打开
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 先量化全体 M15 SLOT1/post_n 的 EA legacy counter drift cohort，再决定是否有低波及 prototype
+
+### 结论 109: M15 SLOT1/post_n cohort 不支持统一 counter 修复，下一步应转向 no-candidate/source-gap
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_m15_slot1_legacy_counter_drift_cohort_20260717.py`
+  - `30m2H策略/data/validation/stage_state_m15_slot1_legacy_counter_drift_cohort_20260717/m15_slot1_postn_legacy_counter_drift_cohort_audit.md`
+  - `m15_slot1_postn_final_decision.csv`
+  - `m15_slot1_postn_cohort_alignment.csv`
+  - `m15_slot1_postn_classification_summary.csv`
+  - `m15_slot1_postn_mapping_summary.csv`
+- 关键证据：
+  - cohort total `19`
+  - Python M15 可比覆盖后样本 `12`
+  - Python M15 覆盖前样本 `7`
+  - tester log 候选覆盖 `19`
+  - EA raw counter 与 merged counter 相等 `19`
+  - actual-anchor exact counter match `0`
+  - actual-anchor counter offset `1`
+  - mapped count `12`
+  - reliable mapped count `6`
+- 分组结论：
+  - `pre_python_m15_coverage`：`7` 行，MT5 net `+324.24`
+  - `python_no_postn_candidate_nearby`：`7` 行，MT5 net `+211.14`
+  - `aligned_plus90_counter_offset`：`4` 行，MT5 net `+221.55`
+  - `actual_anchor_counter_offset`：`1` 行，MT5 net `-104.70`
+- 当前判断：
+  - 这不是一个可直接合并的统一 counter 口径问题
+  - `mt5_0076` 是唯一 actual-anchor counter-offset 样本，不能单独支撑主信号或 EA counter 修改
+  - 4 个 reliable exact mapped 样本集中在 `+90` aligned offset，不等于真实 EA anchor 已对齐
+  - 7 个可比样本属于 Python nearby post_n candidate 缺失，下一步应审计 source/no-candidate，而不是继续扩大 counter 修改
+  - `low_blast_prototype_gate_open = False`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state M15 SLOT1 no-candidate/source-gap cohort audit`
+  - 优先拆解 `mt5_0050`、`mt5_0052`、`mt5_0054`、`mt5_0067`、`mt5_0068`、`mt5_0069`、`mt5_0072`
+
+### 结论 110: M15 SLOT1 no-candidate 不是 raw 全缺，最大问题是 near-trigger family drift
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_m15_slot1_no_candidate_source_gap_20260717.py`
+  - `30m2H策略/data/validation/stage_state_m15_slot1_no_candidate_source_gap_audit_20260717/m15_slot1_no_candidate_source_gap_audit.md`
+  - `m15_slot1_no_candidate_case_review.csv`
+  - `m15_slot1_no_candidate_window_evidence.csv`
+  - `m15_slot1_no_candidate_candidate_samples.csv`
+  - `m15_slot1_no_candidate_classification_summary.csv`
+  - `m15_slot1_no_candidate_final_decision.csv`
+- 关键证据：
+  - target count `7`
+  - MT5 net profit sum `+211.14`
+  - positive MT5 count `4`
+  - negative/flat MT5 count `3`
+  - reliable mapped count `2`
+  - primary class count `4`
+- 分组结论：
+  - `layer12_present_not_postn`：`4` 行，MT5 net `+209.71`，样本 `mt5_0052/0054/0068/0069`
+  - `time_axis_drift`：`1` 行，MT5 net `+159.92`，样本 `mt5_0050`
+  - `raw_present_layer12_filtered`：`1` 行，MT5 net `-70.14`，样本 `mt5_0072`
+  - `trigger_or_direction_drift`：`1` 行，MT5 net `-88.35`，样本 `mt5_0067`
+- 当前判断：
+  - no-candidate 不是 Python raw 完全缺失；`raw_absent_count = 0`
+  - 最大簇是 Python Layer1/2 在 ±60m 附近有同向候选，但不是 `post_n`
+  - `mt5_0072` 是 raw actual-anchor 有 post_n、但 Layer1/2 actual-anchor 不保留的单点负收益样本，不应单独打开过滤器修改
+  - `mt5_0050` 是远窗口 time-axis/mapping artifact，不应扩大 mapping 窗口合并
+  - 当前不支持主信号、EA、dynamic risk 或 mapping 主规则修改
+  - `diagnostic_source_prototype_gate_open = False`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state M15 SLOT1 near-trigger family drift audit`
+  - 优先审 `mt5_0052`、`mt5_0054`、`mt5_0068`、`mt5_0069`、`mt5_0067` 的 EA post_n 与 Python near cross/pre_cross 时间线
+
+### 结论 111: near-trigger 漂移的主簇是 EA exact post_n 对 Python Layer1/2 near cross/pre_cross
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_m15_slot1_near_trigger_family_drift_20260717.py`
+  - `30m2H策略/data/validation/stage_state_m15_slot1_near_trigger_family_drift_audit_20260717/m15_slot1_near_trigger_family_drift_audit.md`
+  - `m15_slot1_near_trigger_case_verdict.csv`
+  - `m15_slot1_near_trigger_timeline_pm120.csv`
+  - `m15_slot1_near_trigger_classification_summary.csv`
+  - `m15_slot1_near_trigger_final_decision.csv`
+- 关键证据：
+  - target count `5`
+  - MT5 net profit sum `+121.36`
+  - primary class count `2`
+  - `trigger_family_label_gap`：`4` 行，MT5 net `+209.71`，样本 `mt5_0052/0054/0068/0069`
+  - `raw_sequence_gap`：`1` 行，MT5 net `-88.35`，样本 `mt5_0067`
+  - mapping far-window artifact secondary count `2`
+  - reliable mapped count `1`
+- 当前判断：
+  - 对 `mt5_0052/0054/0068/0069`，EA 在 exact anchor 有 `Candidate/Execute/SIGNAL` 的 `post_n*_m15_slot1_replace_or_rescue`
+  - 同一 ±120m 窗口里，Python Layer1/2 有同向 `cross/pre_cross`，但没有同向 `post_n`
+  - `mt5_0067` 是 raw near cross 与 raw later post_n 的 sequence gap，不是 Layer1/2 near-label gap
+  - 远窗口 mapping artifact 只作为 secondary，不足以打开 mapping 合并门
+  - 当前仍不支持主信号、EA、dynamic risk 或 mapping 主规则修改
+  - `diagnostic_trigger_family_prototype_gate_open = False`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state EA vs Python SLOT1 trigger-family generation source audit`
+  - 重点查 EA `TryM15EarlyEntry()`/`replace_or_rescue` 与 Python raw/Layer1/2 relabel 条件差异
+
+### 结论 112: SLOT1 trigger-family 源码审计确认 4 笔是 Python replace/rescue 不重标标签，1 笔是 base sequence reset gap
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_ea_python_slot1_trigger_family_source_20260717.py`
+  - `30m2H策略/data/validation/stage_state_ea_python_slot1_trigger_family_source_audit_20260717/slot1_trigger_family_source_audit.md`
+  - `slot1_trigger_family_source_final_decision.csv`
+  - `slot1_trigger_family_source_case_review.csv`
+  - `slot1_trigger_family_source_case_code_map.csv`
+  - `slot1_trigger_family_source_code_hits.csv`
+  - `slot1_trigger_family_source_classification_summary.csv`
+- 关键证据：
+  - target count `5`
+  - MT5 net profit sum `+121.36`
+  - source primary class count `2`
+  - `python_relabel_gap`：`4` 行，MT5 net `+209.71`，样本 `mt5_0052/0054/0068/0069`
+  - `base_sequence_reset_gap`：`1` 行，MT5 net `-88.35`，样本 `mt5_0067`
+  - `stopspec_rescue_path_gap_count = 0`
+  - `insufficient_code_evidence_count = 0`
+  - `ea_label_drift_secondary_count = 5`
+  - 每个目标样本均有 EA source hit、Python source hit、timeline evidence
+- 当前判断：
+  - EA `TryM15EarlyEntry()` 在 runtime 先判 `pre_cross`、再判 `cross`、最后用 `g_merged_post_n_counter` 判 `post_n`
+  - Python raw 先生成 `pre_cross/cross/post_n`，SLOT1 `apply_replace_variant()` 与 `build_rescued_trades()` 只改 entry/stop/spec/variant，不改原始 `mode`
+  - 因此 `mt5_0052/0054/0068/0069` 的核心差异不是 StopSpec rescue，而是 Python SLOT1 replace/rescue 沿用 near raw/Layer1/2 `cross/pre_cross` 标签，没有按 EA runtime 状态重标成 `post_n`
+  - `mt5_0067` 不属于同一 relabel 主簇；它是 Python raw near `cross/pre_cross`，同向 `post_n` 只在后续 base sequence 出现
+  - 当前只允许另开 diagnostic-only prototype 验证 runtime-label 变体，不允许直接修改 EA、Python 主信号、dynamic risk 或 mapping 主规则
+  - `prototype_gate_open = False`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state diagnostic-only Python SLOT1 runtime-label variant feasibility`
+  - 仅在副本输出中测试“Python SLOT1 replace/rescue 是否应按 EA runtime merged counter 重新标记 trigger-family”，先目标样本、再 full-chain，不直接合并
+
+### 结论 113: Python SLOT1 runtime-label target-only 能解释，但 full-chain label-only 不能合并
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_python_slot1_runtime_label_feasibility_20260717.py`
+  - `30m2H策略/data/validation/stage_state_python_slot1_runtime_label_feasibility_20260717/runtime_label_feasibility_audit.md`
+  - `runtime_label_final_decision.csv`
+  - `runtime_label_target_review.csv`
+  - `runtime_label_dynamic_assignments.csv`
+  - `runtime_label_mapping_delta.csv`
+  - `runtime_label_target_mapping_before_after.csv`
+  - `diagnostic_mapping/unique_match_summary.csv`
+- target-only 结果：
+  - target total `5`
+  - runtime relabel target count `4`
+  - target explained count `4`
+  - `mt5_0052/0054/0068/0069` 都能用 EA exact runtime `post_nN` 解释 Python near `cross/pre_cross` 标签差异
+  - `mt5_0067` 被正确排除为 `base_sequence_reset_gap`
+- full-chain label-only 结果：
+  - dynamic relabelable target count `2`
+  - `mt5_0052/0054` 只在 Layer1/2 有 near candidate，没有进入当前 Layer3/dynamic，label-only remap 无法恢复这两笔
+  - Python-MT5 baseline matched unique `60`，diagnostic matched unique `59`，delta `-1`
+  - reliable tier matched `29 -> 31`，delta `+2`
+  - Python unmatched `38 -> 39`，delta `+1`
+  - MT5 unmatched `22 -> 23`，delta `+1`
+  - final balance 不变：`4039.57227 -> 4039.57227`
+- 关键风险：
+  - 当前 mapper 主要比较 `mode_family = post_n`，不比较 `post_n2/post_n5` 的具体编号
+  - label-only remap 后出现 `2` 个 target 级 post_n 编号错配：
+    - `mt5_0068` 的 MT5 是 `post_n2`，diagnostic 匹配到 Python `post_n5`
+    - `mt5_0069` 的 MT5 是 `post_n5`，diagnostic 匹配到 Python `post_n2`
+  - 因此 reliable tier `+2` 不能当成真实对齐改善
+- 当前判断：
+  - runtime-label 方向对 target-only 归因成立，但 full-chain label-only 不通过
+  - 不能直接把 Python SLOT1 replace/rescue 改成 EA runtime relabel
+  - 下一步必须先做 post_n 编号感知的 mapping 审计，避免 mapper 把 `post_n2/post_n5` 互换误判成可靠匹配
+  - `target_only_pass = True`
+  - `full_chain_not_widened = False`
+  - `mode_number_safe = False`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state mode-number-aware runtime-label mapping audit`
+  - 在不改 canonical mapper 的前提下，诊断性重算 post_nN 严格匹配，确认 runtime-label 是否仍有净改善
+
+### 结论 114: post_nN 编号感知 mapping 下 target 编号错配消失，但全局 relaxed mismatch 仍阻止合并
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_mode_number_aware_runtime_label_mapping_20260718.py`
+  - `30m2H策略/data/validation/stage_state_mode_number_aware_runtime_label_mapping_audit_20260718/mode_number_mapping_audit.md`
+  - `mode_number_final_decision.csv`
+  - `mode_number_diagnostic_delta_summary.csv`
+  - `mode_number_target_strict_review.csv`
+  - `family_vs_mode_number_summary.csv`
+  - `diagnostic_mode_number_unique_matches.csv`
+- 严格口径结果：
+  - Python-MT5 matched unique `34 -> 35`，delta `+1`
+  - reliable tier matched `21 -> 23`，delta `+2`
+  - Python unmatched `64 -> 63`，delta `-1`
+  - MT5 unmatched `48 -> 47`，delta `-1`
+  - matched profit diff `+303.731558 -> +178.871978`
+- 编号风险：
+  - target 级 `diagnostic_postn_number_mismatch_count = 0`
+  - reliable 级 `diagnostic_reliable_postn_number_mismatch_count = 0`
+  - 但 diagnostic unique 全局仍有 `5` 个 relaxed post_n 编号 mismatch：
+    - `mt5_0074`：Python `post_n4` vs MT5 `post_n3`
+    - `mt5_0064`：Python `post_n3` vs MT5 `post_n2`
+    - `mt5_0036`：Python `post_n3` vs MT5 `pre_cross`
+    - `mt5_0050`：Python `post_n6` vs MT5 `post_n5`
+    - `mt5_0002`：Python `post_n2` vs MT5 `post_n6`
+- 当前判断：
+  - `mt5_0068/0069` 在 post_nN 严格后不再互换，target 改善是真实的
+  - 但通过标准要求全局 `diagnostic_postn_number_mismatch_count = 0`，当前为 `5`
+  - runtime-label 方向仍只能保持 diagnostic-only，不能改主信号、EA 或 canonical mapper
+  - 下一步应审计这 5 个 relaxed mismatch：若剔除 relaxed post_n 编号错配后仍保留净改善，才进入 Layer3 admission gap；否则关闭 runtime-label 变体方向
+  - `mode_number_aware_pass = False`
+  - `runtime_label_direction_closed = True`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state relaxed post_n mismatch residual audit`
+  - 重点测试“从 unique matching 候选中排除 relaxed post_n 编号错配”后，`mt5_0068/0069` 的改善是否还能保留
+
+### 结论 115: 排除 relaxed post_n 编号错配后，runtime-label target 改善仍保留，可进入 Layer3 admission gap 诊断
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_relaxed_postn_mismatch_residual_20260718.py`
+  - `30m2H策略/data/validation/stage_state_relaxed_postn_mismatch_residual_audit_20260718/relaxed_postn_mismatch_residual_audit.md`
+  - `strict_plus_exclusion_final_decision.csv`
+  - `strict_plus_exclusion_delta_summary.csv`
+  - `strict_plus_exclusion_target_retention.csv`
+  - `previous_relaxed_postn_mismatch_rows.csv`
+  - `previous_relaxed_postn_mismatch_summary.csv`
+- relaxed mismatch 归因：
+  - baseline strict unique 有 `6` 个 relaxed post_n mismatch
+  - diagnostic strict unique 有 `5` 个 relaxed post_n mismatch
+  - 类型：
+    - `near_exact_postn_number_drift`：`mt5_0074/0064`
+    - `near_trigger_family_drift`：baseline `mt5_0068/0036`，diagnostic `mt5_0036`
+    - `far_window_postn_mismatch_artifact`：`mt5_0050/0002`
+- strict-plus-exclusion 结果：
+  - 规则：排除 relaxed post_n 编号错配候选；保留 reliable post_nN 一致候选；非 post_n relaxed 候选仍按现有诊断口径保留
+  - Python-MT5 matched unique `28 -> 30`，delta `+2`
+  - reliable tier matched `21 -> 23`，delta `+2`
+  - Python unmatched `70 -> 68`，delta `-2`
+  - MT5 unmatched `54 -> 52`，delta `-2`
+  - diagnostic post_n mismatch count `0`
+  - reliable post_n mismatch count `0`
+  - `mt5_0068` 保留为 `post_n2` 对 `post_n2_m15_slot1_replace_or_rescue`
+  - `mt5_0069` 保留为 `post_n5` 对 `post_n5_m15_slot1_replace_or_rescue`
+- 当前判断：
+  - runtime-label target `mt5_0068/0069` 的改善在严格+排除口径下仍成立
+  - 这只打开 `Layer3 admission gap` 诊断门，用于查 `mt5_0052/0054` 为什么停在 Layer1/2，没有进入 Layer3/dynamic
+  - 仍不能直接改主信号、EA、canonical mapper 或 dynamic-risk 计算
+  - `strict_plus_exclusion_pass = True`
+  - `layer3_admission_gap_gate_open = True`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state Layer3 admission gap audit for runtime-label targets`
+  - 聚焦 `mt5_0052/0054`：它们有 Layer1/2 near `cross`，能被 EA runtime `post_n5` 解释，但没有进入当前 Layer3/dynamic
+
+### 结论 116: Layer3 admission gap 审计确认 runtime-label 缺失样本失败于 Layer3 threshold，不是 max-position
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_layer3_admission_gap_runtime_label_targets_20260718.py`
+  - `30m2H策略/data/validation/stage_state_layer3_admission_gap_runtime_label_targets_20260718/layer3_admission_gap_audit.md`
+  - `layer3_admission_final_decision.csv`
+  - `layer3_admission_case_review.csv`
+  - `layer3_admission_summary.csv`
+  - `layer12_with_layer3_eval_all.csv`
+  - `layer3_after_maxpos_recomputed.csv`
+- 关键结果：
+  - target count `4`
+  - missing Layer3 target count `2`：`mt5_0052/0054`
+  - control target count `2`：`mt5_0068/0069`
+  - `missing_layer3_failure_reasons = layer3_threshold_fail`
+  - `missing_all_layer3_threshold_fail = True`
+  - `controls_admitted_after_maxpos = True`
+- 逐笔判断：
+  - `mt5_0052`：Layer1/2 有 BUY `cross`，runtime 可解释为 `post_n5`，但 `Bias_5_ea = 0.227808` 低于 threshold `0.296599`，gap `-0.068791`，Layer3 不通过
+  - `mt5_0054`：Layer1/2 有 BUY `cross`，runtime 可解释为 `post_n5`，但 `Bias_5_ea = 0.027632` 低于 threshold `0.344232`，gap `-0.316600`，Layer3 不通过
+  - `mt5_0068/0069`：对照样本均通过 Layer3 threshold，bias gap `+0.349660`，并通过 max-position 后进入 dynamic path
+- 当前判断：
+  - `mt5_0052/0054` 缺失不是 max-position lifecycle、opposite displacement 或 admission ordering 造成，而是在 Layer3 H2 top_pct threshold 前已经失败
+  - 若为了纳入 `0052/0054` 绕过或放宽 Layer3 threshold，波及面会变成全局 Layer3 admission 修改，不是低波及 runtime-label 修补
+  - runtime-label Layer3 admission 路径应关闭，不能继续用这两笔正收益样本推动主信号、EA 行为、canonical mapper 或 dynamic-risk 合并
+  - `low_blast_admission_rule_supported = False`
+  - `layer3_admission_prototype_gate_open = False`
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state residual priority reset after runtime-label closure`
+  - 汇总结论 112-116 的门禁结果，把 runtime-label 分支正式关闭后，重新排序剩余 residual bucket，再选择下一条可执行诊断线
+
+### 结论 117: runtime-label 分支已正式关闭，下一优先级转为 Python-unmatched unique-match conflict
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_residual_priority_reset_after_runtime_label_closure_20260718.py`
+  - `30m2H策略/data/validation/stage_state_residual_priority_reset_after_runtime_label_closure_20260718/residual_priority_reset_audit.md`
+  - `residual_priority_reset_final_decision.csv`
+  - `runtime_label_gate_chain_summary.csv`
+  - `residual_bucket_priority.csv`
+- runtime-label chain 复盘：
+  - source audit：`python_relabel_gap = 4`，`base_sequence_reset_gap = 1`，只证明差异来源，不打开合并门
+  - target-only runtime label：`target_explained = 4`，但 full-chain matched unique `-1`，且出现 post_n 编号错配
+  - mode-number-aware mapping：target 编号安全，但全局 relaxed post_n mismatch 仍为 `5`
+  - strict-plus-exclusion：target 改善保留，diagnostic post_n mismatch 降为 `0`，只打开 Layer3 admission 诊断门
+  - Layer3 admission：`mt5_0052/0054` 均为 `layer3_threshold_fail`，没有低波及 admission 规则
+- residual priority reset 结果：
+  - runtime-label branch closed：`True`
+  - closure reason：`layer3_threshold_fail_no_low_blast_admission_rule`
+  - closed target ids：`mt5_0052/0054`
+  - retained diagnostic target ids：`mt5_0068/0069`
+  - selected next bucket：`stage_exit_python_unmatched_unique_match_conflict`
+  - recommended next task：`Stage-state Python-unmatched unique-match conflict audit`
+- 剩余 bucket 排序：
+  - rank `1`：`stage_exit_python_unmatched_unique_match_conflict`，诊断优先，当前样本数 `1`
+  - rank `2`：`independent_mt5_signal_gap`，放到 P1 conflict 之后量化
+  - rank `3`：`mt5_0050 time_axis/far-window artifact`，单样本正收益但 mapping 波及大，暂缓
+  - rank `4`：`mt5_0067 base_sequence_reset_gap`，单样本负收益，暂不主修
+  - rank `5`：`mt5_0072 raw_present_layer12_filtered`，单样本负收益，暂不主修
+- 当前判断：
+  - 不再沿 runtime-label / Layer3 admission 方向做主线修复
+  - 下一步只做 Python-unmatched unique-match conflict 审计，不直接执行 EA Stage1/2 price-side 行为修改
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `dynamic_risk_change_gate_open = False`
+  - `merge_gate_pass = False`
+
+### 结论 118: Python-unmatched unique-match conflict 已复核为 mapping/accounting/duplicate 问题，不支持 EA 行为修复
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_python_unmatched_unique_match_conflict_20260718.py`
+  - `30m2H策略/data/validation/stage_state_python_unmatched_unique_match_conflict_audit_20260718/python_unmatched_unique_match_conflict_audit.md`
+  - `python_unmatched_unique_match_conflict_final_decision.csv`
+  - `python_unmatched_unique_match_conflict_case_audit.csv`
+  - `python_unmatched_unique_match_conflict_bucket_summary.csv`
+- 当前复核结果：
+  - reviewed unique-conflict rows：`32`
+  - P1 unique-conflict rows：`5`
+  - P1 abs gap sum：`1448.529090`
+  - P1 far-candidate accounting-only rows：`2`
+  - P1 duplicate-continuation rows：`1`
+  - P1 relaxed mapping-policy rows：`2`
+  - P1 EA / Stage-exit behavior evidence rows：`0`
+- P1 逐类判断：
+  - `python_mt5_0079`、`python_mt5_0073`：best candidate 分别为 `nearby_7d_all`，属于远窗口 accounting-only，不能作为行为修复证据
+  - `python_mt5_0075`：近邻 duplicate continuation，已由 duplicate filtered dynamic/mapping 复跑验证为 `diagnostic_improvement_only`，merge gate 仍关闭
+  - `python_mt5_0065`、`python_mt5_0062`：依赖 relaxed trigger/mode policy，属于 mapping-policy review，不是 Stage-exit 或 EA price-side 证据
+- 当前判断：
+  - reset 里的 selected bucket `stage_exit_python_unmatched_unique_match_conflict` 实际不是单笔 blocker，而是一个 unique-conflict 桶
+  - 该桶内 P1 样本没有任何一笔能打开 EA behavior gate
+  - duplicate continuation 方向有诊断价值，但已验证不能仅凭 filtered trade-list 合并主信号
+  - unique-match conflict behavior blocker 可关闭
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `dynamic_risk_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state independent MT5 signal gap audit`
+  - 在 runtime-label 与 unique-conflict 都关闭行为修复门之后，量化剩余 MT5-only / independent signal gap
+
+### 结论 119: independent MT5 signal gap 复核后，只剩 M30 CLOSE/post_n true no-candidate 小簇值得进入 source audit
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_independent_mt5_signal_gap_20260718.py`
+  - `30m2H策略/data/validation/stage_state_independent_mt5_signal_gap_audit_20260718/independent_mt5_signal_gap_audit.md`
+  - `independent_mt5_signal_gap_final_decision.csv`
+  - `independent_mt5_signal_gap_case_audit.csv`
+  - `independent_mt5_signal_gap_bucket_summary.csv`
+- 当前复核结果：
+  - MT5-unmatched rows reviewed：`22`
+  - true independent signal candidate rows：`2`
+  - true independent signal candidate abs gap：`135.100000`
+  - candidate ids：`mt5_0026;mt5_0061`
+  - 这 2 笔均属于 `M30 CLOSE/post_n true no-candidate`
+- 被排除为非独立信号候选的主要桶：
+  - `time_axis_diagnostic_only`：`5` 行，abs `574.05`
+  - `mapping_policy_unique_conflict_accounting`：`4` 行，abs `308.70`
+  - `outside_7d_mapping_window_accounting`：`3` 行，abs `276.63`
+  - `nearby_opposite_direction_divergence_defer`：`3` 行，abs `107.04`
+  - `layer3_displacement_prototype_not_mergeable`：`1` 行，`mt5_0076`
+  - `base_sequence_reset_gap_defer`：`1` 行，`mt5_0067`
+  - `layer12_trigger_family_drift_high_blast_defer`：`1` 行，`mt5_0044`
+  - `raw_present_layer12_filtered_defer`：`1` 行，`mt5_0072`
+  - `runtime_label_layer3_threshold_closed`：`1` 行，`mt5_0052`
+- 当前判断：
+  - 当前 22 个 MT5-unmatched 中，大多数已经是 mapping/accounting/time-axis/高波及或已关闭路径
+  - 真正窄口径的下一步不是改 EA，也不是放宽 mapping，而是审计 `mt5_0026/0061` 为什么 EA 有 `M30 CLOSE/post_n`，Python raw 没有同源候选
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `dynamic_risk_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state M30 CLOSE post_n true no-candidate source audit`
+  - 目标样本：`mt5_0026`、`mt5_0061`
+  - 先查 Python raw generation 与 EA M30 close post_n source/counter 差异，不直接做信号原型
+
+### 结论 120: M30 CLOSE/post_n true no-candidate source audit 将最后两个候选拆成混合 loss point，不能打开信号或 EA 修改门
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_m30_close_postn_true_no_candidate_source_20260718.py`
+  - `30m2H策略/data/validation/stage_state_m30_close_postn_true_no_candidate_source_audit_20260718/m30_close_postn_source_audit.md`
+  - `m30_close_postn_source_final_decision.csv`
+  - `m30_close_postn_source_case_summary.csv`
+  - `m30_close_postn_source_context_rows.csv`
+  - `m30_close_postn_source_code_hits.csv`
+- 当前复核结果：
+  - target count：`2`
+  - target ids：`mt5_0026;mt5_0061`
+  - primary classification count：`2`
+  - all targets Python raw absent broad window：`False`
+  - low-blast signal prototype gate open：`False`
+- 逐笔判断：
+  - `mt5_0026`：MT5 为 BUY `M30 CLOSE/post_n3`，net `-75.19`，Python raw exact / 60m / 7d same-family 均为 `0`，分类 `python_raw_generation_absent_broad_window`
+  - `mt5_0061`：MT5 为 BUY `M30 CLOSE/post_n6`，net `-59.91`；Python raw exact same-family 为 `1`，Layer1/2 exact same-mode 为 `1`，但 Layer3/dynamic exact same-mode 为 `0`，分类 `python_raw_parent_transformed_then_layer3_filtered`
+- 源码证据：
+  - EA `M30 CLOSE/post_n` 由 `g_merged_post_n_counter` 触发，并受 `g_merged_strict_post_n_counter` veto 保护
+  - Python raw post_n 来自 `merged_post_cross_n`，由 `add_pre_cross_and_counter()` 在 `方向_合并后` 上生成
+  - `mt5_0061` 说明差异不是“Python 完全没有 raw”，而是 raw parent 后续被 SLOT1 transform / Layer3 过滤
+- 当前判断：
+  - 最后两个 independent MT5 候选不是同源、同规则、可低波及修补的簇
+  - `mt5_0026` 是 broad-window raw absent，不能原地 relabel
+  - `mt5_0061` 是 raw-present 但后续 transform/filter，不能和 `mt5_0026` 用同一 raw generation 修复
+  - 当前不支持主信号、EA、mapping、dynamic-risk 或 merge 修改
+  - `main_signal_change_gate_open = False`
+  - `ea_behavior_gate_open = False`
+  - `mapping_change_gate_open = False`
+  - `dynamic_risk_change_gate_open = False`
+  - `merge_gate_pass = False`
+- 下一步：
+  - 做 `Stage-state final freeze / run readiness gate`
+  - 汇总结论 112-120 的所有关闭门，决定是否冻结当前 MT5 stage-state baseline，并进入最终回归/运行包流程
+
+### 结论 121: Stage-state final freeze / run readiness gate 已通过，可以冻结当前 MT5 stage-state baseline，进入最终回归和运行包检查
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_final_freeze_run_readiness_20260718.py`
+  - `30m2H策略/data/validation/stage_state_final_freeze_run_readiness_20260718/final_freeze_run_readiness_audit.md`
+  - `final_freeze_run_readiness_decision.csv`
+  - `readiness_gate_source_summary.csv`
+  - `readiness_gate_summary.csv`
+  - `baseline_snapshot_summary.csv`
+  - `mapping_snapshot_summary.csv`
+  - `mt5_ledger_recomputed_check.csv`
+  - `final_regression_checklist.csv`
+- 冻结决策：
+  - `freeze_current_stage_state_baseline = True`
+  - frozen baseline：`mt5_stage_state_full_2018_20260707_20260716`
+  - `critical_gate_open_count = 0`
+  - `ready_to_final_regression = True`
+  - `ready_to_live_run_now = False`
+  - 原因：`conclusions_112_120_change_gates_closed`
+- 关键门控归纳：
+  - 结论 112-120 中未发现可支持继续修改主信号、EA 行为、mapping 或 dynamic-risk 的关键门
+  - 所有 critical gate 均未打开：`main_signal_change_gate_open`、`ea_behavior_gate_open`、`mapping_change_gate_open`、`dynamic_risk_change_gate_open`、`merge_gate_pass`
+  - 因此当前不应继续追 `mt5_0026/0061` 这类最后小样本做信号/EA 原型
+- 冻结基线快照：
+  - Python-only dynamic-risk parity：`118` 笔，final balance `$23366.397098`，win rate `45.7627%`，any-stage SL `95`，all-stage SL `44`
+  - Python-MT5 dynamic-risk parity：`98` 笔，final balance `$4039.572270`，win rate `48.9796%`，any-stage SL `80`，all-stage SL `33`
+  - MT5 ledger reference：`82` 笔，final balance `$1649.84`，win rate `40.243902%`，any-stage SL `75`，all-stage SL `40`
+  - MT5 ledger recompute：initial `$500.0`，final `$1649.84`，net profit `$1149.84`，与 reference 摘要闭合
+- 当前判断：
+  - 策略修复阶段可以从“差异追因/小样本原型”切换到“最终回归/运行包”
+  - 这不是宣布已经可以直接跑实盘；仍需完成最终回归、三版本统一报告刷新、EA `.ex5` / `.set` 运行包检查
+- 下一步：
+  - 执行 `Stage-state final regression / run package check`
+  - 后续只允许回归、报告刷新、部署/运行包动作；除非最终回归重新打开明确 gate，否则不改 EA/Python 主逻辑
+
+### 结论 122: Final regression 第 1 项 dynamic-risk baseline review 通过，冻结摘要可由明细重算闭合
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_final_regression_dynamic_risk_baseline_20260718.py`
+  - `30m2H策略/data/validation/stage_state_final_regression_dynamic_risk_baseline_review_20260718/dynamic_risk_baseline_review.md`
+  - `dynamic_risk_baseline_review_decision.csv`
+  - `dynamic_risk_baseline_recomputed_summary.csv`
+  - `dynamic_risk_baseline_comparison.csv`
+  - `final_regression_checklist_status_after_dynamic_risk.csv`
+- 决策结果：
+  - check id：`python_mt5_dynamic_risk_baseline_review`
+  - status：`pass`
+  - `failed_comparison_count = 0`
+  - `source_count = 3`
+  - 原因：`detail_files_recompute_match_dynamic_summary_and_freeze_snapshot`
+- 重算闭合结果：
+  - Python-only：`118` 笔，final balance `$23366.397104`，profit `$22866.397098`，win rate `45.762712%`，any-stage SL `95`，all-stage SL `44`
+  - Python-MT5：`98` 笔，final balance `$4039.572270`，profit `$3539.572270`，win rate `48.979592%`，any-stage SL `80`，all-stage SL `33`
+  - MT5 ledger：`82` 笔，final balance `$1649.84`，profit `$1149.84`，win rate `40.243902%`，any-stage SL `75`，all-stage SL `40`
+- 口径说明：
+  - Python-only 的 `final_balance` 明细最后一行与摘要差 `0.000006`
+  - 该差异来自逐笔余额累计与总利润求和的浮点尾差，已按 `1e-5` 容差通过
+  - 交易数、总利润、胜率、止损计数没有差异
+- 当前判断：
+  - dynamic-risk baseline 可作为冻结回归输入
+  - 本步未修改 EA、Python 主信号、dynamic-risk 或 canonical mapper
+- 下一步：
+  - 执行 `mapped_alignment_summary_review`
+
+### 结论 123: Final regression 第 2 项 mapped alignment summary review 通过，unique-match / unmatched / tier 结构均可由明细重算闭合
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_final_regression_mapped_alignment_summary_20260718.py`
+  - `30m2H策略/data/validation/stage_state_final_regression_mapped_alignment_summary_review_20260718/mapped_alignment_summary_review.md`
+  - `mapped_alignment_review_decision.csv`
+  - `mapped_alignment_recomputed_summary.csv`
+  - `mapped_alignment_summary_comparison.csv`
+  - `mapped_alignment_tier_counts_recomputed.csv`
+  - `mapped_alignment_tier_counts_comparison.csv`
+  - `final_regression_checklist_status_after_mapped_alignment.csv`
+- 决策结果：
+  - check id：`mapped_alignment_summary_review`
+  - status：`pass`
+  - `failed_summary_comparison_count = 0`
+  - `failed_tier_comparison_count = 0`
+  - `source_count = 2`
+  - 原因：`unique_match_summary_and_freeze_mapping_snapshot_match_detail_files`
+- 重算闭合结果：
+  - Python-only vs MT5：Python trades `118`，MT5 trades `82`，matched unique `61`，reliable `43`，relaxed `18`，Python unmatched `57`，MT5 unmatched `21`
+  - Python-only matched profit：Python `$5486.127765`，MT5 `$983.63`，diff `$4502.497765`
+  - Python-only SL same：any-stage `49`，all-stage `48`
+  - Python-MT5 vs MT5：Python trades `98`，MT5 trades `82`，matched unique `60`，reliable `29`，relaxed `31`，Python unmatched `38`，MT5 unmatched `22`
+  - Python-MT5 matched profit：Python `$1237.394778`，MT5 `$582.50`，diff `$654.894778`
+  - Python-MT5 SL same：any-stage `53`，all-stage `45`
+- 当前判断：
+  - unique-match summary、final-freeze mapping snapshot、unique-match tier counts 均与明细一致
+  - 当前不需要，也不允许为了最终小样本继续改 canonical mapper
+  - 本步未修改 EA、Python 主信号、dynamic-risk 或 mapper policy
+- 下一步：
+  - 执行 `mt5_full_stage_state_ledger_closure_review`
+
+### 结论 124: Final regression 第 3 项 MT5 full stage-state ledger closure review 通过，MT5 单独版账务链路闭合
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_final_regression_mt5_ledger_closure_20260718.py`
+  - `30m2H策略/data/validation/stage_state_final_regression_mt5_ledger_closure_review_20260718/mt5_ledger_closure_review.md`
+  - `mt5_ledger_closure_review_decision.csv`
+  - `mt5_ledger_closure_summary.csv`
+  - `mt5_ledger_closure_checks.csv`
+  - `mt5_trade_stage_group_summary.csv`
+  - `mt5_trade_stage_group_anomalies.csv`
+  - `mt5_deal_position_closure_anomalies.csv`
+  - `mt5_ticket_profit_mismatches.csv`
+  - `mt5_unique_signal_closure_mismatches.csv`
+  - `final_regression_checklist_status_after_mt5_ledger_closure.csv`
+- 决策结果：
+  - check id：`mt5_full_stage_state_ledger_closure_review`
+  - status：`pass`
+  - `failed_check_count = 0`
+  - stage group anomalies：`0`
+  - position closure anomalies：`0`
+  - ticket profit mismatches：`0`
+  - unique signal mismatches：`0`
+  - 原因：`mt5_deal_history_trade_ledger_unique_signals_and_tester_final_balance_close`
+- 账务闭合结果：
+  - trade ledger stage rows：`246`
+  - unique signals：`82`
+  - deal history rows：`492`
+  - deal IN rows：`246`
+  - deal OUT rows：`246`
+  - trade ledger net profit：`$1149.84`
+  - deal history OUT net profit：`$1149.84`
+  - unique signals net profit：`$1149.84`
+  - initial balance：`$500.0`
+  - computed final balance：`$1649.84`
+  - unique final balance：`$1649.84`
+  - tester final balance：`$1649.84`
+  - deinit rows：`0`
+- 口径说明：
+  - MT5 tester/terminal log 为 UTF-16 LE；审计脚本已按日志编码解析
+  - tester log 内含多段测试记录，因此只要求 final balance 记录非空，并以最后解析到的 final balance 与 frozen final balance 闭合
+- 当前判断：
+  - MT5 单独版可作为冻结回归基线
+  - 本步未重新跑 tester，也未修改 EA、Python 主信号、dynamic-risk 或 mapper policy
+- 下一步：
+  - 执行 `three_version_unified_report_refresh`
+
+### 结论 125: Final regression 第 4 项 three-version unified report refresh 通过，三版统一报告已从冻结输入刷新
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_final_regression_three_version_unified_report_20260718.py`
+  - `30m2H策略/data/validation/stage_state_final_regression_three_version_unified_report_20260718/three_version_unified_report.md`
+  - `three_version_unified_report_decision.csv`
+  - `three_version_unified_metrics.csv`
+  - `three_version_direct_gap_vs_mt5.csv`
+  - `three_version_alignment_snapshot.csv`
+  - `three_version_unmatched_trigger_mode_summary.csv`
+  - `three_version_execution_scope.csv`
+  - `final_regression_checklist_status_after_three_version_report.csv`
+- 决策结果：
+  - check id：`three_version_unified_report_refresh`
+  - status：`pass`
+  - prior regression checks passed：`True`
+  - source count：`3`
+  - 原因：`three_version_report_refreshed_from_frozen_inputs`
+- 三版统一指标：
+  - Python-only 基础版：initial `$500.0`，leverage setting `100`，Python accounting only，trade count `118`，final `$23366.397104`，net profit `$22866.397098`，win rate `45.762712%`，any-stage SL `95`，all-stage SL `44`
+  - Python-MT5 数据版：initial `$500.0`，leverage setting `100`，Python accounting only，trade count `98`，final `$4039.572270`，net profit `$3539.572270`，win rate `48.979592%`，any-stage SL `80`，all-stage SL `33`
+  - MT5-only EA 单独版：initial `$500.0`，leverage `100` enforced by MT5 tester，trade count `82`，final `$1649.84`，net profit `$1149.84`，win rate `40.243902%`，any-stage SL `75`，all-stage SL `40`
+- 手数/执行口径：
+  - 三版参数均按 tester config 读取：`InpRiskPct=3.0`，`InpUseDynamicLots=true`，stage weight `0.01/0.02/0.03`
+  - Python-only / Python-MT5 是 `Python dynamic-risk approximation with MT5 value/stage-lot parity`，不强制 MT5 保证金/订单生命周期
+  - MT5-only 是 `EA real dynamic lots in MT5 tester`，真实执行杠杆、保证金、订单/持仓/平仓生命周期
+  - realized total lot avg：Python-only `0.114831`，Python-MT5 `0.037143`，MT5-only `0.033171`
+- 直接差距相对 MT5：
+  - Python-only：trade gap `+36`，final gap `+$21716.557104`，net profit gap `+$21716.557098`
+  - Python-MT5：trade gap `+16`，final gap `+$2389.732270`，net profit gap `+$2389.732270`
+- 当前判断：
+  - 三版差距大的主因仍是信号集合不同加执行模型不同，不是 MT5 ledger 闭合失败
+  - MT5-only 是冻结运行基线；Python-only / Python-MT5 是诊断与口径参照
+  - 本步未修改 EA、Python 主信号、dynamic-risk 或 mapper policy
+- 下一步：
+  - 执行 `ea_ex5_set_run_package_check`
+
+### 结论 126: Final regression 第 5 项 EA EX5 / SET run package check 通过，冻结 MT5 tester 运行包已就绪
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_final_regression_run_package_check_20260718.py`
+  - `30m2H策略/data/validation/stage_state_final_regression_run_package_check_20260718/run_package_check.md`
+  - `run_package_check_decision.csv`
+  - `run_package_check_summary.csv`
+  - `run_package_checks.csv`
+  - `run_package_file_inventory.csv`
+  - `run_package_tester_fields.csv`
+  - `run_package_input_fields.csv`
+  - `run_package_command.md`
+  - `final_regression_checklist_status_after_run_package.csv`
+  - `auto_trade/30m2H_Strategy_EA.stage_state_frozen_20260718.set`
+- 决策结果：
+  - check id：`ea_ex5_set_run_package_check`
+  - status：`pass`
+  - `ready_to_frozen_tester_run = True`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - `warning_count = 1`
+  - 原因：`ea_binary_config_set_snapshot_and_archive_outputs_are_ready_for_frozen_tester_run`
+- 二进制与部署：
+  - MQ5：`auto_trade/30m2H_Strategy_EA.mq5`
+  - local EX5：`auto_trade/30m2H_Strategy_EA.ex5`
+  - deployed EX5：`C:\Users\3762\AppData\Roaming\MetaQuotes\Terminal\B695BCB6C1E6864B6D96307B87B29F16\MQL5\Experts\Advisors\30m2H_Strategy_EA.ex5`
+  - local/deployed EX5 SHA256 均为 `5F3D2771F43815E6A405CE8DFBDE31B8ECF35400E5C433992A8D158D95AA1B8C`
+  - compile log：`compile_stage_state_fix.log`，`Result: 0 errors, 0 warnings`
+  - EX5 时间晚于 MQ5，部署 EX5 与本地 EX5 大小、时间、哈希一致
+- tester 运行包：
+  - terminal：`F:\Program Files\MetaTrader 5 EXNESS\terminal64.exe`
+  - tester ini：`auto_trade/30m2H_Strategy_EA.stage_state_full_2018_20260707.ini`
+  - Expert：`Advisors\30m2H_Strategy_EA.ex5`
+  - Symbol：`XAUUSDm`
+  - Period：`M30`
+  - Date range：`2018.01.01` 到 `2026.07.07`
+  - Deposit：`500`
+  - Leverage：`100`
+  - Risk pct：`3.0`
+  - Dynamic lots：`true`
+  - Stage lots：`0.01/0.02/0.03`
+  - frozen expected result：`82` trades，final balance `$1649.84`
+- `.set` 口径：
+  - 已从通过回归的 full tester `.ini` 生成当前冻结 `.set`：`auto_trade/30m2H_Strategy_EA.stage_state_frozen_20260718.set`
+  - 旧 v3.21/v3.22 `.set` 文件仅作为历史文件保留，不应作为当前冻结运行包使用
+- 当前判断：
+  - 最终回归 5 项全部通过
+  - 当前策略已达到“冻结 MT5 tester 运行包可跑”的状态
+  - 这不是实盘交易批准；实盘还需要单独的账户、风控、监控、断线/滑点/交易时段等上线检查
+  - 本步未修改 EA/Python 策略逻辑，只生成冻结 `.set` 参数快照和审计输出
+- 下一步：
+  - 若要重新跑冻结 full tester，使用 `run_package_command.md` 中的命令
+  - 若进入实盘或模拟盘持续运行，需要新建单独的 live/sim run gate，不与当前 tester readiness 混淆
+
+### 结论 127: Live/sim run gate 已完成，模拟干跑参数集就绪，实盘仍未批准
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_live_sim_run_gate_20260718.py`
+  - `30m2H策略/data/validation/stage_state_live_sim_run_gate_20260718/live_sim_run_gate.md`
+  - `live_sim_run_gate_decision.csv`
+  - `live_sim_run_gate_summary.csv`
+  - `live_sim_run_gate_checks.csv`
+  - `live_sim_run_gate_checklist.csv`
+  - `sim_dryrun_notes.md`
+  - `auto_trade/30m2H_Strategy_EA.stage_state_sim_dryrun_20260718.set`
+- 决策结果：
+  - check id：`stage_state_live_sim_run_gate`
+  - status：`pass`
+  - `ready_to_sim_dry_run = True`
+  - `ready_to_live_trade = False`
+  - `sim_blocker_count = 0`
+  - `live_blocker_count = 5`
+  - 原因：`sim_dryrun_set_ready_live_trade_not_approved`
+- 模拟干跑口径：
+  - frozen set：`auto_trade/30m2H_Strategy_EA.stage_state_frozen_20260718.set`
+  - sim dry-run set：`auto_trade/30m2H_Strategy_EA.stage_state_sim_dryrun_20260718.set`
+  - `InpSimMode = true`
+  - `InpExportCSV = true`
+  - `InpExportTradeLedger = true`
+  - frozen expected result 仍为 `82` trades，final balance `$1649.84`
+- 实盘 blocker：
+  - 连接凭证仍存在硬编码文件，需要外置到安全配置或环境变量
+  - 当前 `auto_trade/auto_trader.py` 不是冻结 EA 策略 runner，不能当成生产运行器
+  - live-specific max loss / session limit / kill switch 尚未定义
+  - monitoring / restart / alert plan 尚未定义
+  - 尚未做人工 live trade approval
+- 当前判断：
+  - 可以进入 MT5 手动/界面层面的 signal-only dry run
+  - 不批准实盘交易
+  - 本步未修改 EA/Python 策略逻辑，只生成 `SimMode=true` 干跑 `.set` 与审计输出
+- 旧修复门处理：
+  - `EA Stage1/2 price-side 行为修复门` 没有 smoke 证据支撑，且最终冻结回归已完成，不应继续作为下一步代码修改
+
+### 结论 128: Sim dry-run smoke 执行包已完成，可进入 MT5 短窗口模拟干跑，实盘仍然关闭
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_sim_dryrun_smoke_package_20260718.py`
+  - `30m2H策略/data/validation/stage_state_sim_dryrun_smoke_package_20260718/sim_dryrun_smoke_package.md`
+  - `sim_dryrun_smoke_package_decision.csv`
+  - `sim_dryrun_smoke_checks.csv`
+  - `sim_dryrun_smoke_tester_fields.csv`
+  - `sim_dryrun_smoke_input_fields.csv`
+  - `sim_dryrun_smoke_run_command.md`
+  - `auto_trade/30m2H_Strategy_EA.stage_state_sim_dryrun_smoke_20260601_20260707.ini`
+- 决策结果：
+  - check id：`stage_state_sim_dryrun_smoke_package`
+  - status：`pass`
+  - `ready_to_execute_tester_smoke = True`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - 原因：`sim_dryrun_smoke_tester_package_ready`
+- smoke 运行口径：
+  - tester window：`2026.06.01` 到 `2026.07.07`
+  - Symbol / Period：`XAUUSDm` / `M30`
+  - Deposit / Leverage：`500` / `100`
+  - `InpRiskPct = 3.0`
+  - `InpUseDynamicLots = true`
+  - `InpSimMode = true`
+  - `InpExportCSV = true`
+  - `InpExportTradeLedger = true`
+- 当前判断：
+  - 这一步只生成短窗口 Strategy Tester smoke 包，不修改 EA/Python 策略逻辑
+  - 该 smoke 不是收益回归；因为 `InpSimMode=true` 不应按真实 tester 订单盈亏判断策略收益
+  - smoke 目标是验证 EA 在 MT5 runtime 中能初始化、扫描信号、导出 CSV/日志，并确认不会误进入实盘路径
+  - 下一步需要外部启动 MT5 terminal 执行 tester smoke；执行后再解析 report/log/export 文件
+
+### 结论 129: Sim dry-run smoke 已实际执行并通过，下一步进入 sim continuous runner 决策门
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_sim_dryrun_smoke_execution_20260718.py`
+  - `30m2H策略/data/validation/stage_state_sim_dryrun_smoke_execution_review_20260718/sim_dryrun_smoke_execution_review.md`
+  - `sim_dryrun_smoke_execution_decision.csv`
+  - `sim_dryrun_smoke_execution_checks.csv`
+  - `sim_dryrun_smoke_execution_csv_summary.csv`
+  - `sim_dryrun_smoke_signal_decision_counts.csv`
+  - 已归档证据副本：terminal log、tester log、tester agent log、signal export、trade ledger
+- 决策结果：
+  - check id：`stage_state_sim_dryrun_smoke_execution`
+  - status：`pass`
+  - `smoke_execution_passed = True`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - `warning_count = 1`
+  - 原因：`sim_dryrun_smoke_execution_passed_with_xml_report_warning`
+- smoke 执行证据：
+  - MT5 terminal 已加载 `auto_trade/30m2H_Strategy_EA.stage_state_sim_dryrun_smoke_20260601_20260707.ini`
+  - Strategy Tester 日志显示 test successfully finished
+  - tester final balance：`500.00 USD`
+  - signal export 行数：`1180`
+  - signal decision counts：`SIGNAL=2`，`HOLD=54`，`SKIP=1124`
+  - trade ledger 数据行：`0`，符合 `InpSimMode=true` 不真实下单的预期
+  - 日志出现 `CSV export closed` 与 `Trade ledger export closed`
+- warning：
+  - `auto_trade/stage_state_sim_dryrun_smoke_20260601_20260707_report.xml` 未生成
+  - 该项暂不作为 blocker，因为 terminal/tester/agent 日志、final balance、CSV 导出、ledger 关闭均已证明 smoke 完成
+- 当前判断：
+  - 短窗口 signal-only smoke 已通过
+  - 本步仍未修改 EA/Python 策略逻辑
+  - 实盘继续关闭；下一步只能进入 sim continuous runner 设计/决策门，不能直接进 live trade
+
+### 结论 130: Post-smoke 决策门已打开“持续模拟运行器设计”，但未打开连续运行和实盘
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_post_smoke_decision_gate_20260718.py`
+  - `30m2H策略/data/validation/stage_state_post_smoke_decision_gate_20260718/post_smoke_decision_gate.md`
+  - `post_smoke_decision_gate_decision.csv`
+  - `post_smoke_decision_gate_checks.csv`
+  - `sim_continuous_runner_required_tasks.csv`
+- 决策结果：
+  - check id：`stage_state_post_smoke_decision_gate`
+  - status：`pass`
+  - `ready_to_sim_continuous_runner_design = True`
+  - `ready_to_sim_continuous_runner_execution = False`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - `required_design_task_count = 5`
+  - 原因：`post_smoke_all_blockers_passed_design_gate_opened`
+- 已打开：
+  - 可以开始设计本地持续模拟运行器
+- 未打开：
+  - 不能直接持续运行
+  - 不能进入实盘
+  - 不能使用 `auto_trade/auto_trader.py` 作为当前生产 runner
+- 下一步必须完成的 5 项设计任务：
+  - runner scope：明确本地 MT5 chart/EA signal-only runtime，不走 Python auto_trader，不开 live
+  - credential isolation：处理 Python helper 中硬编码凭证
+  - runtime risk controls：定义 max loss、session limit、max positions、kill switch、symbol/timeframe 限制
+  - monitoring/restart/alerts：定义心跳、日志轮转、重启规则、告警/报告文件
+  - forward dry-run verification：用 `InpSimMode=true` 做真实行情前向干跑验证
+
+### 结论 131: 持续模拟运行器设计包已完成，只打开实现门，不打开执行门和实盘
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_sim_continuous_runner_design_package_20260718.py`
+  - `30m2H策略/data/validation/stage_state_sim_continuous_runner_design_package_20260718/sim_continuous_runner_design_package.md`
+  - `sim_continuous_runner_design_decision.csv`
+  - `sim_continuous_runner_config_template.json`
+  - `sim_continuous_runner_scope.csv`
+  - `sim_continuous_runner_risk_controls.csv`
+  - `sim_continuous_runner_monitoring_spec.csv`
+  - `sim_continuous_runner_forward_dryrun_test_plan.csv`
+  - `sim_continuous_runner_implementation_tasks.csv`
+  - `sim_continuous_runner_runbook.md`
+- 决策结果：
+  - check id：`stage_state_sim_continuous_runner_design_package`
+  - status：`pass`
+  - `ready_to_sim_continuous_runner_implementation = True`
+  - `ready_to_sim_continuous_runner_execution = False`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - `hardcoded_credential_file_count = 3`
+  - 原因：`sim_continuous_runner_design_package_ready`
+- 设计边界：
+  - runner 口径是 MT5 terminal + 已部署 EX5 + `XAUUSDm/M30` chart/EA signal-only runtime
+  - 强制 `InpSimMode=true`
+  - 强制 `live_trade_enabled=false`
+  - 禁止运行 `auto_trade/auto_trader.py`
+  - 不能直接连续运行，也不能实盘
+- 已识别但未在本步修复的 blocker：
+  - `auto_trade/auto_trader.py`
+  - `auto_trade/verify_connection.py`
+  - `auto_trade/signal_validator.py`
+  - 以上文件存在硬编码凭证模式，必须在 runner execution 之前隔离；本设计包没有写入任何凭证值
+- 下一步：
+  - 进入 `sim continuous runner implementation package`
+  - 实现安全配置、监控/preflight 脚本、手动 MT5 chart runbook trial、前向干跑 review
+
+### 结论 132: 持续模拟运行器 implementation package 已完成，可进入手动 MT5 chart trial，执行门和实盘仍关闭
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/sim_continuous_runner_monitor_20260719.py`
+  - `30m2H策略/scripts/validate/review_stage_state_sim_continuous_runner_implementation_package_20260719.py`
+  - `30m2H策略/data/validation/stage_state_sim_continuous_runner_implementation_package_20260719/sim_continuous_runner_implementation_package.md`
+  - `sim_continuous_runner_config_20260719.json`
+  - `sim_continuous_runner_implementation_decision.csv`
+  - `sim_continuous_runner_implementation_checks.csv`
+  - `sim_continuous_runner_monitor_commands.md`
+  - `sim_continuous_runner_manual_chart_trial_checklist.csv`
+  - `monitor_preflight/sim_continuous_runner_monitor_decision.csv`
+  - `monitor_preflight/sim_continuous_runner_monitor_checks.csv`
+- 决策结果：
+  - check id：`stage_state_sim_continuous_runner_implementation_package`
+  - status：`pass`
+  - `ready_to_manual_chart_trial = True`
+  - `ready_to_sim_continuous_runner_execution = False`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - `warning_count = 0`
+  - `monitor_preflight_status = pass`
+- monitor preflight 结果：
+  - `terminal_running = False`，当前未启动 MT5，不作为 preflight blocker
+  - signal CSV：使用 smoke 归档，`1180` 行
+  - trade ledger：使用 smoke 归档，`0` 行
+  - `ready_to_sim_continuous_runner_execution = False`
+  - `ready_to_live_trade = False`
+- 安全边界：
+  - 配置中 `live_trade_enabled=false`
+  - 配置中 `execution_enabled=false`
+  - 配置中 `sim_only_lock=true`
+  - 配置中 `InpSimMode=true`
+  - 明确禁止 `auto_trade/auto_trader.py`
+  - 实现配置未写入账户或密码值
+- 下一步：
+  - 进入手动 MT5 chart trial：打开 `XAUUSDm/M30`，加载已部署 EX5 和 sim dry-run set，确认 `SIMULATION` marker
+  - 至少一个新 M30 bar 后运行 monitor `forward-review`
+
+### 结论 133: Manual MT5 chart trial 尚未通过，当前阻断是 EA 未作为 chart runtime 启动，不是策略回归失败
+
+- 当前证据：
+  - MT5 terminal 正在运行
+  - `forward-review` 连续失败，`blocker_failure_count = 2`
+  - 未看到新的实时 `30m2H_strategy_signals_export.csv`
+  - 未看到 `30m2H_Strategy_EA` 初始化日志
+  - 未看到 `SIMULATION` marker
+  - `MQL5\Logs` 未出现新的 Experts 日志
+  - `MQL5\Files` 未出现 EA 目标导出文件
+- 已完成辅助：
+  - deployed EX5 已确认在 MT5 data folder 的 `MQL5\Experts\Advisors`
+  - sim dry-run set 已复制到 MT5 `MQL5\Presets`
+  - Presets 中 set 已校验 `InpSimMode=true`、`InpExportCSV=true`、`InpExportTradeLedger=true`
+- 安全判断：
+  - 不自动挂载 EA
+  - 原因是当前 EA 默认 `InpSimMode=false`，没有可复用 chart template，也无法证明 startup config 一定加载 sim set
+  - 下一步仍必须在 MT5 界面手动挂载 EA 并加载 Presets 中的 sim dry-run set
+
+### 结论 134: 已生成 SIM_ONLY 图表试运行包，可安全推进手动/启动挂载试验，连续运行和实盘仍关闭
+
+- 专项输出：
+  - `auto_trade/30m2H_Strategy_EA_SIM_ONLY.mq5`
+  - `auto_trade/30m2H_Strategy_EA_SIM_ONLY.ex5`
+  - `auto_trade/30m2H_Strategy_EA_SIM_ONLY.stage_state_sim_dryrun_20260719.set`
+  - `auto_trade/compile_sim_only_20260719.log`
+  - `30m2H策略/scripts/validate/review_stage_state_sim_only_chart_trial_package_20260719.py`
+  - `30m2H策略/data/validation/stage_state_sim_only_chart_trial_package_20260719/sim_only_chart_trial_package.md`
+  - `sim_only_chart_trial_decision.csv/json`
+  - `sim_only_chart_trial_checks.csv`
+  - `manual_chart_trial_sim_only_steps.csv`
+- 决策结果：
+  - check id：`stage_state_sim_only_chart_trial_package`
+  - status：`pass`
+  - `ready_to_manual_chart_trial_with_sim_only = True`
+  - `ready_to_startup_attach_trial = True`
+  - `ready_to_sim_continuous_runner_execution = False`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - `warning_failure_count = 0`
+- 安全结论：
+  - 主冻结 EA 未改动，仍保持原默认 `InpSimMode=false`
+  - SIM_ONLY 副本默认 `InpSimMode=true`
+  - SIM_ONLY 副本在 `OnInit()` 早期检查 `InpSimMode`，若被改为 `false` 则 `INIT_FAILED`
+  - 编译结果 `0 errors, 0 warnings`
+  - 本地 EX5 与 MT5 Advisors 目录部署 EX5 的 SHA256 一致
+  - MT5 Presets 中 SIM_ONLY set 已校验 `InpSimMode=true`、`InpExportCSV=true`、`InpExportTradeLedger=true`
+- 下一步：
+  - 优先用 `30m2H_Strategy_EA_SIM_ONLY.ex5` 做 MT5 chart trial
+  - 可尝试 startup/config 挂载；若仍无 `SIM-ONLY GUARD` / `SIMULATION` marker，则回到 MT5 界面手动挂载
+  - 即使 SIM_ONLY 挂载通过，也只能打开 forward-review，不能直接打开 continuous runner execution 或 live trade
+
+### 结论 135: SIM_ONLY 包部署后 forward-review 仍关闭，当前只差 MT5 图表实际挂载
+
+- 当前证据：
+  - `terminal_running = True`
+  - `ready_to_sim_continuous_runner_execution = False`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 2`
+  - `signal_csv_path` 仍回落到 smoke 归档 CSV
+  - `signal_csv_rows = 1180`
+  - `trade_ledger_rows = 0`
+- 剩余 blocker：
+  - `signal_csv_freshness`：当前 CSV 约 `882.45` 分钟旧，未看到 terminal chart runtime 新导出
+  - `sim_marker_seen_in_logs`：仍未看到 `SIM-ONLY GUARD` 或 `SIMULATION` marker
+- 判断：
+  - SIM_ONLY 编译/部署/preset 审计已通过
+  - forward-review fail closed 是正确行为
+  - 当前卡点不是策略逻辑、资金曲线或止损计算偏差，而是 EA 尚未在 MT5 图表 runtime 中实际启动
+- 下一步：
+  - 在 MT5 界面刷新 Navigator，打开 `XAUUSDm/M30`
+  - 挂载 `30m2H_Strategy_EA_SIM_ONLY.ex5`
+  - 加载 `30m2H_Strategy_EA_SIM_ONLY.stage_state_sim_dryrun_20260719.set`
+  - 确认日志出现 `SIM-ONLY GUARD` 和 `SIMULATION` 后，再等待一个新 M30 bar 运行 forward-review
+
+### 结论 136: SIM_ONLY startup attach 已通过，当前等待开盘 tick/数据行，连续运行和实盘仍关闭
+
+- 专项输出：
+  - `auto_trade/30m2H_Strategy_EA_SIM_ONLY.startup_chart_trial_20260719.ini`
+  - `30m2H策略/scripts/validate/review_stage_state_sim_only_startup_attach_gate_20260719.py`
+  - `30m2H策略/data/validation/stage_state_sim_only_startup_attach_gate_20260719/sim_only_startup_attach_gate.md`
+  - `sim_only_startup_attach_decision.csv/json`
+  - `sim_only_startup_attach_checks.csv`
+- 决策结果：
+  - check id：`stage_state_sim_only_startup_attach_gate`
+  - status：`pass_attach_pending_market_data`
+  - `terminal_running_and_attached = True`
+  - `ready_to_runtime_forward_review_after_market_tick = True`
+  - `ready_to_sim_continuous_runner_execution = False`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - `pending_failure_count = 2`
+- 已确认：
+  - startup config 已被 MT5 读取
+  - SIM_ONLY EA 已加载到 `XAUUSDm,M30`
+  - SIM_ONLY set 已被读取
+  - `MQL5\Files\30m2H_strategy_signals_export.csv` 已创建
+  - `MQL5\Files\30m2H_strategy_trade_ledger.csv` 已创建
+  - trade ledger 数据行仍为 `0`
+  - 当前无 live-trading marker
+- 当前未过 forward-review 的原因：
+  - signal CSV 只有表头，数据行 `0`
+  - 最新 `XAUUSDm` tick 时间为 `2026-07-18 04:57:58`
+  - 当前是 `2026-07-19` 周日，属于等待市场新 tick / 新 M30 bar 的状态
+- 判断：
+  - 这一步已经从“EA 未挂载”推进到“EA 已挂载，等待市场数据”
+  - 当前不是策略逻辑、止损、资金曲线或 EA 编译问题
+  - continuous runner execution gate 不能打开
+  - live trade gate 继续关闭
+- 下一步：
+  - 保持 MT5 运行至市场重新产生 `XAUUSDm` tick
+  - 有新 tick / 新 M30 bar 后复跑 `forward-review`
+  - 只有当 signal CSV 出现数据行、sim marker 可审计、ledger 仍 0 行时，才进入 continuous runner execution gate
+
+### 结论 137: 市场恢复后 SIM_ONLY forward-review 已通过，持续模拟运行门已打开，实盘仍关闭
+
+- 专项输出：
+  - `30m2H策略/data/validation/stage_state_sim_only_chart_trial_package_20260719/sim_continuous_runner_config_20260720.json`
+  - `30m2H策略/data/validation/stage_state_sim_only_chart_trial_package_20260719/forward_review_20260720_config_01`
+  - `30m2H策略/data/validation/stage_state_sim_only_chart_trial_package_20260719/monitor_probe_20260720_config_01`
+  - `30m2H策略/scripts/validate/review_stage_state_sim_continuous_runner_execution_gate_20260720.py`
+  - `30m2H策略/data/validation/stage_state_sim_continuous_runner_execution_gate_20260720/sim_continuous_runner_execution_gate.md`
+  - `sim_continuous_runner_execution_gate_decision.csv/json`
+  - `sim_continuous_runner_execution_gate_checks.csv`
+- 已修正的监控问题：
+  - `sim_continuous_runner_monitor_20260719.py` 的 log scan 从“只取最新一个日志”改为“扫描全部候选日志”
+  - 20260720 SIM_ONLY 配置加入 `MQL5\Logs\20260720.log`、`MQL5\Logs\20260719.log`、terminal 当天/前一天日志
+  - 解决了 `SIMULATION` marker 在 Experts 初始化日志中、而 runtime 行在当天 Experts 日志中的分散问题
+- forward-review 结果：
+  - status：`pass`
+  - `blocker_failure_count = 0`
+  - `warning_count = 0`
+  - `terminal_running = True`
+  - signal CSV 数据行：`6`
+  - trade ledger 数据行：`0`
+  - `sim_marker_seen_in_logs = True`
+  - `ready_to_live_trade = False`
+- execution gate 结果：
+  - check id：`stage_state_sim_continuous_runner_execution_gate`
+  - status：`pass`
+  - `ready_to_sim_continuous_runner_execution = True`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - positions：`0`
+  - orders：`0`
+- 判断：
+  - 当前已经从“等待市场数据”推进到“SIM_ONLY 持续模拟运行门打开”
+  - 这个门只允许继续做 SIM_ONLY terminal runtime 监控，不代表实盘批准
+  - 仍禁止运行 `auto_trade/auto_trader.py`
+  - trade ledger 预期保持 `0` 数据行；若出现真实交易行，应立即 fail closed
+
+### 结论 138: SIM_ONLY 有限连续 runner 试验已通过，可进入更长观察窗，实盘仍关闭
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/sim_continuous_runner_finite_trial_20260720.py`
+  - `30m2H策略/data/validation/stage_state_sim_continuous_runner_finite_trial_20260720/finite_runner_trial.md`
+  - `finite_runner_trial_decision.csv/json`
+  - `finite_runner_trial_cycles.csv`
+  - `finite_runner_trial_checks.csv`
+  - `cycle_001`、`cycle_002`、`cycle_003`
+- clean run 结果：
+  - status：`pass`
+  - `ready_to_sim_continuous_runner_execution = True`
+  - `ready_to_live_trade = False`
+  - `cycles_requested = 3`
+  - `cycles_completed = 3`
+  - `interval_sec = 20`
+  - `failed_cycles_count = 0`
+  - `blocker_failure_count = 0`
+  - stop flag：未触发
+- 三轮监控结果：
+  - 每轮 monitor status 均为 `pass`
+  - 每轮 monitor blocker 均为 `0`
+  - 每轮 signal CSV 数据行均为 `6`
+  - 每轮 trade ledger 数据行均为 `0`
+  - 每轮 positions 均为 `0`
+  - 每轮 orders 均为 `0`
+- 判断：
+  - 当前已经从“单次 monitor probe”推进到“短时有限连续监控通过”
+  - 这一步仍只证明 SIM_ONLY terminal runtime 可连续被审计，不代表实盘批准
+  - 下一阶段只能进入更长但仍有限的 SIM_ONLY observation window
+  - 继续禁止运行 `auto_trade/auto_trader.py`
+  - 继续禁止把 `InpSimMode` 改为 `false`
+  - 若 ledger 出现数据行、positions/orders 非 `0`、或日志出现 live/order 风险 marker，应立即 fail closed
+
+### 结论 139: 更长 SIM_ONLY observation window 已通过，策略可继续进入模拟就绪门，实盘仍未批准
+
+- 专项输出：
+  - `30m2H策略/data/validation/stage_state_sim_continuous_runner_observation_window_20260720/finite_runner_trial.md`
+  - `finite_runner_trial_decision.csv/json`
+  - `finite_runner_trial_cycles.csv`
+  - `finite_runner_trial_checks.csv`
+  - `cycle_001` 至 `cycle_012`
+- observation window 结果：
+  - status：`pass`
+  - `ready_to_sim_continuous_runner_execution = True`
+  - `ready_to_live_trade = False`
+  - `cycles_requested = 12`
+  - `cycles_completed = 12`
+  - `interval_sec = 300`
+  - `failed_cycles_count = 0`
+  - `blocker_failure_count = 0`
+  - stop flag：未触发
+- 运行趋势：
+  - signal CSV 数据行从 `27` 增至 `29`
+  - trade ledger 全程保持 `0` 数据行
+  - positions 全程保持 `0`
+  - orders 全程保持 `0`
+  - monitor blocker 全程为 `0`
+- 判断：
+  - SIM_ONLY terminal runtime 已通过短时连续试验和更长 observation window
+  - 当前可以进入“模拟就绪门”审计：整理可运行配置、停止机制、审计报告和下一步人工确认项
+  - 当前仍不是实盘定型，`ready_to_live_trade` 继续为 `False`
+  - 在未完成实盘独立门禁前，禁止运行 `auto_trade/auto_trader.py`
+  - 在未完成实盘独立门禁前，禁止把 `InpSimMode` 改为 `false`
+
+### 结论 140: SIM_ONLY post-observation readiness gate 已通过，可继续有边界模拟监控，实盘仍关闭
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_sim_only_post_observation_readiness_gate_20260720.py`
+  - `30m2H策略/data/validation/stage_state_sim_only_post_observation_readiness_gate_20260720/sim_only_post_observation_readiness_gate.md`
+  - `sim_only_post_observation_readiness_decision.csv/json`
+  - `sim_only_post_observation_readiness_checks.csv`
+- readiness gate 结果：
+  - status：`pass`
+  - `ready_to_continue_sim_only_monitoring = True`
+  - `ready_to_live_trade = False`
+  - `blocker_failure_count = 0`
+  - observation cycles completed：`12`
+  - observation signal rows：`27 -> 29`
+  - observation trade ledger last rows：`0`
+  - 当前 positions：`0`
+  - 当前 orders：`0`
+  - failed checks：空
+- 当前允许的动作：
+  - 可以继续运行有边界的 SIM_ONLY monitoring
+  - 继续使用 20260720 SIM_ONLY config
+  - 继续保留 `auto_trade/RUNNER_STOP.flag` 作为停止机制
+- 当前不允许的动作：
+  - 不允许运行 `auto_trade/auto_trader.py`
+  - 不允许开启 live trading
+  - 不允许把 `InpSimMode` 改为 `false`
+- 判断：
+  - 当前策略已经达到“可继续模拟跑”的状态
+  - 当前仍未达到“可实盘跑”的状态
+  - 下一阶段若要推进实盘，需要单独做 live-trade readiness gap audit，不应把 SIM_ONLY 结果直接等同于实盘批准
+
+### 结论 141: Live-trade readiness gap audit 已完成，实盘状态为 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_live_trade_readiness_gap_audit_20260720.py`
+  - `30m2H策略/data/validation/stage_state_live_trade_readiness_gap_audit_20260720/live_trade_readiness_gap_audit.md`
+  - `live_trade_readiness_gap_decision.csv/json`
+  - `live_trade_readiness_gap_checklist.csv`
+  - `live_trade_readiness_gap_checks.csv`
+- 审计结果：
+  - status：`blocked`
+  - `audit_completed = True`
+  - `ready_to_continue_sim_only_monitoring = True`
+  - `ready_to_live_trade = False`
+  - open gaps：`10`
+  - critical gaps：`7`
+  - major gaps：`3`
+  - 当前 positions：`0`
+  - 当前 orders：`0`
+- critical 缺口：
+  - `LIVE-GAP-001`：缺少明确实盘人工批准
+  - `LIVE-GAP-002`：缺少独立 live package 与哈希/部署审计
+  - `LIVE-GAP-003`：缺少 `InpSimMode=false` 前的独立门禁
+  - `LIVE-GAP-004`：凭证仍需外部化；源码中检测到硬编码凭证模式文件
+  - `LIVE-GAP-005`：缺少被批准的生产 runner 路径
+  - `LIVE-GAP-006`：缺少实盘风控上限与账户护栏
+  - `LIVE-GAP-007`：缺少应急停止/平仓/回滚方案
+- major 缺口：
+  - `LIVE-GAP-008`：缺少实盘监控、告警与对账方案
+  - `LIVE-GAP-009`：缺少账户、杠杆、合约规格、余额上限确认
+  - `LIVE-GAP-010`：缺少非生产环境下的真实下单路径演练
+- 判断：
+  - 当前实盘不是“差最后一步”，而是仍有明确门禁缺口
+  - SIM_ONLY 可以继续跑，实盘不能开
+  - 下一步只能起草 live-trade gate checklist / gate script 草案，不执行实盘动作
+
+### 结论 142: Live-trade gate checklist 草案已完成，10 个 gate 全部保持 open，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/draft_stage_state_live_trade_gate_checklist_20260720.py`
+  - `30m2H策略/scripts/validate/review_stage_state_live_trade_gate_draft_20260720.py`
+  - `30m2H策略/data/validation/stage_state_live_trade_gate_checklist_draft_20260720/live_trade_gate_checklist_draft.md`
+  - `live_trade_gate_checklist_draft.csv`
+  - `live_trade_gate_manual_confirmation_template.csv`
+  - `30m2H策略/data/validation/stage_state_live_trade_gate_draft_review_20260720/live_trade_gate_draft_review.md`
+  - `live_trade_gate_draft_review_decision.csv/json`
+  - `live_trade_gate_draft_review_checks.csv`
+- checklist 草案结果：
+  - status：`draft_complete`
+  - checklist items：`10`
+  - critical items：`7`
+  - major items：`3`
+  - missing definitions：`0`
+  - `ready_to_live_trade = False`
+- draft review 结果：
+  - status：`draft_review_pass_live_blocked`
+  - `draft_review_completed = True`
+  - `ready_to_continue_sim_only_monitoring = True`
+  - `ready_to_live_trade = False`
+  - checklist items：`10`
+  - open gate count：`10`
+  - blocker failures：`0`
+  - 当前 positions：`0`
+  - 当前 orders：`0`
+- 判断：
+  - 实盘 gate 草案结构已成型，覆盖全部 10 个 open gaps
+  - 每个 gate 已有关闭条件、证据要求、脚本检查点、人工确认字段和 fail-closed 动作
+  - 当前没有关闭任何 live gate；10 个 gate 全部仍为 `open`
+  - 下一步只能填充 live gate evidence 模板与人工确认材料，仍不能开启实盘
+
+### 结论 143: Live gate evidence 模板已生成并审查通过，全部仍为 open/template-only
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/generate_stage_state_live_gate_evidence_templates_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_live_gate_evidence_templates_20260721.py`
+  - `30m2H策略/data/validation/stage_state_live_gate_evidence_templates_20260721/live_gate_evidence_templates.md`
+  - `live_gate_evidence_index.csv`
+  - `live_gate_evidence_schema.csv/json`
+  - `30m2H策略/data/validation/stage_state_live_gate_evidence_templates_review_20260721/live_gate_evidence_templates_review.md`
+  - `live_gate_evidence_templates_review_decision.csv/json`
+  - `live_gate_evidence_templates_review_checks.csv`
+- 模板生成结果：
+  - status：`templates_generated`
+  - gate count：`10`
+  - evidence template count：`22`
+  - `ready_to_live_trade = False`
+  - all gate status：`open`
+  - contains real credentials：`False`
+- 模板审查结果：
+  - status：`pass_templates_open_live_blocked`
+  - review completed：`True`
+  - gate count：`10`
+  - evidence template count：`22`
+  - open gate count：`22`
+  - `ready_to_live_trade = False`
+  - blocker failures：`0`
+  - suspicious secret hits：`0`
+- 判断：
+  - 10 个 live gate 的 evidence 模板已齐全
+  - 模板均为空白占位，未关闭任何 gate
+  - 当前仍不能开启实盘、不能改 `InpSimMode`、不能运行 `auto_trade/auto_trader.py`
+  - 下一步应制定 evidence 填写计划，明确哪些证据可自动采集、哪些必须人工确认
+
+### 结论 144: Live gate evidence fill plan 已完成，22 项证据被分为 auto/manual/rehearsal，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/draft_stage_state_live_gate_evidence_fill_plan_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_live_gate_evidence_fill_plan_20260721.py`
+  - `30m2H策略/data/validation/stage_state_live_gate_evidence_fill_plan_20260721/live_gate_evidence_fill_plan.md`
+  - `live_gate_evidence_fill_plan.csv`
+  - `live_gate_evidence_fill_plan_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_live_gate_evidence_fill_plan_review_20260721/live_gate_evidence_fill_plan_review.md`
+  - `live_gate_evidence_fill_plan_review_decision.csv/json`
+  - `live_gate_evidence_fill_plan_review_checks.csv`
+- fill plan 结果：
+  - status：`fill_plan_draft_complete`
+  - fill plan items：`22`
+  - auto items：`5`
+  - manual items：`13`
+  - rehearsal items：`4`
+  - contains secret risk items：`4`
+  - live action risk items：`12`
+  - requires user approval items：`15`
+  - all gate status：`open`
+  - `ready_to_live_trade = False`
+- fill plan review 结果：
+  - status：`pass_fill_plan_ready_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 判断：
+  - 22 个 evidence 模板已全部纳入填写计划
+  - 当前仍没有填写真实证据值，也没有关闭任何 gate
+  - 下一步只能采集 auto-safe 证据；manual 与 rehearsal 项必须等待人工批准或非生产演练安排
+  - 实盘仍 blocked
+
+### 结论 145: Auto-safe evidence 已完成静态采集，2 项 collected、3 项 pending，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/collect_stage_state_live_gate_auto_safe_evidence_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_live_gate_auto_safe_evidence_20260721.py`
+  - `30m2H策略/data/validation/stage_state_live_gate_auto_safe_evidence_20260721/auto_safe_evidence_collection.md`
+  - `auto_safe_evidence_collection_plan.csv`
+  - `credential_scan_report.csv`
+  - `runner_source_audit.csv`
+  - `30m2H策略/data/validation/stage_state_live_gate_auto_safe_evidence_review_20260721/auto_safe_evidence_review.md`
+  - `auto_safe_evidence_review_decision.csv/json`
+  - `auto_safe_evidence_review_checks.csv`
+- 采集结果：
+  - status：`auto_safe_evidence_collected_live_blocked`
+  - auto items total：`5`
+  - auto items collected：`2`
+  - auto items pending：`3`
+  - credential scan rows：`4`
+  - credential pattern file count：`3`
+  - runner source audit rows：`5`
+  - blocked runner count：`5`
+  - credential values output：`False`
+  - runner executed：`False`
+  - gate status：`open`
+  - `ready_to_live_trade = False`
+- 已采集：
+  - `credential_scan_report.csv`
+  - `runner_source_audit.csv`
+- 仍 pending：
+  - `live_package_hashes.csv`
+  - `parsed_live_set_template.json`
+  - `broker_symbol_spec.csv`
+- 审查结果：
+  - status：`pass_auto_safe_evidence_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 判断：
+  - 当前只完成静态安全证据采集
+  - 未输出任何真实凭证值
+  - 未执行任何 runner
+  - 未查询 MT5 symbol spec、未生成 live set、未 hash live package
+  - 所有 live gate 仍保持 `open`，实盘仍 blocked
+
+### 结论 146: Manual evidence prerequisite plan 已完成，剩余 20 项已转为可执行前置清单，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/draft_stage_state_manual_evidence_prerequisite_plan_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_manual_evidence_prerequisite_plan_20260721.py`
+  - `30m2H策略/data/validation/stage_state_manual_evidence_prerequisite_plan_20260721/manual_evidence_prerequisite_plan.md`
+  - `manual_evidence_prerequisite_plan.csv`
+  - `manual_evidence_prerequisite_plan_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_manual_evidence_prerequisite_plan_review_20260721/manual_evidence_prerequisite_plan_review.md`
+  - `manual_evidence_prerequisite_plan_review_decision.csv/json`
+  - `manual_evidence_prerequisite_plan_review_checks.csv`
+- 前置计划结果：
+  - status：`manual_prerequisites_drafted_live_blocked`
+  - fill plan items total：`22`
+  - auto-safe collected items：`2`
+  - remaining prerequisite items：`20`
+  - pending auto items：`3`
+  - manual items：`13`
+  - rehearsal items：`4`
+  - P0 items：`13`
+  - P1 items：`7`
+  - secret risk items：`3`
+  - live action risk items：`11`
+  - requires user approval items：`15`
+  - gate status：`open`
+  - `ready_to_live_trade = False`
+- 审查结果：
+  - status：`pass_manual_prerequisites_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 判断：
+  - 剩余证据已经从“模板列表”变成了逐项可执行的前置清单
+  - 每项都明确了确认人、所需字段、允许来源、禁止内容和下一步允许动作
+  - 已排除前一步完成的 `credential_scan_report.csv` 与 `runner_source_audit.csv`
+  - `live_package_hashes.csv`、`parsed_live_set_template.json`、`broker_symbol_spec.csv` 仍只能在对应人工确认后采集
+  - 当前仍未填写真实凭证、未运行 runner、未执行 MT5 下单、未切换 live set
+  - 所有 live gate 仍保持 `open`，实盘仍 blocked
+
+### 结论 147: P0 manual evidence dry-run 已完成，10 个关键人工模板已脱敏占位填充，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/generate_stage_state_p0_manual_template_fill_dry_run_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_p0_manual_template_fill_dry_run_20260721.py`
+  - `30m2H策略/data/validation/stage_state_p0_manual_template_fill_dry_run_20260721/p0_manual_template_fill_dry_run.md`
+  - `p0_manual_template_fill_dry_run_manifest.csv`
+  - `p0_manual_template_fill_dry_run_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_p0_manual_template_fill_dry_run_review_20260721/p0_manual_template_fill_dry_run_review.md`
+  - `p0_manual_template_fill_dry_run_review_decision.csv/json`
+  - `p0_manual_template_fill_dry_run_review_checks.csv`
+- dry-run 生成结果：
+  - status：`p0_manual_dry_run_generated_live_blocked`
+  - P0 manual items：`10`
+  - dry-run files written：`10`
+  - required fields total：`52`
+  - markdown files：`8`
+  - json files：`2`
+  - original templates overwritten：`False`
+  - credential values output：`False`
+  - runner executed：`False`
+  - MT5 accessed：`False`
+  - live set switched：`False`
+  - gate status：`open`
+  - `ready_to_live_trade = False`
+- 审查结果：
+  - status：`pass_p0_manual_dry_run_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 判断：
+  - P0 manual 类证据模板已完成脱敏填充演练，所有必填字段均有 `PENDING_*` / `REDACTED_*` 占位值
+  - dry-run 文件写入独立目录，未覆盖原始 evidence templates
+  - 当前仍没有真实人工批准、真实凭证、真实 package、真实 live set 或实盘操作证据
+  - 所有 live gate 仍保持 `open`，实盘仍 blocked
+
+### 结论 148: P0 rehearsal prerequisite dry-run 已完成，1 个关键演练项已形成非生产计划，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/draft_stage_state_p0_rehearsal_prerequisite_dry_run_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_p0_rehearsal_prerequisite_dry_run_20260721.py`
+  - `30m2H策略/data/validation/stage_state_p0_rehearsal_prerequisite_dry_run_20260721/p0_rehearsal_prerequisite_dry_run.md`
+  - `p0_rehearsal_prerequisite_dry_run_plan.csv`
+  - `p0_rehearsal_prerequisite_dry_run_steps.csv`
+  - `p0_rehearsal_prerequisite_dry_run_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_p0_rehearsal_prerequisite_dry_run_review_20260721/p0_rehearsal_prerequisite_dry_run_review.md`
+  - `p0_rehearsal_prerequisite_dry_run_review_decision.csv/json`
+  - `p0_rehearsal_prerequisite_dry_run_review_checks.csv`
+- dry-run 生成结果：
+  - status：`p0_rehearsal_dry_run_planned_live_blocked`
+  - P0 rehearsal items：`1`
+  - planned steps：`6`
+  - expected evidence samples：`1`
+  - MT5 accessed：`False`
+  - runner executed：`False`
+  - orders placed：`False`
+  - live set switched：`False`
+  - credential values output：`False`
+  - gate status：`open`
+  - `ready_to_live_trade = False`
+- 审查结果：
+  - status：`pass_p0_rehearsal_dry_run_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 判断：
+  - P0 rehearsal 项 `emergency_rehearsal_report.csv` 已被拆成 6 个非生产演练前置步骤
+  - 预期证据样例明确标记为 `NOT_EXECUTED_DRY_RUN_PLAN_ONLY`
+  - 当前仍没有执行真实演练、没有访问 MT5、没有运行 runner、没有下单、没有切换 live set
+  - 所有 live gate 仍保持 `open`，实盘仍 blocked
+
+### 结论 149: P1 manual evidence dry-run 已完成，3 个人工模板已脱敏占位填充，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/generate_stage_state_p1_manual_template_fill_dry_run_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_p1_manual_template_fill_dry_run_20260721.py`
+  - `30m2H策略/data/validation/stage_state_p1_manual_template_fill_dry_run_20260721/p1_manual_template_fill_dry_run.md`
+  - `p1_manual_template_fill_dry_run_manifest.csv`
+  - `p1_manual_template_fill_dry_run_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_p1_manual_template_fill_dry_run_review_20260721/p1_manual_template_fill_dry_run_review.md`
+  - `p1_manual_template_fill_dry_run_review_decision.csv/json`
+  - `p1_manual_template_fill_dry_run_review_checks.csv`
+- dry-run 生成结果：
+  - status：`p1_manual_dry_run_generated_live_blocked`
+  - P1 manual items：`3`
+  - dry-run files written：`3`
+  - required fields total：`19`
+  - json files：`2`
+  - csv files：`1`
+  - original templates overwritten：`False`
+  - credential values output：`False`
+  - runner executed：`False`
+  - MT5 accessed：`False`
+  - orders placed：`False`
+  - live set switched：`False`
+  - gate status：`open`
+  - `ready_to_live_trade = False`
+- 审查结果：
+  - status：`pass_p1_manual_dry_run_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 判断：
+  - P1 manual 类证据模板已完成脱敏填充演练，覆盖 monitoring、reconciliation、account/spec snapshot
+  - `live_account_spec_snapshot.json` 使用 `REDACTED_*` 占位，没有输出真实账户、杠杆、资金或 symbol 值
+  - dry-run 文件写入独立目录，未覆盖原始 evidence templates
+  - 当前仍没有真实人工批准、真实账户规格快照、真实 broker symbol spec 或实盘操作证据
+  - 所有 live gate 仍保持 `open`，实盘仍 blocked
+
+### 结论 150: P1 rehearsal prerequisite dry-run 已完成，3 个演练项已形成非生产计划，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/draft_stage_state_p1_rehearsal_prerequisite_dry_run_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_p1_rehearsal_prerequisite_dry_run_20260721.py`
+  - `30m2H策略/data/validation/stage_state_p1_rehearsal_prerequisite_dry_run_20260721/p1_rehearsal_prerequisite_dry_run.md`
+  - `p1_rehearsal_prerequisite_dry_run_plan.csv`
+  - `p1_rehearsal_prerequisite_dry_run_steps.csv`
+  - `p1_rehearsal_prerequisite_dry_run_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_p1_rehearsal_prerequisite_dry_run_review_20260721/p1_rehearsal_prerequisite_dry_run_review.md`
+  - `p1_rehearsal_prerequisite_dry_run_review_decision.csv/json`
+  - `p1_rehearsal_prerequisite_dry_run_review_checks.csv`
+- dry-run 生成结果：
+  - status：`p1_rehearsal_dry_run_planned_live_blocked`
+  - P1 rehearsal items：`3`
+  - planned steps：`18`
+  - expected evidence samples：`3`
+  - MT5 accessed：`False`
+  - runner executed：`False`
+  - orders placed：`False`
+  - live set switched：`False`
+  - credential values output：`False`
+  - gate status：`open`
+  - `ready_to_live_trade = False`
+- 审查结果：
+  - status：`pass_p1_rehearsal_dry_run_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 判断：
+  - P1 rehearsal 项已覆盖 `nonprod_order_rehearsal_report.md`、`rehearsal_ledger.csv`、`rehearsal_alert_log.csv`
+  - 三个预期证据样例均明确标记为 `NOT_EXECUTED_DRY_RUN_PLAN_ONLY`
+  - 当前仍没有执行真实非生产演练、没有访问 MT5、没有运行 runner、没有下单、没有切换 live set
+  - manual/rehearsal 的 dry-run 层已经闭合；剩余重点转为 3 个 pending auto 证据项的审批与前置采集计划
+  - 所有 live gate 仍保持 `open`，实盘仍 blocked
+
+### 结论 151: Pending auto evidence prerequisite plan 已完成，3 个 pending auto 项已收口到审批前置，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/draft_stage_state_pending_auto_evidence_prerequisite_plan_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_pending_auto_evidence_prerequisite_plan_20260721.py`
+  - `30m2H策略/data/validation/stage_state_pending_auto_evidence_prerequisite_plan_20260721/pending_auto_evidence_prerequisite_plan.md`
+  - `pending_auto_evidence_prerequisite_plan.csv`
+  - `pending_auto_evidence_prerequisite_steps.csv`
+  - `pending_auto_evidence_prerequisite_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_pending_auto_evidence_prerequisite_plan_review_20260721/pending_auto_evidence_prerequisite_review.md`
+  - `pending_auto_evidence_prerequisite_review_decision.csv/json`
+  - `pending_auto_evidence_prerequisite_review_checks.csv`
+- 计划结果：
+  - status：`pending_auto_prerequisites_drafted_live_blocked`
+  - pending auto items：`3`
+  - P0 items：`2`
+  - P1 items：`1`
+  - planned steps：`12`
+  - hash generated：`False`
+  - set parsed：`False`
+  - MT5 accessed：`False`
+  - runner executed：`False`
+  - orders placed：`False`
+  - live set switched：`False`
+  - `ready_to_live_trade = False`
+- 审查结果：
+  - status：`pass_pending_auto_prerequisites_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 判断：
+  - `live_package_hashes.csv` 只能在 live package manifest 被人工批准后离线 hash
+  - `parsed_live_set_template.json` 只能在 transition approval 与 inactive set template 被批准后离线 parse
+  - `broker_symbol_spec.csv` 只能在用户明确批准只读 MT5 spec 查询后采集，且不得下单
+  - 本步没有真实采集 pending auto evidence
+  - 所有 live gate 仍保持 `open`，实盘仍 blocked
+
+### 结论 152: 最终收口报告已生成，dry-run 层收口完成；策略可继续 SIM_ONLY，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/generate_stage_state_final_closeout_report_20260721.py`
+  - `30m2H策略/data/validation/stage_state_final_closeout_report_20260721/final_closeout_report.md`
+  - `final_closeout_status_matrix.csv`
+  - `final_closeout_shortest_path.csv`
+  - `final_closeout_decision.csv/json`
+- 收口结果：
+  - status：`final_closeout_report_generated_live_blocked`
+  - SIM_ONLY complete：`True`
+  - bounded SIM_ONLY monitoring optional：`True`
+  - dry-run closeout complete：`True`
+  - pending auto items：`3`
+  - shortest path steps before live discussion：`3`
+  - live trade blocked：`True`
+  - `ready_to_live_trade = False`
+- 当前状态：
+  - 可以继续：bounded SIM_ONLY monitoring、dry-run evidence generation、static review
+  - 不能继续：运行 `auto_trade/auto_trader.py` 作为 live runner、使用 `InpSimMode=false`、实盘下单、live chart attachment、active live set loading、live package deployment
+- 真正上线讨论前最短路径：
+  - 1. 提供真实人工批准包
+  - 2. 在批准后采集 3 个 pending auto 证据
+  - 3. 用真实证据运行 final live gate review
+- 判断：
+  - 当前不应继续自动扩展 dry-run 分支
+  - 后续只有在用户提供真实批准、真实文件路径或只读 MT5 查询授权后，才进入真实证据采集
+  - 所有 live gate 仍保持 `open`，实盘仍 blocked
+
+### 结论 153: 经用户授权，broker symbol spec 已完成只读 MT5 采集；pending auto 剩余 2 项，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/collect_stage_state_broker_symbol_spec_read_only_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_broker_symbol_spec_read_only_20260721.py`
+  - `30m2H策略/scripts/validate/generate_stage_state_closeout_after_broker_spec_20260721.py`
+  - `30m2H策略/data/validation/stage_state_broker_symbol_spec_read_only_20260721/broker_symbol_spec.csv`
+  - `broker_symbol_spec_read_only.md`
+  - `broker_symbol_spec_read_only_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_broker_symbol_spec_read_only_review_20260721/broker_symbol_spec_read_only_review.md`
+  - `broker_symbol_spec_read_only_review_decision.csv/json`
+  - `broker_symbol_spec_read_only_review_checks.csv`
+  - `30m2H策略/data/validation/stage_state_closeout_after_broker_spec_20260721/closeout_after_broker_spec.md`
+- 采集结果：
+  - status：`broker_symbol_spec_collected_read_only_live_blocked`
+  - symbol：`XAUUSDm`
+  - broker symbol spec rows：`1`
+  - contract size：`100.0`
+  - min lot：`0.01`
+  - lot step：`0.01`
+  - margin initial：`0.0`
+  - digits：`3`
+  - spread policy：`floating;current_spread_points=240`
+  - terminal process count：`1 -> 1`
+  - terminal spawned：`False`
+  - orders placed：`False`
+  - runner executed：`False`
+  - live set switched：`False`
+  - `ready_to_live_trade = False`
+- 审查结果：
+  - status：`pass_broker_symbol_spec_read_only_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 收口更新：
+  - status：`closeout_updated_after_broker_spec_live_blocked`
+  - broker symbol spec collected：`True`
+  - pending auto items before：`3`
+  - pending auto items remaining：`2`
+  - remaining pending auto files：`live_package_hashes.csv;parsed_live_set_template.json`
+- 判断：
+  - 本步只执行了用户授权的只读 MT5 symbol spec 查询
+  - 未运行 `auto_trade/auto_trader.py`，未下单，未切换 live set，未启动新 terminal
+  - broker/spec 证据已从 pending auto 中完成一项
+  - 实盘仍 blocked；还缺 live package hash 与 inactive live set template parse 的真实批准和采集
+
+### 结论 154: 经用户授权，live package hash 与 set template 离线解析已完成；pending auto 剩余 0，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/collect_stage_state_live_package_hashes_and_set_parse_offline_20260721.py`
+  - `30m2H策略/scripts/validate/review_stage_state_live_package_hashes_and_set_parse_offline_20260721.py`
+  - `30m2H策略/scripts/validate/generate_stage_state_closeout_after_all_pending_auto_20260721.py`
+  - `30m2H策略/data/validation/stage_state_live_package_hashes_and_set_parse_offline_20260721/live_package_hashes.csv`
+  - `parsed_live_set_template.json`
+  - `live_package_hashes_and_set_parse_offline_decision.csv/json`
+  - `30m2H策略/data/validation/stage_state_live_package_hashes_and_set_parse_offline_review_20260721/live_package_hashes_and_set_parse_offline_review.md`
+  - `live_package_hashes_and_set_parse_offline_review_decision.csv/json`
+  - `live_package_hashes_and_set_parse_offline_review_checks.csv`
+  - `30m2H策略/data/validation/stage_state_closeout_after_all_pending_auto_20260721/closeout_after_all_pending_auto.md`
+- 采集结果：
+  - status：`live_package_hashes_and_set_parse_collected_offline_live_blocked`
+  - hash rows：`2`
+  - hashed files：
+    - `auto_trade\30m2H_Strategy_EA.ex5`
+    - `auto_trade\30m2H_Strategy_EA.stage_state_frozen_20260718.set`
+  - parsed set：`auto_trade\30m2H_Strategy_EA.stage_state_frozen_20260718.set`
+  - `InpSimMode`：`false`
+  - `InpExportCSV`：`true`
+  - `InpExportTradeLedger`：`true`
+  - MT5 accessed：`False`
+  - runner executed：`False`
+  - orders placed：`False`
+  - live set switched：`False`
+  - `ready_to_live_trade = False`
+- 审查结果：
+  - status：`pass_live_package_hashes_and_set_parse_offline_live_blocked`
+  - review completed：`True`
+  - blocker failures：`0`
+  - failed checks：空
+- 收口更新：
+  - status：`all_pending_auto_collected_live_still_blocked`
+  - all pending auto collected：`True`
+  - pending auto items remaining：`0`
+  - live trade blocked：`True`
+  - `ready_to_live_trade = False`
+- 判断：
+  - 剩余 pending auto evidence 已全部采集/审查
+  - `InpSimMode=false` 只是离线解析出的 set 文件内容，不代表已加载 MT5 或允许实盘
+  - 当前仍未运行 live runner、未下单、未切换 live set
+  - 实盘仍 blocked；下一阶段必须用真实 manual approval evidence package 运行 final live gate review
+
+### 结论 155: final live gate review 已按 fail-closed 执行；10 个实盘门禁全部 blocked，不能进入实盘
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_final_live_gate_20260721.py`
+  - `30m2H策略/data/validation/stage_state_final_live_gate_review_20260721/final_live_gate_review.md`
+  - `final_live_gate_review.csv`
+  - `final_live_gate_review_checks.csv`
+  - `final_live_gate_review_decision.csv/json`
+- 审查结果：
+  - status：`final_live_gate_review_blocked`
+  - gate count：`10`
+  - closed gates：`0`
+  - blocked gates：`10`
+  - auto evidence collected：`5`
+  - pending auto items remaining：`0`
+  - real manual evidence：`0`
+  - manual dry-run evidence：`13`
+  - real rehearsal evidence：`0`
+  - rehearsal dry-run evidence：`4`
+  - blocker failures：`0`
+  - `ready_to_live_trade=False`
+- 判断：
+  - 自动证据已全部采集/审查完成，但只能证明“可审查”，不能替代真实人工签核
+  - 当前存在的人工与演练材料仍是 dry-run/template/sample，不是正式批准证据包
+  - `InpSimMode=false` 只在离线解析中出现；本次没有加载 set、没有启动 runner、没有下单、没有切换 live set
+  - live gate 到此应停止自动推进；只有在提供真实批准文件与真实非生产演练证据后，才能重新审查
+
+### 结论 156: 用户已确认模拟账户参数；已生成 demo/manual confirmation package，可进入 MT5 非生产演练
+
+- 用户确认口径：
+  - account type：`demo_nonproduction`
+  - account alias：`MT5_DEMO_***085`
+  - symbol：`XAUUSDm`
+  - starting balance / cap：`2000`
+  - leverage：`1:2000`
+  - risk mode：`strategy_defined`
+  - max lot mode：`strategy_defined`
+  - runner：`MT5_EA_ONLY`
+  - emergency stop：`disable_mt5_auto_trading`
+  - position close rule：`strategy_defined`
+- 专项输出：
+  - `30m2H策略/scripts/validate/generate_stage_state_demo_manual_confirmation_package_20260721.py`
+  - `30m2H策略/data/validation/stage_state_demo_manual_confirmation_package_20260721/demo_manual_confirmation_package.md`
+  - `demo_manual_confirmation_decision.csv/json`
+  - `demo_manual_confirmation_checks.csv`
+  - `demo_manual_confirmation_evidence_matrix.csv`
+  - `nonprod_mt5_rehearsal_next_steps.csv`
+- 审查结果：
+  - status：`demo_manual_confirmation_collected_nonprod_rehearsal_pending`
+  - ready to nonprod rehearsal：`True`
+  - nonprod rehearsal evidence present：`False`
+  - ready to live trade：`False`
+  - blocker failures：`0`
+- 判断：
+  - 这一步把用户授权整理成可审查的 demo/manual evidence
+  - 完整模拟账号未写入输出文件，只保留 alias/尾号
+  - 该 evidence 允许推进 MT5 tester/demo 非生产演练
+  - 该 evidence 不等于真实资金实盘批准；实盘仍必须等待真实演练 report/ledger 和更完整的 live risk limit
+
+### 结论 157: MT5 Strategy Tester 非生产演练已按策略执行并通过；真实资金实盘仍未放行
+
+- 执行包：
+  - `30m2H策略/scripts/validate/prepare_stage_state_nonprod_mt5_rehearsal_package_20260721.py`
+  - `auto_trade/30m2H_Strategy_EA.nonprod_demo_rehearsal_20260601_20260707_20260721.ini`
+  - `30m2H策略/scripts/validate/collect_and_review_stage_state_nonprod_mt5_rehearsal_execution_20260721.py`
+- 演练参数：
+  - environment：MT5 Strategy Tester / demo non-production
+  - Expert：`Advisors\30m2H_Strategy_EA.ex5`
+  - symbol：`XAUUSDm`
+  - period：`M30`
+  - window：`2026.06.01 -> 2026.07.07`
+  - initial deposit：`2000`
+  - leverage：`1:2000`
+  - `InpSimMode=false` 仅用于本次非生产 tester 配置
+  - runner：`MT5_EA_ONLY`
+- 执行结果：
+  - status：`nonprod_mt5_rehearsal_passed`
+  - initial deposit：`2000`
+  - final balance：`2043.70`
+  - profit：`43.70`
+  - signal rows：`1180`
+  - trade ledger rows：`15`
+  - deal history rows：`30`
+  - deal entry IN/OUT：`15 / 15`
+  - SL rows：`10`
+  - EA/EXPERT exit rows：`5`
+  - stage rows：Stage1 `5`，Stage2 `5`，Stage3 `5`
+  - lots range：`0.01 -> 0.05`
+  - ledger net profit 与余额变化闭合：`43.70 = 2043.70 - 2000`
+  - Python runner executed：`False`
+  - `ready_to_live_trade=False`
+- 证据归档：
+  - `30m2H策略/data/validation/stage_state_nonprod_mt5_rehearsal_package_20260721/nonprod_mt5_rehearsal_package.md`
+  - `30m2H策略/data/validation/stage_state_nonprod_mt5_rehearsal_execution_20260721/nonprod_mt5_rehearsal_execution_review.md`
+  - `30m2H_strategy_signals_export_nonprod_rehearsal.csv`
+  - `30m2H_strategy_trade_ledger_nonprod_rehearsal.csv`
+  - `30m2H_strategy_deal_history_nonprod_rehearsal.csv`
+  - redacted terminal/tester/agent logs
+- 注意：
+  - MT5 XML report 未生成，作为 warning；本次以 terminal/tester/agent 日志、trade ledger、deal history 和净利润闭合作为通过证据
+  - 日志归档已脱敏，不保留完整模拟账号
+  - 本结论只说明非生产 tester 演练跑通；真实资金实盘仍需单独 live risk、emergency、monitoring/reconciliation 与 final live gate review
+
+### 结论 158: 非生产演练证据已并入 live gate；LIVE-GAP-010 仅部分满足，实盘仍 blocked
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_post_nonprod_live_gate_update_20260722.py`
+  - `30m2H策略/data/validation/stage_state_post_nonprod_live_gate_update_20260722/post_nonprod_live_gate_update.md`
+  - `post_nonprod_live_gate_update.csv`
+  - `post_nonprod_remaining_live_actions.csv`
+  - `post_nonprod_live_gate_update_decision.csv/json`
+- 审查结果：
+  - status：`post_nonprod_gate_update_live_still_blocked`
+  - gate count：`10`
+  - closed gates：`0`
+  - partially satisfied gates：`1`
+  - blocked gates：`10`
+  - nonprod order lifecycle passed：`True`
+  - final balance：`2043.70`
+  - profit：`43.70`
+  - trade ledger rows：`15`
+  - deal history rows：`30`
+  - blocker failures：`0`
+  - `ready_to_live_trade=False`
+- 判断：
+  - MT5 Strategy Tester 的真实非生产订单生命周期证据已成立
+  - `LIVE-GAP-010` 从“未执行演练”更新为“订单生命周期部分满足”
+  - 但原 gate 还要求 alert log 与 emergency handling 证据，所以不能全关
+  - 下一步应先补 `LIVE-GAP-006/007/008`：live numeric risk limits、emergency rehearsal、monitoring/reconciliation
+
+### 结论 159: LIVE-GAP-006 已形成 live numeric risk policy proposal，但尚未关闭
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/draft_stage_state_live_numeric_risk_policy_proposal_20260722.py`
+  - `30m2H策略/data/validation/stage_state_live_numeric_risk_policy_proposal_20260722/live_numeric_risk_policy_proposal.md`
+  - `live_risk_policy_proposal.json`
+  - `live_risk_policy_ea_support_matrix.csv`
+  - `live_risk_policy_confirmation_required.md`
+  - `live_risk_policy_proposal_decision.csv/json`
+- 建议风险数字：
+  - max daily loss：`120.00`
+  - max drawdown：`200.00`
+  - max open positions：`3`
+  - max new positions per day：`9`
+  - max spread points：`300`
+  - margin guard：`500%`
+  - min lot：`0.01`
+  - max lot：`0.10`
+  - balance cap：`2000`
+- EA 支持现状：
+  - 已支持：`InpRiskPct` 动态手数、`InpMaxPos`、`InpMinLots`、`InpMaxLots`
+  - 未发现：max daily loss、max drawdown、max spread guard
+  - 部分支持：pre-trade margin check，但源码中估算使用 hardcoded `1:500`，与当前 demo 参数 `1:2000` 不一致
+- 判断：
+  - status：`live_numeric_risk_policy_proposal_pending_user_confirmation`
+  - `LIVE-GAP-006` 仍未关闭
+  - 需要用户确认/调整风险数字
+  - 还需要决定这些 guard 是写入 EA，还是由外部 monitor 强制执行
+  - `ready_to_live_trade=False`
+
+### 结论 160: LIVE-GAP-006 风控 guard 已写入 EA 并编译通过，但仍需 guard-enabled 非生产演练
+
+- 专项输出：
+  - `auto_trade/30m2H_Strategy_EA.mq5`
+  - `auto_trade/30m2H_Strategy_EA.ex5`
+  - `auto_trade/compile_live_risk_guard_20260722.log`
+  - `30m2H策略/scripts/validate/review_stage_state_live_risk_guard_implementation_20260722.py`
+  - `30m2H策略/data/validation/stage_state_live_risk_guard_implementation_20260722/live_risk_guard_implementation_review.md`
+  - `live_risk_guard_implementation_checks.csv`
+  - `live_risk_guard_prior_nonprod_coverage_review.csv`
+  - `live_risk_guard_implementation_decision.csv/json`
+- 已实现的 EA 风控能力：
+  - `InpEnableLiveRiskGuards=false` 默认关闭，避免旧 set 静默改变行为
+  - 新增 balance cap、daily loss、drawdown、daily entry count、spread、margin guard、per-stage lot cap、leverage override 输入
+  - 下单前检查已接入 `ExecuteSignal`
+  - margin estimate 已从 hardcoded `1:500` 改为优先 `OrderCalcMargin`，fallback 才用账户/override 杠杆估算
+  - guard-enabled 且非 sim 时，风险触发会 `LIVE_RISK_BLOCK` 并阻断新开仓
+- 编译结果：
+  - MetaEditor log：`0 errors, 0 warnings`
+  - EX5 已刷新
+  - MetaEditor 进程退出码显示 `1`，但编译日志本身是控制证据，结果为通过
+- 当前判断：
+  - status：`live_risk_guard_implemented_compile_passed_guard_rehearsal_pending`
+  - `LIVE-GAP-006` code implemented：`True`
+  - `LIVE-GAP-006` closed：`False`
+  - `ready_to_live_trade=False`
+- 不能关闭原因：
+  - 旧非生产 rehearsal 没有启用 `InpEnableLiveRiskGuards=true`
+  - 风险数字还需要在实现后最终确认
+  - live alert、emergency stop、monitoring/reconciliation 仍属于更高层 live gate，不能被代码编译替代
+
+### 结论 161: guard-enabled 非生产演练已跑通代码路径，但发现 tester 有效杠杆为 1:100，不是请求的 1:2000
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prepare_stage_state_live_risk_guard_rehearsal_package_20260722.py`
+  - `30m2H策略/scripts/validate/collect_and_review_stage_state_live_risk_guard_rehearsal_execution_20260722.py`
+  - `auto_trade/30m2H_Strategy_EA.live_risk_guard_rehearsal_20260601_20260707_20260722.set`
+  - `auto_trade/30m2H_Strategy_EA.live_risk_guard_rehearsal_20260601_20260707_20260722.ini`
+  - `30m2H策略/data/validation/stage_state_live_risk_guard_rehearsal_package_20260722/live_risk_guard_rehearsal_package.md`
+  - `30m2H策略/data/validation/stage_state_live_risk_guard_rehearsal_execution_20260722/live_risk_guard_rehearsal_execution_review.md`
+- 包校验：
+  - deployed EX5 与本地 EX5 sha256 一致
+  - `InpEnableLiveRiskGuards=true`
+  - `InpSimMode=false`
+  - deposit：`2000`
+  - tester config requested leverage：`1:2000`
+  - `ready_to_live_trade=False`
+- 执行结果：
+  - status：`live_risk_guard_rehearsal_completed_with_leverage_mismatch`
+  - guard code path passed：`True`
+  - exact environment passed：`False`
+  - final balance：`2043.67`
+  - profit：`43.67`
+  - signal rows：`1180`
+  - trade ledger rows：`15`
+  - deal history rows：`30`
+  - SL rows：`10`
+  - EA/EXPERT exit rows：`5`
+  - lots range：`0.01 -> 0.05`
+  - `OrderCalcMargin` markers：`10`
+  - `LIVE_RISK_BLOCK` count：`0`，本轮未触发阻断是可接受结果，因为未达到 guard limit
+  - Python runner executed：`False`
+- 关键偏差：
+  - EA 日志打印的 effective leverage 为 `1:100`
+  - 用户/配置请求的 tester leverage 为 `1:2000`
+  - 因为 margin guard 依赖 broker/tester 实际保证金计算，所以该偏差必须先解释或修正，不能把本轮当作完全匹配 demo leverage 的 live gate 证据
+- 判断：
+  - EA 风控代码已经通过非生产代码路径演练
+  - `LIVE-GAP-006` 仍未关闭
+  - 下一步优先解决 MT5 tester/account leverage mismatch，再更新 live gate
+  - `ready_to_live_trade=False`
+
+### 结论 162: tester 杠杆格式偏差已定位并修正，LIVE-GAP-006 已推进为部分满足，实盘仍 blocked
+
+- 定位结果：
+  - 只读 MT5 查询显示当前 demo account leverage：`1:2000`
+  - `order_calc_margin` 样本反推 leverage：约 `1:2000`
+  - tester 使用 `Leverage=2000` 时 EA 看到 `1:100`
+  - tester 使用 `Leverage=1:2000` 时 EA 看到 `1:2000`
+- 修正内容：
+  - `30m2H策略/scripts/validate/prepare_stage_state_live_risk_guard_rehearsal_package_20260722.py`
+  - 正式 tester INI 改为 `Leverage=1:2000`
+  - `30m2H策略/scripts/validate/collect_and_review_stage_state_live_risk_guard_rehearsal_execution_20260722.py` 改为只解析最新 guard-enabled agent session
+- 修正版 guard-enabled rehearsal：
+  - status：`live_risk_guard_rehearsal_passed`
+  - exact environment passed：`True`
+  - final balance：`2043.67`
+  - profit：`43.67`
+  - signal rows：`1180`
+  - trade ledger rows：`15`
+  - deal history rows：`30`
+  - SL rows：`10`
+  - EXPERT exit rows：`5`
+  - lots range：`0.01 -> 0.05`
+  - `OrderCalcMargin` markers：`5`
+  - effective leverage seen：`1:2000`
+  - blocker failures：`0`
+  - warning：MT5 XML report 未落盘
+  - `ready_to_live_trade=False`
+- live gate 更新：
+  - 输出目录：`30m2H策略/data/validation/stage_state_post_live_risk_guard_gate_update_20260722`
+  - status：`post_live_risk_guard_update_live_still_blocked`
+  - closed gates：`0`
+  - partially satisfied gates：`2`
+  - blocked gates：`10`
+  - `LIVE-GAP-006`：`partially_satisfied_guard_code_and_nonprod_rehearsal_passed`
+  - `ready_to_live_trade=False`
+
+### 结论 163: LIVE-GAP-007 emergency stop 自动控制已就绪，但人工关闭 AutoTrading 证据仍缺
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/generate_stage_state_emergency_stop_rehearsal_package_20260723.py`
+  - `30m2H策略/scripts/validate/review_stage_state_post_emergency_stop_gate_update_20260723.py`
+  - `30m2H策略/data/validation/stage_state_emergency_stop_rehearsal_package_20260723/emergency_runbook.md`
+  - `emergency_rehearsal_summary.md`
+  - `emergency_rehearsal_report.csv`
+  - `emergency_rehearsal_checks.csv`
+  - `emergency_stop_flags.csv`
+  - `30m2H策略/data/validation/stage_state_post_emergency_stop_gate_update_20260723/post_emergency_stop_gate_update.md`
+- 已完成：
+  - 创建 `auto_trade/EMERGENCY_STOP.flag`
+  - 创建 `auto_trade/RUNNER_STOP.flag`
+  - emergency runbook 已生成
+  - terminal64 process snapshot 已采集：`0`
+  - 既有 SIM_ONLY runner gate 证据显示 positions/orders：`0 / 0`
+- 当前 blocker：
+  - manual MT5 Algo Trading / AutoTrading disable evidence 缺失
+  - 该证据必须来自实际 MT5 GUI 操作截图、Journal/Experts 日志，或连接会话可验证记录，不能由脚本伪造
+- live gate 更新：
+  - status：`post_emergency_stop_update_live_still_blocked`
+  - closed gates：`0`
+  - partially satisfied gates：`3`
+  - blocked gates：`10`
+  - `LIVE-GAP-007`：`partially_satisfied_runbook_and_stop_flags_ready_manual_ui_pending`
+  - `ready_to_live_trade=False`
+
+### 结论 164: LIVE-GAP-008 monitoring / alerts / reconciliation 已建立本地策略与对账 probe，但人工 watched alert 仍缺
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/generate_stage_state_live_monitoring_reconciliation_package_20260723.py`
+  - `30m2H策略/scripts/validate/review_stage_state_post_monitoring_reconciliation_gate_update_20260723.py`
+  - `30m2H策略/data/validation/stage_state_live_monitoring_reconciliation_package_20260723/live_monitoring_policy.json`
+  - `reconciliation_checklist.csv`
+  - `reconciliation_probe.csv`
+  - `live_monitoring_alert_test_log.jsonl`
+  - `monitoring_reconciliation_summary.md`
+  - `30m2H策略/data/validation/stage_state_post_monitoring_reconciliation_gate_update_20260723/post_monitoring_reconciliation_gate_update.md`
+- 已完成：
+  - monitoring policy 已生成
+  - local alert write-path 已测试
+  - guard-enabled rehearsal ledger/deal 对账 probe 已通过
+  - stop flags 仍存在，保持 fail-closed
+  - terminal process snapshot 已采集；采集时看到 `terminal64_process_count=1`
+- 对账 probe 结果：
+  - signal export rows：`1180 / 1180`
+  - trade ledger rows：`15 / 15`
+  - deal history rows：`30 / 30`
+  - deal IN/OUT：`15 / 15`
+  - ledger net profit 与 balance delta：`43.67 / 43.67`
+  - stage 1/2/3 均存在
+- 当前 blocker：
+  - watched alert channel 未人工确认
+  - operator reconciliation owner/process 未人工确认
+- live gate 更新：
+  - status：`post_monitoring_reconciliation_update_live_still_blocked`
+  - closed gates：`0`
+  - partially satisfied gates：`4`
+  - blocked gates：`10`
+  - `LIVE-GAP-008`：`partially_satisfied_policy_alert_probe_and_reconciliation_ready_manual_watch_pending`
+  - `ready_to_live_trade=False`
+
+### 结论 165: LIVE-GAP-009 account/spec 只读快照已采集，账户与品种口径匹配用户给定 demo 条件
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/collect_stage_state_live_account_spec_snapshot_read_only_20260723.py`
+  - `30m2H策略/scripts/validate/review_stage_state_post_account_spec_gate_update_20260723.py`
+  - `30m2H策略/data/validation/stage_state_live_account_spec_snapshot_read_only_20260723/live_account_spec_snapshot_review.md`
+  - `live_account_spec_snapshot_decision.json`
+  - `live_account_spec_snapshot_account.csv`
+  - `live_account_spec_snapshot_symbol.csv`
+  - `live_account_spec_snapshot_margin_samples.csv`
+  - `30m2H策略/data/validation/stage_state_post_account_spec_gate_update_20260723/post_account_spec_gate_update.md`
+- 已确认：
+  - 账户别名：`MT5_ACCOUNT_***085`
+  - server：`Exness-MT5Trial5`
+  - symbol：`XAUUSDm`
+  - balance / balance cap：`2000.00 / 2000.00`
+  - account leverage：`1:2000`
+  - margin sample 反推杠杆：约 `1:2000`
+  - positions / orders：`0 / 0`
+  - 采集过程未下单、未运行 runner、未输出完整账号或凭证
+- live gate 更新：
+  - status：`post_account_spec_update_live_still_blocked`
+  - closed gates：`0`
+  - partially satisfied gates：`5`
+  - blocked gates：`10`
+  - `LIVE-GAP-009`：`partially_satisfied_demo_account_spec_snapshot_collected`
+  - `ready_to_live_trade=False`
+- 当前 blocker：
+  - 还需要人工/上线批准包明确确认该 account/spec 快照就是目标执行环境
+  - 该确认完成前，账户规格只能算部分满足，不能作为实盘批准
+
+### 结论 166: LIVE-GAP-007 已补 connected-session AutoTrading 关闭证据，但实盘仍受总 gate 阻断
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/collect_stage_state_autotrading_disable_connected_snapshot_20260723.py`
+  - `30m2H策略/scripts/validate/review_stage_state_post_autotrading_disable_gate_update_20260723.py`
+  - `30m2H策略/data/validation/stage_state_autotrading_disable_connected_snapshot_20260723/autotrading_disable_connected_snapshot_review.md`
+  - `autotrading_disable_connected_snapshot_decision.json`
+  - `30m2H策略/data/validation/stage_state_post_autotrading_disable_gate_update_20260723/post_autotrading_disable_gate_update.md`
+- 已确认：
+  - MT5 connected-session snapshot 成功
+  - `terminal_trade_allowed=False`
+  - `auto_trade/EMERGENCY_STOP.flag` 存在
+  - `auto_trade/RUNNER_STOP.flag` 存在
+  - 采集过程未下单、未启动 Python runner
+- live gate 更新：
+  - status：`post_autotrading_disable_update_live_still_blocked`
+  - closed gates：`0`
+  - partially satisfied gates：`5`
+  - blocked gates：`10`
+  - `LIVE-GAP-007`：`partially_satisfied_runbook_stop_flags_and_connected_autotrading_disabled`
+  - `ready_to_live_trade=False`
+- 当前 blocker：
+  - watched alert channel 与 operator reconciliation 仍缺人工确认
+  - account/spec 快照仍需纳入人工上线批准包
+  - live approval / deployment approval / `InpSimMode=false` 授权 / credential externalization / production order path 仍未关闭
+  - 如果最终人工流程强制要求 GUI 截图，则还要补充截图；当前 connected-session 证据只能证明终端当前禁止自动交易
+
+### 结论 167: LIVE-GAP-008 人工监控/对账确认已接入，watched channel 与 operator confirmation 已确认
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prepare_stage_state_live_monitoring_manual_confirmation_package_20260723.py`
+  - `30m2H策略/scripts/validate/review_stage_state_post_monitoring_manual_confirmation_gate_update_20260723.py`
+  - `30m2H策略/data/validation/stage_state_live_monitoring_manual_confirmation_package_20260723/monitoring_manual_confirmation_package.md`
+  - `watched_alert_operator_confirmation_template.json`
+  - `monitoring_manual_confirmation_requirements.csv`
+  - `30m2H策略/data/validation/stage_state_post_monitoring_manual_confirmation_gate_update_20260723/post_monitoring_manual_confirmation_gate_update.md`
+- 已确认的自动证据：
+  - monitoring policy ready：`True`
+  - local alert write path tested：`True`
+  - reconciliation probe passed：`True`
+  - terminal trade_allowed：`False`
+  - stop flags ready：`True`
+- 已确认的人工证据：
+  - watched alert channel confirmed：`True`
+  - operator reconciliation confirmed：`True`
+  - operator alias：`owner_local`
+- live gate 更新：
+  - status：`post_monitoring_manual_confirmation_update_live_still_blocked`
+  - closed gates：`0`
+  - partially satisfied gates：`5`
+  - blocked gates：`10`
+  - `LIVE-GAP-008`：`partially_satisfied_policy_probe_and_manual_operator_confirmation_collected`
+  - `ready_to_live_trade=False`
+- 当前 blocker：
+  - LIVE-GAP-008 单项确认已完成；最终是否可进入加载包由 final live gate review 统一决定
+  - 当前 final live gate review 已通过到 loading package pending，但仍未授权加载 EA 或启用交易
+
+### 结论 168: 最终上线批准包草案已生成，剩余工作收敛为 4 步、9 个签署项
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prepare_stage_state_final_live_approval_package_draft_20260723.py`
+  - `30m2H策略/data/validation/stage_state_final_live_approval_package_draft_20260723/final_live_approval_package_draft.md`
+  - `final_live_operator_approval_template.json`
+  - `final_live_signoff_requirements.csv`
+  - `final_live_remaining_steps.csv`
+  - `final_live_gate_status_snapshot.csv`
+  - `final_live_approval_package_draft_decision.json`
+- 当前 gate 汇总：
+  - gate count：`10`
+  - closed gates：`0`
+  - partially satisfied gates：`5`
+  - blocked gates：`10`
+  - required signoffs：`9`
+  - signed signoffs：`0`
+  - `ready_to_live_trade=False`
+- 最短剩余步骤：
+  - 1. 完成人工 operator approval template
+  - 2. 用签署证据 rerun final live gate review
+  - 3. gate 全部关闭后准备 MT5 EA live loading package
+  - 4. 明确批准后移除 stop flags 并加载 EA
+- 当前判断：
+  - 技术证据已经从“继续修策略”收敛到“上线批准/监控/执行环境确认”
+  - 未签署前不能移除 stop flags，不能加载实盘执行 EA
+
+### 结论 169: final live gate review 已落地并 dry-run，当前被 operator approval 缺失明确阻断
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_final_live_gate_from_operator_approval_20260723.py`
+  - `30m2H策略/data/validation/stage_state_final_live_gate_review_from_operator_approval_20260723/final_live_gate_review_from_operator_approval.md`
+  - `final_live_gate_review_from_operator_approval.csv`
+  - `final_live_gate_review_checks.csv`
+  - `final_live_gate_review_decision.json`
+- dry-run 结果：
+  - status：`final_live_gate_blocked_operator_approval_missing`
+  - gate count：`10`
+  - closed gates：`0`
+  - blocked gates：`10`
+  - required signoffs：`9`
+  - required approval booleans：`10`
+  - signed approval booleans：`0`
+  - operator alias ready：`False`
+  - stop flags present：`True`
+  - ready for live loading package：`False`
+  - `ready_to_live_trade=False`
+- 当前判断：
+  - final gate review 本身可复跑，且空模板不会误通过
+  - 下一步唯一可关闭 gate 的输入是 non-secret operator approval template
+  - 即使 approval 全部通过，该 review 也不会自动移除 stop flags 或启用交易
+
+### 结论 170: operator approval 中文确认单已生成，并已刷新为 owner_local / 10 项确认
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prepare_stage_state_operator_approval_manual_form_20260723.py`
+  - `30m2H策略/data/validation/stage_state_operator_approval_manual_form_20260723/operator_approval_manual_form.md`
+  - `operator_approval_items.csv`
+  - `operator_approval_signoff_requirements.csv`
+  - `operator_approval_response_template.json`
+  - `operator_approval_manual_form_decision.json`
+- 当前结果：
+  - status：`operator_approval_confirmed_final_gate_loading_package_pending`
+  - operator alias：`owner_local`
+  - operator alias ready：`True`
+  - approval booleans：`10 / 10`
+  - required signoffs：`9`
+  - latest final gate status：`final_live_gate_approval_preconditions_satisfied_loading_package_pending`
+  - `ready_to_live_trade=False`
+- 当前判断：
+  - 人工 non-secret `operator_alias` 与 10 个 approval boolean 已确认
+  - 该确认单不包含完整账号、密码、investor password、API token 或 secret key
+
+### 结论 171: operator approval 已确认，final live gate review 已通过到 loading package pending
+
+- 人工确认输入：
+  - operator alias：`owner_local`
+  - approval booleans：`10 / 10`
+  - approval source：`final_live_operator_approval_confirmed_by_user_response_annotation_20260723`
+- 已复跑：
+  - `30m2H策略/scripts/validate/prepare_stage_state_operator_approval_manual_form_20260723.py`
+  - `30m2H策略/scripts/validate/review_stage_state_final_live_gate_from_operator_approval_20260723.py`
+- 最新结果：
+  - operator approval status：`operator_approval_confirmed_final_gate_loading_package_pending`
+  - final live gate status：`final_live_gate_approval_preconditions_satisfied_loading_package_pending`
+  - gate count：`10`
+  - closed gates：`10`
+  - blocked gates：`0`
+  - required signoffs：`9`
+  - required approval booleans：`10`
+  - signed approval booleans：`10`
+  - stop flags present：`True`
+  - ready for live loading package：`True`
+  - `ready_to_live_trade=False`
+- 当前判断：
+  - live gate 前置批准已通过，下一步可以准备 exact MT5 EA live loading package
+  - stop flags 仍然保留，且本步骤没有加载 EA、没有启用交易
+  - 移除 stop flags / 加载 EA / 实际运行仍需要后续明确批准
+
+### 结论 172: exact MT5 EA live loading package 已准备完成，当前仍 fail-closed
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prepare_stage_state_exact_mt5_ea_live_loading_package_20260723.py`
+  - `30m2H策略/data/validation/stage_state_exact_mt5_ea_live_loading_package_20260723/exact_mt5_ea_live_loading_package.md`
+  - `exact_mt5_ea_live_loading_manifest.json`
+  - `exact_mt5_ea_live_loading_manifest_files.csv`
+  - `exact_mt5_ea_live_loading_inputs.csv`
+  - `exact_mt5_ea_live_loading_checklist.csv`
+  - `exact_mt5_ea_live_loading_precheck.csv`
+  - `exact_mt5_ea_live_loading_decision.json`
+- 最新结果：
+  - status：`exact_live_loading_package_ready_fail_closed`
+  - final gate passed to loading package pending：`True`
+  - account context matches approval：`True`
+  - risk guard rehearsal passed：`True`
+  - compile log zero errors/warnings：`True`
+  - critical inputs match：`True`
+  - stop flags present：`True`
+  - terminal AutoTrading disabled：`True`
+  - orders placed：`False`
+  - runner executed：`False`
+  - EA loaded：`False`
+  - stop flags removed：`False`
+  - ready for live loading package：`True`
+  - `ready_to_live_trade=False`
+- exact package 关键参数：
+  - EA：`auto_trade/30m2H_Strategy_EA.ex5`
+  - source：`auto_trade/30m2H_Strategy_EA.mq5`
+  - compile log：`auto_trade/compile_live_risk_guard_20260722.log`
+  - set snapshot：`30m2H_Strategy_EA.live_loading_owner_local_20260723.set`
+  - symbol/timeframe：`XAUUSDm / M30`
+  - `InpSimMode=false`
+  - `InpEnableLiveRiskGuards=true`
+  - `InpLiveBalanceCap=2000.0`
+  - `InpLiveMaxLotCap=0.1`
+- 当前判断：
+  - 可以进入“明确批准移除 stop flags 并手动加载 EA”的下一审批点
+  - 当前步骤没有移除 stop flags、没有加载 EA、没有启用交易
+
+### 结论 173: stop flag removal / manual EA loading approval request 已生成，当前仍等待明确批准
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/prepare_stage_state_stop_flag_removal_manual_loading_approval_request_20260723.py`
+  - `30m2H策略/data/validation/stage_state_stop_flag_removal_manual_loading_approval_request_20260723/stop_flag_removal_manual_loading_approval_request.md`
+  - `stop_flag_removal_manual_loading_approval_template.json`
+  - `stop_flag_removal_manual_loading_checklist.csv`
+  - `stop_flag_removal_manual_loading_precheck.csv`
+  - `stop_flag_removal_manual_loading_approval_request_decision.json`
+- 当前结果：
+  - status：`stop_flag_removal_manual_loading_approval_request_ready_waiting_for_explicit_approval`
+  - loading package ready：`True`
+  - stop flags present：`True`
+  - approval items signed：`0 / 6`
+  - orders placed：`False`
+  - runner executed：`False`
+  - EA loaded：`False`
+  - stop flags removed：`False`
+  - `ready_to_live_trade=False`
+- 当前判断：
+  - 这是最终动作前的批准请求包，不是执行包
+  - 未收到明确批准前，仍保持 fail-closed
+  - “下一步”不能被解释为批准移除 stop flags 或加载 EA
+
+### 结论 174: stop flags 已按明确批准移除，manual EA loading 仍等待 GUI 加载证据
+
+- 人工确认输入：
+  - operator alias：`owner_local`
+  - 批准移除 `EMERGENCY_STOP.flag`
+  - 批准移除 `RUNNER_STOP.flag`
+  - 批准手动加载 MT5 EA 到 `XAUUSDm / M30`
+  - 批准加载后可按策略开启 MT5 AutoTrading
+  - 确认 owner_local 继续监控告警与对账，发现异常立即停止
+- 专项输出：
+  - `30m2H策略/scripts/validate/review_stage_state_post_stop_flag_removal_manual_loading_execution_20260724.py`
+  - `30m2H策略/data/validation/stage_state_post_stop_flag_removal_manual_loading_execution_20260724/post_stop_flag_removal_execution_review.md`
+  - `post_stop_flag_removal_decision.json`
+  - `post_stop_flag_removal_checks.csv`
+  - `post_stop_flag_removal_terminal_snapshot.csv`
+- 最新结果：
+  - status：`stop_flags_removed_manual_ea_loading_pending`
+  - approval items signed：`6 / 6`
+  - loading package ready：`True`
+  - stop flags removed：`True`
+  - terminal64 process count：`1`
+  - terminal trade_allowed：`False`
+  - positions / orders：`0 / 0`
+  - orders placed：`False`
+  - runner executed：`False`
+  - EA loaded：`False`
+  - `ready_to_live_trade=False`
+- 当前判断：
+  - stop flags 已移除，但 MT5 AutoTrading 仍关闭，未发现持仓/挂单
+  - 仍需在 MT5 GUI 上手动加载 EA，并采集 Experts/Journal 或截图证据后，才能进入 post-load review
+
+### 结论 175: post manual EA load evidence 采集器已就绪，当前仍缺 LIVE TRADING / AutoTrading 证据
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/collect_stage_state_post_manual_ea_load_evidence_20260724.py`
+  - `30m2H策略/data/validation/stage_state_post_manual_ea_load_evidence_20260724/post_manual_ea_load_evidence.md`
+  - `post_manual_ea_load_decision.json`
+  - `post_manual_ea_load_checks.csv`
+  - `post_manual_ea_load_files.csv`
+  - `manual_mt5_ea_load_steps_20260724.md`
+- 当前采集结果：
+  - status：`post_manual_ea_load_evidence_manual_load_or_autotrading_pending`
+  - terminal connected：`True`
+  - terminal AutoTrading allowed：`False`
+  - account alias/server：`MT5_ACCOUNT_***085 / Exness-MT5Trial5`
+  - symbol：`XAUUSDm`
+  - positions / orders：`0 / 0`
+  - EA file present in terminal Experts：`True`
+  - approved set present in terminal Presets/Tester：`True`
+  - EA name evidence seen：`True`
+  - LIVE TRADING mode evidence seen：`False`
+  - export evidence seen：`False`
+  - orders placed by collector：`False`
+  - runner executed by collector：`False`
+  - `ready_to_live_trade=False`
+- 当前判断：
+  - EA 和 set 已经在 MT5 可加载位置
+  - 仍需要在 MT5 GUI 中实际附加 EA、加载 approved set、开启 AutoTrading，再复跑采集器
+
+### 结论 176: MT5 GUI 已加载 EA 并开启 AutoTrading，post-load evidence 已确认 ready_to_live_trade
+
+- 用户确认：
+  - 已在 MT5 GUI 加载 EA
+  - 已开启 AutoTrading
+  - 请求采集 post-load evidence
+- 已复跑：
+  - `30m2H策略/scripts/validate/collect_stage_state_post_manual_ea_load_evidence_20260724.py`
+- 最新证据：
+  - `30m2H策略/data/validation/stage_state_post_manual_ea_load_evidence_20260724/post_manual_ea_load_decision.json`
+  - `post_manual_ea_load_checks.csv`
+  - `post_manual_ea_load_terminal_snapshot.csv`
+  - `post_manual_ea_load_log_hits.csv`
+  - `post_manual_ea_load_evidence.md`
+- 最新结果：
+  - status：`post_manual_ea_load_evidence_ready_to_monitor_live`
+  - terminal connected：`True`
+  - terminal trade_allowed：`True`
+  - account alias/server：`MT5_ACCOUNT_***085 / Exness-MT5Trial5`
+  - symbol：`XAUUSDm`
+  - positions / orders：`0 / 0`
+  - EA loaded evidence seen：`True`
+  - LIVE TRADING mode evidence seen：`True`
+  - export evidence seen：`True`
+  - current log hit count：`40`
+  - orders placed by collector：`False`
+  - runner executed by collector：`False`
+  - blocker failures：`0`
+  - manual pending：`0`
+  - `ready_to_live_trade=True`
+- 关键当天日志：
+  - `20260724.log`：`expert 30m2H_Strategy_EA (XAUUSDm,M30) loaded successfully`
+  - `20260724.log`：`30m x 2H EA v3.26 - Initializing`
+  - `20260724.log`：`Mode:     LIVE TRADING`
+  - `20260724.log`：`CSV export: 30m2H_strategy_signals_export.csv`
+  - `20260724.log`：`Trade ledger export: 30m2H_strategy_trade_ledger.csv`
+  - `20260724.log`：`[CSV] row #1 written OK`
+- 当前判断：
+  - EA 已在 MT5 GUI 中以 live 模式运行并进入监控阶段
+  - 当前没有持仓/挂单，采集器没有下单，也没有启动 Python runner
+  - 下一步应进入 live monitoring：采集 first tick / first bar / 后续信号与交易对账
+
+### 结论 177: live monitor first tick / first bar evidence 已通过，EA 当前可继续等待首次信号或交易
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/collect_stage_state_live_monitor_first_tick_bar_evidence_20260724.py`
+  - `30m2H策略/data/validation/stage_state_live_monitor_first_tick_bar_evidence_20260724/live_monitor_first_tick_bar_decision.json`
+  - `live_monitor_first_tick_bar_checks.csv`
+  - `live_monitor_first_tick_bar_terminal_snapshot.csv`
+  - `live_monitor_first_tick_bar_log_hits.csv`
+  - `live_monitor_first_tick_bar_export_files.csv`
+  - `live_monitor_first_tick_bar_evidence.md`
+- 最新结果：
+  - status：`live_monitor_first_tick_bar_evidence_passed`
+  - terminal connected / AutoTrading：`True / True`
+  - account alias/server：`MT5_ACCOUNT_***085 / Exness-MT5Trial5`
+  - symbol：`XAUUSDm`
+  - positions / orders：`0 / 0`
+  - deal history count today：`0`
+  - EA loaded evidence seen：`True`
+  - LIVE TRADING mode seen：`True`
+  - first M30 bar seen：`True`
+  - status line seen：`True`
+  - CSV row seen：`True`
+  - export file zero length count：`0`
+  - LIVE_RISK_BLOCK count：`0`
+  - trade log count：`0`
+  - blocker failures / warnings：`0 / 0`
+  - orders placed by collector：`False`
+  - runner executed by collector：`False`
+  - `ready_to_monitor_live=True`
+  - `ready_to_live_trade=True`
+- 当前判断：
+  - EA 已经完成加载后的第一轮 live 运行证据，不再停留在“只加载未运行”的状态
+  - 当前没有持仓、挂单或今日成交，未发现外部 collector 触发交易
+  - 下一步不是再做上线批准，而是继续等待首次策略信号或首次交易，并做 trade ledger 与 MT5 deal history 闭合对账
+
+### 结论 178: 首次信号/首次交易初始对账快照完成，当前状态是正常等待信号
+
+- 专项输出：
+  - `30m2H策略/scripts/validate/collect_stage_state_live_first_signal_trade_reconciliation_20260724.py`
+  - `30m2H策略/data/validation/stage_state_live_first_signal_trade_reconciliation_20260724/live_first_signal_trade_reconciliation_decision.json`
+  - `live_first_signal_trade_checks.csv`
+  - `live_first_signal_trade_signal_summary.csv`
+  - `live_first_signal_trade_ledger_summary.csv`
+  - `live_first_signal_trade_terminal_snapshot.csv`
+  - `live_first_signal_trade_signal_latest_rows.csv`
+  - `live_first_signal_trade_deal_history_today.csv`
+  - `live_first_signal_trade_log_hits.csv`
+- 最新结果：
+  - status：`live_first_signal_trade_waiting_no_accepted_signal_or_trade`
+  - terminal connected / AutoTrading：`True / True`
+  - signal export rows / accepted signal count：`2 / 0`
+  - latest signal：`2026.07.24 12:00`，`SKIP`，`no_cross_m30_or_h2`
+  - trade ledger rows：`0`
+  - positions / orders：`0 / 0`
+  - deal history / order history today：`0 / 0`
+  - stage price diag rows：`0`
+  - M15 entry diag rows：`1`
+  - LIVE_RISK_BLOCK / trade log / broker issue：`0 / 0 / 0`
+  - blocker failures / warnings：`0 / 0`
+  - first signal seen：`False`
+  - first trade seen：`False`
+  - first signal/trade gate closed：`False`
+  - `ready_to_continue_monitoring=True`
+  - `ready_to_live_trade=True`
+- 当前判断：
+  - 当前无交易不是异常，而是信号层仍为 `SKIP/no_cross_m30_or_h2`
+  - ledger、MT5 deal history、positions/orders 都为 0，与未出现 accepted signal 的状态一致
+  - 该 gate 不能标记最终完成；必须等首次 accepted signal 或首次 EA trade 出现后复跑同一采集器做闭合对账
+- 最新复核：
+  - `2026-07-24T20:13:10` 复跑同一采集器
+  - status 仍为：`live_first_signal_trade_waiting_no_accepted_signal_or_trade`
+  - signal export rows / accepted signal count：`2 / 0`
+  - latest signal：`2026.07.24 12:00`，`SKIP`，`no_cross_m30_or_h2`
+  - positions / orders / deals / order history：`0 / 0 / 0 / 0`
+  - blocker failures / warnings：`0 / 0`

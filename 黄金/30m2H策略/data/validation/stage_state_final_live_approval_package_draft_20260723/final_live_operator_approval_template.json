@@ -1,0 +1,41 @@
+﻿{
+  "source": "final_live_operator_approval_confirmed_by_user_response_annotation_20260723",
+  "account_alias": "MT5_ACCOUNT_***085",
+  "server": "Exness-MT5Trial5",
+  "symbol": "XAUUSDm",
+  "balance_cap": 2000.0,
+  "leverage": 2000,
+  "ready_to_live_trade": false,
+  "operator_alias": "owner_local",
+  "approval_items": {
+    "LIVE-GAP-001_live_trading_approval": true,
+    "LIVE-GAP-002_live_package_manifest_release_approval": true,
+    "LIVE-GAP-003_InpSimMode_false_loading_approval": true,
+    "LIVE-GAP-004_secret_externalization_approval": true,
+    "LIVE-GAP-005_MT5_EA_only_order_path_approval": true,
+    "LIVE-GAP-006_live_risk_policy_approval": true,
+    "LIVE-GAP-008_watched_alert_channel_confirmed": true,
+    "LIVE-GAP-008_operator_reconciliation_confirmed": true,
+    "LIVE-GAP-009_account_spec_intended_context_confirmed": true,
+    "LIVE-GAP-010_nonprod_rehearsal_alert_emergency_acceptance": true
+  },
+  "current_gate_status": {
+    "LIVE-GAP-001": "blocked",
+    "LIVE-GAP-002": "blocked",
+    "LIVE-GAP-003": "blocked",
+    "LIVE-GAP-004": "blocked",
+    "LIVE-GAP-005": "blocked",
+    "LIVE-GAP-006": "partially_satisfied_guard_code_and_nonprod_rehearsal_passed",
+    "LIVE-GAP-007": "partially_satisfied_runbook_stop_flags_and_connected_autotrading_disabled",
+    "LIVE-GAP-008": "partially_satisfied_policy_probe_and_manual_confirmation_package_ready",
+    "LIVE-GAP-009": "partially_satisfied_demo_account_spec_snapshot_collected",
+    "LIVE-GAP-010": "partially_satisfied_order_lifecycle_passed"
+  },
+  "do_not_include": [
+    "full account number",
+    "password",
+    "investor password",
+    "api token",
+    "secret key"
+  ]
+}

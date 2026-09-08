@@ -1,0 +1,184 @@
+﻿{
+  "schema_version": 1,
+  "generated_at": "2026-07-21T11:26:03",
+  "gate_count": 10,
+  "template_count": 22,
+  "templates": [
+    {
+      "gap_id": "LIVE-GAP-001",
+      "file_name": "live_trade_approval_record.md",
+      "file_kind": "markdown",
+      "required_fields": "approval_id;approval_date;approver;account_alias;symbol;max_risk;allowed_runner;rollback_owner;approval_scope",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-002",
+      "file_name": "live_package_manifest.json",
+      "file_kind": "json",
+      "required_fields": "package_id;ex5_path;set_path;startup_config_path;deployment_path;package_is_sim_only",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-002",
+      "file_name": "live_package_hashes.csv",
+      "file_kind": "csv",
+      "required_fields": "artifact;path;sha256;verified_by;verified_at",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-002",
+      "file_name": "live_package_deployment_proof.md",
+      "file_kind": "markdown",
+      "required_fields": "deployed_ex5_path;deployed_set_path;deployed_startup_config_path;reviewer",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-003",
+      "file_name": "sim_mode_transition_approval.md",
+      "file_kind": "markdown",
+      "required_fields": "approval_id;required_phrase;prior_gate_statuses;approver;approval_date",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-003",
+      "file_name": "parsed_live_set_template.json",
+      "file_kind": "json",
+      "required_fields": "set_path;InpSimMode;InpExportCSV;InpExportTradeLedger",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-004",
+      "file_name": "secret_policy.md",
+      "file_kind": "markdown",
+      "required_fields": "secret_source;allowed_runtime;forbidden_locations;operator",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-004",
+      "file_name": "credential_scan_report.csv",
+      "file_kind": "csv",
+      "required_fields": "path;scan_status;hardcoded_account_pattern;hardcoded_password_pattern;reviewed_at",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-004",
+      "file_name": "env_example_review.md",
+      "file_kind": "markdown",
+      "required_fields": ".env.example_status;real_values_present;reviewer",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-005",
+      "file_name": "production_runner_decision.md",
+      "file_kind": "markdown",
+      "required_fields": "runner_mode;order_source_count;blocked_runner_files;approver",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-005",
+      "file_name": "runner_source_audit.csv",
+      "file_kind": "csv",
+      "required_fields": "runner_path;allowed;reason;reviewed_by;reviewed_at",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-006",
+      "file_name": "live_risk_policy.json",
+      "file_kind": "json",
+      "required_fields": "max_daily_loss;max_drawdown;max_orders;max_spread_points;margin_guard_pct;min_lot;max_lot;balance_cap",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-006",
+      "file_name": "risk_policy_manual_confirmation.md",
+      "file_kind": "markdown",
+      "required_fields": "account_size;leverage;operator;confirmed_at",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-007",
+      "file_name": "emergency_runbook.md",
+      "file_kind": "markdown",
+      "required_fields": "disable_auto_trading_steps;close_position_steps;rollback_steps;owner;backup_owner",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-007",
+      "file_name": "emergency_rehearsal_report.csv",
+      "file_kind": "csv",
+      "required_fields": "rehearsal_id;environment;action;status;evidence_path;reviewed_at",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-008",
+      "file_name": "live_monitoring_policy.json",
+      "file_kind": "json",
+      "required_fields": "order_alert;position_alert;pnl_alert;margin_alert;disconnect_alert;stale_tick_alert;ledger_mismatch_alert",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-008",
+      "file_name": "reconciliation_checklist.csv",
+      "file_kind": "csv",
+      "required_fields": "check_id;frequency;source_a;source_b;owner;fail_closed_action",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-009",
+      "file_name": "live_account_spec_snapshot.json",
+      "file_kind": "json",
+      "required_fields": "account_alias;account_type;leverage;balance_cap;allowed_symbol;captured_at",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-009",
+      "file_name": "broker_symbol_spec.csv",
+      "file_kind": "csv",
+      "required_fields": "symbol;contract_size;min_lot;lot_step;margin_initial;digits;spread_policy",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-010",
+      "file_name": "nonprod_order_rehearsal_report.md",
+      "file_kind": "markdown",
+      "required_fields": "environment;rehearsal_id;open_order_status;close_order_status;sl_tp_status;emergency_status;reviewer",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-010",
+      "file_name": "rehearsal_ledger.csv",
+      "file_kind": "csv",
+      "required_fields": "event_time;event_type;symbol;lots;price;reason;status",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    },
+    {
+      "gap_id": "LIVE-GAP-010",
+      "file_name": "rehearsal_alert_log.csv",
+      "file_kind": "csv",
+      "required_fields": "event_time;alert_type;channel;status;owner",
+      "ready_to_live_trade_default": false,
+      "gate_status_default": "open"
+    }
+  ]
+}

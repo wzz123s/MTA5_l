@@ -1,0 +1,16 @@
+﻿{
+  "decision_time": "2026-07-21T16:30:33",
+  "check_id": "stage_state_p1_rehearsal_prerequisite_dry_run",
+  "status": "p1_rehearsal_dry_run_planned_live_blocked",
+  "p1_rehearsal_items": 3,
+  "planned_steps": 18,
+  "expected_evidence_samples": 3,
+  "mt5_accessed": false,
+  "runner_executed": false,
+  "orders_placed": false,
+  "live_set_switched": false,
+  "credential_values_output": false,
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "recommended_next_action": "review_p1_rehearsal_prerequisite_dry_run"
+}

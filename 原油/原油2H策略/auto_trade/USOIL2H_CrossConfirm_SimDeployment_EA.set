@@ -1,0 +1,22 @@
+﻿; USOIL2H CrossConfirm | 2H SMMA5/13 cross + 2-bar way/vol_way>=0.5 confirm | SimMode
+; 对齐 Python validate_usoil_2h_standalone.py cross_confirm（40笔/PF 2.19）
+InpMagic=362036
+InpSymbol=USOILm
+InpRiskPct=1.0
+InpStopLoPct=0.1
+InpStopHiPct=1.0
+InpMaxOpenVirtual=20
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimStartBalance=500.0
+InpSMA5=5
+InpSMA13=13
+InpMergedMinLen=8
+InpConfirmThr=0.5
+InpVolMaPeriod=120
+InpHistoryBars=20000
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportCSV=true
+InpExportLedger=true
+InpVerboseDiag=true

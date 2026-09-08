@@ -1,0 +1,19 @@
+﻿{
+  "gap_id": "LIVE-GAP-009",
+  "policy_scope": "nonprod_demo_rehearsal_only",
+  "account_alias": "MT5_DEMO_***085",
+  "account_id_storage": "redacted_full_id_not_written; last3=085",
+  "account_type": "demo_nonproduction",
+  "leverage": 2000,
+  "balance_cap": 2000,
+  "allowed_symbol": "XAUUSDm",
+  "broker_symbol_spec_source": "broker_symbol_spec.csv",
+  "broker_contract_size": "100.0",
+  "broker_min_lot": "0.01",
+  "broker_lot_step": "0.01",
+  "broker_digits": "3",
+  "broker_spread_policy": "floating;current_spread_points=240",
+  "captured_at": "2026-07-21T18:08:14",
+  "ready_to_nonprod_rehearsal": true,
+  "ready_to_live_trade": false
+}

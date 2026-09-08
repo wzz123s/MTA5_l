@@ -1,0 +1,40 @@
+[21:34:14] === auto run start: Gold_DataEvent_EA XAUUSDm H4 2023-01-01~2024-12-31 ===
+[21:34:14] MT5 launched
+[21:39:50] === auto run start: Gold_DataEvent_EA XAUUSDm H4 2023-01-01~2024-12-31 ===
+[21:39:50] MT5 launched
+[23:11:40] === auto run start: Gold_DataEvent_EA XAUUSDm H4 2019-01-01~2026-08-30 ===
+[23:11:40] MT5 launched
+[23:12:00] set_combo err: combo ComboBox/10485 not found
+[23:12:15] set_combo err: combo ComboBox/10486 not found
+[23:12:30] set_combo err: combo ComboBox/10487 not found
+[23:12:31] start button not found (attempt 1)
+[23:12:33] start button not found (attempt 2)
+[23:12:35] start button not found (attempt 3)
+[23:12:37] FATAL: test did not start after 3 attempts
+[23:15:42] === auto run start: Gold_DataEvent_EA XAUUSDm H4 2019-01-01~2026-08-30 ===
+[23:16:02] set_combo err: combo ComboBox/10485 not found
+[23:16:17] set_combo err: combo ComboBox/10486 not found
+[23:16:32] set_combo err: combo ComboBox/10487 not found
+[23:16:33] start button not found (attempt 1)
+[23:16:35] start button not found (attempt 2)
+[23:16:37] start button not found (attempt 3)
+[23:16:39] FATAL: test did not start after 3 attempts
+[23:19:10] === auto run start: Gold_DataEvent_EA XAUUSDm H4 2019-01-01~2026-08-30 ===
+[23:19:19] uia click err: ElementNotVisible()
+[23:19:25] after click: metatester=0 button='开始'
+[23:19:29] uia click err: ElementNotVisible()
+[23:19:35] after click: metatester=0 button='开始'
+[23:19:39] uia click err: ElementNotVisible()
+[23:19:45] after click: metatester=0 button='开始'
+[23:19:49] FATAL: test did not start after 3 attempts
+[23:20:56] === auto run start: Gold_DataEvent_EA XAUUSDm H4 2019-01-01~2026-08-30 ===
+[23:21:05] BM_CLICK sent to start button hwnd=2688276
+[23:21:05] Start clicked (attempt 1)
+[23:21:11] after click: metatester=0 button=''
+[23:21:15] BM_CLICK sent to start button hwnd=2688276
+[23:21:15] Start clicked (attempt 2)
+[23:21:21] after click: metatester=0 button=''
+[23:21:25] BM_CLICK sent to start button hwnd=2688276
+[23:21:25] Start clicked (attempt 3)
+[23:21:31] after click: metatester=0 button=''
+[23:21:35] FATAL: test did not start after 3 attempts

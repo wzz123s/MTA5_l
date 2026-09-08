@@ -1,0 +1,22 @@
+﻿{
+  "decision_time": "2026-07-21T18:08:14",
+  "check_id": "stage_state_demo_manual_confirmation_package",
+  "status": "demo_manual_confirmation_collected_nonprod_rehearsal_pending",
+  "account_alias": "MT5_DEMO_***085",
+  "account_type": "demo_nonproduction",
+  "symbol": "XAUUSDm",
+  "starting_balance_cap": 2000,
+  "leverage": 2000,
+  "risk_mode": "strategy_defined",
+  "allowed_runner": "MT5_EA_ONLY",
+  "emergency_stop": "disable_mt5_auto_trading",
+  "position_close_rule": "strategy_defined",
+  "nonprod_rehearsal_evidence_present": false,
+  "ready_to_nonprod_rehearsal": true,
+  "ready_to_live_trade": false,
+  "runner_executed": false,
+  "orders_placed": false,
+  "live_set_switched": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "execute_bounded_mt5_demo_or_tester_rehearsal_and_collect_report_ledger"
+}

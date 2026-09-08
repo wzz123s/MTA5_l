@@ -1,0 +1,9 @@
+﻿{
+  "decision_time": "2026-07-22T23:46:11",
+  "status": "leverage_format_probe_ini_ready",
+  "source_ini": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.live_risk_guard_rehearsal_20260601_20260707_20260722.ini",
+  "probe_ini": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.live_risk_guard_rehearsal_20260601_20260707_20260722_levfmt.ini",
+  "probe_change": "Tester Leverage changed from 2000 to 1:2000",
+  "ready_to_live_trade": false,
+  "recommended_next_action": "run_terminal64_with_probe_ini_then_collect_effective_leverage"
+}

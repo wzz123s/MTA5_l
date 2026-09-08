@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>止损交易复盘</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --line: #dbe4ee;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #2563eb;
+      --stop: #b91c1c;
+      --good: #166534;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .wrap {
+      width: min(1400px, calc(100vw - 32px));
+      margin: 24px auto 48px;
+    }
+    .hero, .panel, .trade-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .hero {
+      padding: 20px 22px;
+      margin-bottom: 16px;
+    }
+    h1, h2, h3, p { margin: 0; }
+    .hero h1 { font-size: 28px; margin-bottom: 8px; }
+    .hero p { color: var(--muted); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 16px 0 0;
+    }
+    .stat {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .stat strong { font-size: 24px; }
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .panel {
+      padding: 16px 18px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    .table-scroll { overflow-x: auto; }
+    .trade-list {
+      display: grid;
+      gap: 16px;
+    }
+    .trade-card {
+      padding: 16px;
+    }
+    .trade-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      margin-top: 14px;
+      background: #fff;
+    }
+    .trade-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+    }
+    .trade-head h2 {
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(96px, 1fr));
+      gap: 10px 12px;
+      min-width: 340px;
+    }
+    .meta-grid span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .meta-grid strong {
+      font-size: 15px;
+    }
+    .tag-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+    }
+    .tag-stop {
+      border-color: #fecaca;
+      background: #fef2f2;
+      color: var(--stop);
+    }
+    .tag-pass {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+      color: var(--good);
+    }
+    .mini-note {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    @media (max-width: 1080px) {
+      .grid2 { grid-template-columns: 1fr; }
+      .trade-head { flex-direction: column; }
+      .meta-grid {
+        min-width: 0;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>当前主线策略止损交易复盘</h1>
+      <p>基于当前主线策略：Layer 1 `|H2 Bias_55| > 3.0%`，Layer 2 `pre_cross + cross + post_n(2-6)`，Layer 3 `Bias_5 top 30%`，M15 `replace_any + rescue`，H2 `q2 early-gate`，退出 `2.0R / 1.5R trail / 4.0R force / m30_merged_cross`。</p>
+      <div class="stats">
+        <div class="stat"><span>总交易数</span><strong>89</strong></div>
+        <div class="stat"><span>任一阶段止损</span><strong>46</strong></div>
+        <div class="stat"><span>三段全部止损</span><strong>14</strong></div>
+        <div class="stat"><span>止损单总计</span><strong>+911.2 pt</strong></div>
+        <div class="stat"><span>止损单美元合计</span><strong>$+182</strong></div>
+        <div class="stat"><span>最差单</span><strong>T43 -103.3 pt</strong></div>
+      </div>
+      <p class="mini-note">说明：这里的“止损交易”指 Stage 1 / Stage 2 / Stage 3 任一阶段出现 `SL hit` 或 `trail/SL hit`。因此它包含“整单三段都被打掉”的单子，也包含“其中一段止损、但整单最后仍盈利”的单子。</p>
+    </section>
+
+    <div class="grid2">
+      <section class="panel">
+        <h3>按止损模式汇总</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>模式</th><th>笔数</th><th>平均 total</th></tr></thead>
+            <tbody>
+              <tr><td>Stage 2 止损</td><td>20</td><td>+82.94 pt</td></tr>
+<tr><td>三段全部止损</td><td>14</td><td>-50.28 pt</td></tr>
+<tr><td>Stage 3 止损</td><td>4</td><td>+53.33 pt</td></tr>
+<tr><td>Stage 1 止损</td><td>4</td><td>-73.89 pt</td></tr>
+<tr><td>Stage 2 + Stage 3 止损</td><td>3</td><td>+15.28 pt</td></tr>
+<tr><td>Stage 1 + Stage 2 止损</td><td>1</td><td>-7.15 pt</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h3>按入场机会汇总</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>mode</th><th>笔数</th><th>平均 total</th></tr></thead>
+            <tbody>
+              <tr><td>post_n3</td><td>9</td><td>+38.76 pt</td></tr>
+<tr><td>cross</td><td>9</td><td>+16.57 pt</td></tr>
+<tr><td>post_n6</td><td>7</td><td>+35.42 pt</td></tr>
+<tr><td>pre_cross</td><td>7</td><td>+15.50 pt</td></tr>
+<tr><td>post_n2</td><td>6</td><td>+19.16 pt</td></tr>
+<tr><td>post_n4</td><td>5</td><td>-17.98 pt</td></tr>
+<tr><td>post_n5</td><td>3</td><td>+10.58 pt</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-bottom:16px;">
+      <h3>止损交易清单</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Date</th><th>Dir</th><th>Mode</th><th>Pattern</th>
+              <th>Entry</th><th>Stop</th><th>SD</th><th>Total pt</th><th>$</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><a href='#T01'>T01</a></td><td>2020-03-06 18:00</td><td>S</td><td>post_n3</td><td>Stage 2 + Stage 3 止损</td><td>1669.476</td><td>1674.972</td><td>5.496</td><td>+1.96</td><td>$+0.39</td></tr><tr><td><a href='#T02'>T02</a></td><td>2020-03-06 18:30</td><td>S</td><td>post_n4</td><td>三段全部止损</td><td>1663.392</td><td>1674.081</td><td>10.689</td><td>-32.07</td><td>$-6.41</td></tr><tr><td><a href='#T03'>T03</a></td><td>2020-03-06 19:00</td><td>S</td><td>post_n5</td><td>三段全部止损</td><td>1668.063</td><td>1673.618</td><td>5.555</td><td>-16.67</td><td>$-3.33</td></tr><tr><td><a href='#T04'>T04</a></td><td>2020-03-06 19:30</td><td>S</td><td>post_n6</td><td>三段全部止损</td><td>1665.716</td><td>1673.010</td><td>7.294</td><td>-21.88</td><td>$-4.38</td></tr><tr><td><a href='#T05'>T05</a></td><td>2020-03-09 00:30</td><td>L</td><td>post_n6</td><td>三段全部止损</td><td>1698.105</td><td>1676.198</td><td>21.907</td><td>-65.72</td><td>$-13.14</td></tr><tr><td><a href='#T06'>T06</a></td><td>2020-03-13 16:30</td><td>S</td><td>post_n2</td><td>Stage 2 止损</td><td>1563.434</td><td>1581.708</td><td>18.274</td><td>+105.48</td><td>$+21.10</td></tr><tr><td><a href='#T07'>T07</a></td><td>2020-03-17 16:00</td><td>L</td><td>cross</td><td>Stage 2 止损</td><td>1505.210</td><td>1486.460</td><td>18.749</td><td>+61.01</td><td>$+12.20</td></tr><tr><td><a href='#T08'>T08</a></td><td>2020-03-17 17:00</td><td>L</td><td>post_n3</td><td>Stage 1 止损</td><td>1529.679</td><td>1495.380</td><td>34.299</td><td>-75.64</td><td>$-15.13</td></tr><tr><td><a href='#T09'>T09</a></td><td>2020-03-17 17:30</td><td>L</td><td>post_n4</td><td>Stage 1 止损</td><td>1532.481</td><td>1498.234</td><td>34.247</td><td>-81.19</td><td>$-16.24</td></tr><tr><td><a href='#T10'>T10</a></td><td>2020-03-17 18:00</td><td>L</td><td>post_n5</td><td>Stage 1 止损</td><td>1532.162</td><td>1500.844</td><td>31.318</td><td>-77.63</td><td>$-15.53</td></tr><tr><td><a href='#T11'>T11</a></td><td>2020-03-17 18:30</td><td>L</td><td>post_n6</td><td>Stage 1 止损</td><td>1527.333</td><td>1502.882</td><td>24.451</td><td>-61.10</td><td>$-12.22</td></tr><tr><td><a href='#T12'>T12</a></td><td>2020-03-18 07:30</td><td>S</td><td>pre_cross</td><td>Stage 2 止损</td><td>1518.753</td><td>1526.724</td><td>7.971</td><td>+57.78</td><td>$+11.56</td></tr><tr><td><a href='#T13'>T13</a></td><td>2020-03-18 08:00</td><td>S</td><td>cross</td><td>Stage 2 止损</td><td>1511.825</td><td>1526.724</td><td>14.899</td><td>+57.78</td><td>$+11.56</td></tr><tr><td><a href='#T14'>T14</a></td><td>2020-03-18 08:30</td><td>S</td><td>post_n2</td><td>Stage 2 止损</td><td>1512.825</td><td>1523.875</td><td>11.050</td><td>+52.08</td><td>$+10.42</td></tr><tr><td><a href='#T15'>T15</a></td><td>2020-03-18 09:00</td><td>S</td><td>post_n3</td><td>Stage 2 止损</td><td>1512.705</td><td>1523.016</td><td>10.311</td><td>+50.36</td><td>$+10.07</td></tr><tr><td><a href='#T16'>T16</a></td><td>2020-03-18 09:30</td><td>S</td><td>post_n4</td><td>三段全部止损</td><td>1498.102</td><td>1521.099</td><td>22.997</td><td>-68.99</td><td>$-13.80</td></tr><tr><td><a href='#T17'>T17</a></td><td>2020-03-26 12:00</td><td>L</td><td>cross</td><td>Stage 2 止损</td><td>1612.833</td><td>1604.336</td><td>8.498</td><td>+34.43</td><td>$+6.89</td></tr><tr><td><a href='#T18'>T18</a></td><td>2020-03-26 13:00</td><td>L</td><td>post_n3</td><td>Stage 2 止损</td><td>1615.544</td><td>1606.836</td><td>8.708</td><td>+29.43</td><td>$+5.89</td></tr><tr><td><a href='#T19'>T19</a></td><td>2020-03-26 13:30</td><td>L</td><td>post_n4</td><td>Stage 1 + Stage 2 止损</td><td>1619.195</td><td>1607.787</td><td>11.408</td><td>-7.15</td><td>$-1.43</td></tr><tr><td><a href='#T20'>T20</a></td><td>2020-07-28 07:30</td><td>S</td><td>cross</td><td>Stage 2 + Stage 3 止损</td><td>1937.918</td><td>1951.718</td><td>13.799</td><td>+10.14</td><td>$+2.03</td></tr><tr><td><a href='#T21'>T21</a></td><td>2022-11-10 15:30</td><td>L</td><td>post_n2</td><td>Stage 2 止损</td><td>1734.312</td><td>1710.109</td><td>24.203</td><td>+103.38</td><td>$+20.68</td></tr><tr><td><a href='#T22'>T22</a></td><td>2022-11-10 16:00</td><td>L</td><td>post_n3</td><td>Stage 2 止损</td><td>1733.066</td><td>1712.411</td><td>20.655</td><td>+90.66</td><td>$+18.13</td></tr><tr><td><a href='#T23'>T23</a></td><td>2023-03-15 13:00</td><td>L</td><td>cross</td><td>Stage 2 止损</td><td>1908.553</td><td>1898.810</td><td>9.743</td><td>+30.71</td><td>$+6.14</td></tr><tr><td><a href='#T24'>T24</a></td><td>2023-03-15 13:30</td><td>L</td><td>post_n2</td><td>Stage 2 止损</td><td>1911.849</td><td>1902.376</td><td>9.473</td><td>+23.57</td><td>$+4.71</td></tr><tr><td><a href='#T25'>T25</a></td><td>2023-03-15 15:30</td><td>L</td><td>post_n6</td><td>三段全部止损</td><td>1923.854</td><td>1908.410</td><td>15.444</td><td>-46.33</td><td>$-9.27</td></tr><tr><td><a href='#T26'>T26</a></td><td>2025-04-21 02:30</td><td>L</td><td>post_n6</td><td>Stage 2 止损</td><td>3355.526</td><td>3330.527</td><td>24.999</td><td>+186.96</td><td>$+37.39</td></tr><tr><td><a href='#T27'>T27</a></td><td>2025-04-22 12:30</td><td>S</td><td>pre_cross</td><td>三段全部止损</td><td>3452.297</td><td>3457.824</td><td>5.527</td><td>-16.58</td><td>$-3.32</td></tr><tr><td><a href='#T28'>T28</a></td><td>2025-09-02 16:00</td><td>L</td><td>post_n3</td><td>Stage 2 止损</td><td>3497.955</td><td>3485.182</td><td>12.773</td><td>+103.50</td><td>$+20.70</td></tr><tr><td><a href='#T29'>T29</a></td><td>2025-09-02 16:30</td><td>L</td><td>post_n4</td><td>Stage 2 止损</td><td>3502.129</td><td>3487.172</td><td>14.957</td><td>+99.52</td><td>$+19.90</td></tr><tr><td><a href='#T30'>T30</a></td><td>2025-09-02 17:00</td><td>L</td><td>post_n5</td><td>Stage 2 止损</td><td>3511.050</td><td>3489.151</td><td>21.899</td><td>+126.04</td><td>$+25.21</td></tr><tr><td><a href='#T31'>T31</a></td><td>2025-09-02 17:30</td><td>L</td><td>post_n6</td><td>Stage 2 止损</td><td>3512.899</td><td>3491.547</td><td>21.352</td><td>+121.25</td><td>$+24.25</td></tr><tr><td><a href='#T32'>T32</a></td><td>2025-10-17 14:30</td><td>S</td><td>post_n3</td><td>Stage 2 止损</td><td>4293.377</td><td>4326.958</td><td>33.581</td><td>+136.81</td><td>$+27.36</td></tr><tr><td><a href='#T33'>T33</a></td><td>2025-10-20 14:30</td><td>L</td><td>post_n6</td><td>Stage 2 止损</td><td>4293.874</td><td>4264.946</td><td>28.928</td><td>+134.76</td><td>$+26.95</td></tr><tr><td><a href='#T34'>T34</a></td><td>2025-10-29 21:00</td><td>S</td><td>post_n3</td><td>Stage 2 止损</td><td>3969.394</td><td>3992.114</td><td>22.720</td><td>+53.19</td><td>$+10.64</td></tr><tr><td><a href='#T35'>T35</a></td><td>2026-01-21 19:00</td><td>S</td><td>cross</td><td>三段全部止损</td><td>4833.336</td><td>4849.812</td><td>16.476</td><td>-42.82</td><td>$-8.56</td></tr><tr><td><a href='#T36'>T36</a></td><td>2026-01-21 19:30</td><td>S</td><td>post_n2</td><td>三段全部止损</td><td>4821.131</td><td>4843.207</td><td>22.076</td><td>-66.23</td><td>$-13.25</td></tr><tr><td><a href='#T37'>T37</a></td><td>2026-01-26 20:30</td><td>S</td><td>pre_cross</td><td>Stage 3 止损</td><td>5064.439</td><td>5079.424</td><td>14.985</td><td>+74.92</td><td>$+14.98</td></tr><tr><td><a href='#T38'>T38</a></td><td>2026-01-26 21:00</td><td>S</td><td>cross</td><td>Stage 3 止损</td><td>5068.873</td><td>5079.424</td><td>10.551</td><td>+52.75</td><td>$+10.55</td></tr><tr><td><a href='#T39'>T39</a></td><td>2026-02-02 15:30</td><td>S</td><td>pre_cross</td><td>三段全部止损</td><td>4706.167</td><td>4726.017</td><td>19.850</td><td>-59.55</td><td>$-11.91</td></tr><tr><td><a href='#T40'>T40</a></td><td>2026-02-02 17:00</td><td>S</td><td>cross</td><td>Stage 3 止损</td><td>4719.504</td><td>4726.017</td><td>6.513</td><td>+32.56</td><td>$+6.51</td></tr><tr><td><a href='#T41'>T41</a></td><td>2026-03-20 03:00</td><td>L</td><td>pre_cross</td><td>Stage 3 止损</td><td>4661.837</td><td>4651.223</td><td>10.614</td><td>+53.07</td><td>$+10.61</td></tr><tr><td><a href='#T42'>T42</a></td><td>2026-03-20 12:30</td><td>S</td><td>cross</td><td>三段全部止损</td><td>4658.184</td><td>4687.340</td><td>29.156</td><td>-87.47</td><td>$-17.49</td></tr><tr><td><a href='#T43'>T43</a></td><td>2026-03-20 13:00</td><td>S</td><td>post_n2</td><td>三段全部止损</td><td>4645.077</td><td>4679.518</td><td>34.441</td><td>-103.32</td><td>$-20.66</td></tr><tr><td><a href='#T44'>T44</a></td><td>2026-03-20 13:30</td><td>S</td><td>post_n3</td><td>三段全部止损</td><td>4665.106</td><td>4678.919</td><td>13.813</td><td>-41.44</td><td>$-8.29</td></tr><tr><td><a href='#T45'>T45</a></td><td>2026-03-24 02:00</td><td>S</td><td>pre_cross</td><td>Stage 2 + Stage 3 止损</td><td>4377.812</td><td>4406.007</td><td>28.195</td><td>+33.74</td><td>$+6.75</td></tr><tr><td><a href='#T46'>T46</a></td><td>2026-03-24 20:30</td><td>S</td><td>pre_cross</td><td>三段全部止损</td><td>4389.518</td><td>4401.140</td><td>11.622</td><td>-34.87</td><td>$-6.97</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="trade-list">
+      
+    <section class="trade-card" id="T01">
+      <div class="trade-head">
+        <div>
+          <h2>T01 | 2020-03-06 18:00 | S | post_n3</h2>
+          <p class="sub">Stage 2 + Stage 3 止损 | total +1.96 pt | $+0.39</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1669.476</strong></div>
+          <div><span>Stop</span><strong>1674.972</strong></div>
+          <div><span>SD</span><strong>5.496</strong></div>
+          <div><span>Bars</span><strong>6</strong></div>
+          <div><span>Bias55</span><strong>3.023%</strong></div>
+          <div><span>Stage count</span><strong>2</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+10.99 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (-3.53 pt) / trail_stop</span><span class="tag tag-stop">Stage 3: SL hit (-5.50 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T01_20200306_1800_post_n3_S.png" alt="T01 chart" />
+    </section>
+    
+    <section class="trade-card" id="T02">
+      <div class="trade-head">
+        <div>
+          <h2>T02 | 2020-03-06 18:30 | S | post_n4</h2>
+          <p class="sub">三段全部止损 | total -32.07 pt | $-6.41</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1663.392</strong></div>
+          <div><span>Stop</span><strong>1674.081</strong></div>
+          <div><span>SD</span><strong>10.689</strong></div>
+          <div><span>Bars</span><strong>5</strong></div>
+          <div><span>Bias55</span><strong>3.023%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-10.69 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-10.69 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-10.69 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T02_20200306_1830_post_n4_S.png" alt="T02 chart" />
+    </section>
+    
+    <section class="trade-card" id="T03">
+      <div class="trade-head">
+        <div>
+          <h2>T03 | 2020-03-06 19:00 | S | post_n5</h2>
+          <p class="sub">三段全部止损 | total -16.67 pt | $-3.33</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1668.063</strong></div>
+          <div><span>Stop</span><strong>1673.618</strong></div>
+          <div><span>SD</span><strong>5.555</strong></div>
+          <div><span>Bars</span><strong>3</strong></div>
+          <div><span>Bias55</span><strong>3.023%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-5.56 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-5.56 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-5.56 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T03_20200306_1900_post_n5_S.png" alt="T03 chart" />
+    </section>
+    
+    <section class="trade-card" id="T04">
+      <div class="trade-head">
+        <div>
+          <h2>T04 | 2020-03-06 19:30 | S | post_n6</h2>
+          <p class="sub">三段全部止损 | total -21.88 pt | $-4.38</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1665.716</strong></div>
+          <div><span>Stop</span><strong>1673.010</strong></div>
+          <div><span>SD</span><strong>7.294</strong></div>
+          <div><span>Bars</span><strong>2</strong></div>
+          <div><span>Bias55</span><strong>3.023%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-7.29 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-7.29 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-7.29 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T04_20200306_1930_post_n6_S.png" alt="T04 chart" />
+    </section>
+    
+    <section class="trade-card" id="T05">
+      <div class="trade-head">
+        <div>
+          <h2>T05 | 2020-03-09 00:30 | L | post_n6</h2>
+          <p class="sub">三段全部止损 | total -65.72 pt | $-13.14</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1698.105</strong></div>
+          <div><span>Stop</span><strong>1676.198</strong></div>
+          <div><span>SD</span><strong>21.907</strong></div>
+          <div><span>Bars</span><strong>10</strong></div>
+          <div><span>Bias55</span><strong>3.700%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-21.91 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-21.91 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-21.91 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T05_20200309_0030_post_n6_L.png" alt="T05 chart" />
+    </section>
+    
+    <section class="trade-card" id="T06">
+      <div class="trade-head">
+        <div>
+          <h2>T06 | 2020-03-13 16:30 | S | post_n2</h2>
+          <p class="sub">Stage 2 止损 | total +105.48 pt | $+21.10</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1563.434</strong></div>
+          <div><span>Stop</span><strong>1581.708</strong></div>
+          <div><span>SD</span><strong>18.274</strong></div>
+          <div><span>Bars</span><strong>89</strong></div>
+          <div><span>Bias55</span><strong>6.562%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+36.55 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+16.20 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+52.73 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T06_20200313_1630_post_n2_S.png" alt="T06 chart" />
+    </section>
+    
+    <section class="trade-card" id="T07">
+      <div class="trade-head">
+        <div>
+          <h2>T07 | 2020-03-17 16:00 | L | cross</h2>
+          <p class="sub">Stage 2 止损 | total +61.01 pt | $+12.20</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1505.210</strong></div>
+          <div><span>Stop</span><strong>1486.460</strong></div>
+          <div><span>SD</span><strong>18.749</strong></div>
+          <div><span>Bars</span><strong>29</strong></div>
+          <div><span>Bias55</span><strong>3.240%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+37.50 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+19.71 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+3.80 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T07_20200317_1600_cross_L.png" alt="T07 chart" />
+    </section>
+    
+    <section class="trade-card" id="T08">
+      <div class="trade-head">
+        <div>
+          <h2>T08 | 2020-03-17 17:00 | L | post_n3</h2>
+          <p class="sub">Stage 1 止损 | total -75.64 pt | $-15.13</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1529.679</strong></div>
+          <div><span>Stop</span><strong>1495.380</strong></div>
+          <div><span>SD</span><strong>34.299</strong></div>
+          <div><span>Bars</span><strong>30</strong></div>
+          <div><span>Bias55</span><strong>3.240%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-34.30 pt) / hard_stop</span><span class="tag tag-pass">Stage 2: M30 merged cross (-20.67 pt)</span><span class="tag tag-pass">Stage 3: M30 merged cross (-20.67 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T08_20200317_1700_post_n3_L.png" alt="T08 chart" />
+    </section>
+    
+    <section class="trade-card" id="T09">
+      <div class="trade-head">
+        <div>
+          <h2>T09 | 2020-03-17 17:30 | L | post_n4</h2>
+          <p class="sub">Stage 1 止损 | total -81.19 pt | $-16.24</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1532.481</strong></div>
+          <div><span>Stop</span><strong>1498.234</strong></div>
+          <div><span>SD</span><strong>34.247</strong></div>
+          <div><span>Bars</span><strong>29</strong></div>
+          <div><span>Bias55</span><strong>3.240%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-34.25 pt) / hard_stop</span><span class="tag tag-pass">Stage 2: M30 merged cross (-23.47 pt)</span><span class="tag tag-pass">Stage 3: M30 merged cross (-23.47 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T09_20200317_1730_post_n4_L.png" alt="T09 chart" />
+    </section>
+    
+    <section class="trade-card" id="T10">
+      <div class="trade-head">
+        <div>
+          <h2>T10 | 2020-03-17 18:00 | L | post_n5</h2>
+          <p class="sub">Stage 1 止损 | total -77.63 pt | $-15.53</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1532.162</strong></div>
+          <div><span>Stop</span><strong>1500.844</strong></div>
+          <div><span>SD</span><strong>31.318</strong></div>
+          <div><span>Bars</span><strong>28</strong></div>
+          <div><span>Bias55</span><strong>3.489%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-31.32 pt) / hard_stop</span><span class="tag tag-pass">Stage 2: M30 merged cross (-23.15 pt)</span><span class="tag tag-pass">Stage 3: M30 merged cross (-23.15 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T10_20200317_1800_post_n5_L.png" alt="T10 chart" />
+    </section>
+    
+    <section class="trade-card" id="T11">
+      <div class="trade-head">
+        <div>
+          <h2>T11 | 2020-03-17 18:30 | L | post_n6</h2>
+          <p class="sub">Stage 1 止损 | total -61.10 pt | $-12.22</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1527.333</strong></div>
+          <div><span>Stop</span><strong>1502.882</strong></div>
+          <div><span>SD</span><strong>24.451</strong></div>
+          <div><span>Bars</span><strong>27</strong></div>
+          <div><span>Bias55</span><strong>3.489%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-24.45 pt) / hard_stop</span><span class="tag tag-pass">Stage 2: M30 merged cross (-18.33 pt)</span><span class="tag tag-pass">Stage 3: M30 merged cross (-18.33 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T11_20200317_1830_post_n6_L.png" alt="T11 chart" />
+    </section>
+    
+    <section class="trade-card" id="T12">
+      <div class="trade-head">
+        <div>
+          <h2>T12 | 2020-03-18 07:30 | S | pre_cross</h2>
+          <p class="sub">Stage 2 止损 | total +57.78 pt | $+11.56</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1518.753</strong></div>
+          <div><span>Stop</span><strong>1526.724</strong></div>
+          <div><span>SD</span><strong>7.971</strong></div>
+          <div><span>Bars</span><strong>82</strong></div>
+          <div><span>Bias55</span><strong>5.105%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+15.94 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+4.94 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+36.90 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T12_20200318_0730_pre_cross_S.png" alt="T12 chart" />
+    </section>
+    
+    <section class="trade-card" id="T13">
+      <div class="trade-head">
+        <div>
+          <h2>T13 | 2020-03-18 08:00 | S | cross</h2>
+          <p class="sub">Stage 2 止损 | total +57.78 pt | $+11.56</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1511.825</strong></div>
+          <div><span>Stop</span><strong>1526.724</strong></div>
+          <div><span>SD</span><strong>14.899</strong></div>
+          <div><span>Bars</span><strong>81</strong></div>
+          <div><span>Bias55</span><strong>5.267%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+29.80 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (-1.99 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+29.97 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T13_20200318_0800_cross_S.png" alt="T13 chart" />
+    </section>
+    
+    <section class="trade-card" id="T14">
+      <div class="trade-head">
+        <div>
+          <h2>T14 | 2020-03-18 08:30 | S | post_n2</h2>
+          <p class="sub">Stage 2 止损 | total +52.08 pt | $+10.42</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1512.825</strong></div>
+          <div><span>Stop</span><strong>1523.875</strong></div>
+          <div><span>SD</span><strong>11.050</strong></div>
+          <div><span>Bars</span><strong>80</strong></div>
+          <div><span>Bias55</span><strong>5.267%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+22.10 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (-0.99 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+30.97 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T14_20200318_0830_post_n2_S.png" alt="T14 chart" />
+    </section>
+    
+    <section class="trade-card" id="T15">
+      <div class="trade-head">
+        <div>
+          <h2>T15 | 2020-03-18 09:00 | S | post_n3</h2>
+          <p class="sub">Stage 2 止损 | total +50.36 pt | $+10.07</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1512.705</strong></div>
+          <div><span>Stop</span><strong>1523.016</strong></div>
+          <div><span>SD</span><strong>10.311</strong></div>
+          <div><span>Bars</span><strong>79</strong></div>
+          <div><span>Bias55</span><strong>5.267%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+20.62 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (-1.11 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+30.85 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T15_20200318_0900_post_n3_S.png" alt="T15 chart" />
+    </section>
+    
+    <section class="trade-card" id="T16">
+      <div class="trade-head">
+        <div>
+          <h2>T16 | 2020-03-18 09:30 | S | post_n4</h2>
+          <p class="sub">三段全部止损 | total -68.99 pt | $-13.80</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1498.102</strong></div>
+          <div><span>Stop</span><strong>1521.099</strong></div>
+          <div><span>SD</span><strong>22.997</strong></div>
+          <div><span>Bars</span><strong>9</strong></div>
+          <div><span>Bias55</span><strong>5.267%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-23.00 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-23.00 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-23.00 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T16_20200318_0930_post_n4_S.png" alt="T16 chart" />
+    </section>
+    
+    <section class="trade-card" id="T17">
+      <div class="trade-head">
+        <div>
+          <h2>T17 | 2020-03-26 12:00 | L | cross</h2>
+          <p class="sub">Stage 2 止损 | total +34.43 pt | $+6.89</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1612.833</strong></div>
+          <div><span>Stop</span><strong>1604.336</strong></div>
+          <div><span>SD</span><strong>8.498</strong></div>
+          <div><span>Bars</span><strong>39</strong></div>
+          <div><span>Bias55</span><strong>4.052%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+17.00 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+9.80 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+7.64 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T17_20200326_1200_cross_L.png" alt="T17 chart" />
+    </section>
+    
+    <section class="trade-card" id="T18">
+      <div class="trade-head">
+        <div>
+          <h2>T18 | 2020-03-26 13:00 | L | post_n3</h2>
+          <p class="sub">Stage 2 止损 | total +29.43 pt | $+5.89</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1615.544</strong></div>
+          <div><span>Stop</span><strong>1606.836</strong></div>
+          <div><span>SD</span><strong>8.708</strong></div>
+          <div><span>Bars</span><strong>37</strong></div>
+          <div><span>Bias55</span><strong>4.052%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+17.42 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+7.09 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+4.92 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T18_20200326_1300_post_n3_L.png" alt="T18 chart" />
+    </section>
+    
+    <section class="trade-card" id="T19">
+      <div class="trade-head">
+        <div>
+          <h2>T19 | 2020-03-26 13:30 | L | post_n4</h2>
+          <p class="sub">Stage 1 + Stage 2 止损 | total -7.15 pt | $-1.43</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1619.195</strong></div>
+          <div><span>Stop</span><strong>1607.787</strong></div>
+          <div><span>SD</span><strong>11.408</strong></div>
+          <div><span>Bars</span><strong>129</strong></div>
+          <div><span>Bias55</span><strong>4.052%</strong></div>
+          <div><span>Stage count</span><strong>2</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-11.41 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (+2.98 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+1.27 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T19_20200326_1330_post_n4_L.png" alt="T19 chart" />
+    </section>
+    
+    <section class="trade-card" id="T20">
+      <div class="trade-head">
+        <div>
+          <h2>T20 | 2020-07-28 07:30 | S | cross</h2>
+          <p class="sub">Stage 2 + Stage 3 止损 | total +10.14 pt | $+2.03</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1937.918</strong></div>
+          <div><span>Stop</span><strong>1951.718</strong></div>
+          <div><span>SD</span><strong>13.799</strong></div>
+          <div><span>Bars</span><strong>18</strong></div>
+          <div><span>Bias55</span><strong>2.381%</strong></div>
+          <div><span>Stage count</span><strong>2</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+27.60 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (-3.66 pt) / trail_stop</span><span class="tag tag-stop">Stage 3: SL hit (-13.80 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T20_20200728_0730_cross_S.png" alt="T20 chart" />
+    </section>
+    
+    <section class="trade-card" id="T21">
+      <div class="trade-head">
+        <div>
+          <h2>T21 | 2022-11-10 15:30 | L | post_n2</h2>
+          <p class="sub">Stage 2 止损 | total +103.38 pt | $+20.68</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1734.312</strong></div>
+          <div><span>Stop</span><strong>1710.109</strong></div>
+          <div><span>SD</span><strong>24.203</strong></div>
+          <div><span>Bars</span><strong>123</strong></div>
+          <div><span>Bias55</span><strong>4.428%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+48.41 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+29.38 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+25.59 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T21_20221110_1530_post_n2_L.png" alt="T21 chart" />
+    </section>
+    
+    <section class="trade-card" id="T22">
+      <div class="trade-head">
+        <div>
+          <h2>T22 | 2022-11-10 16:00 | L | post_n3</h2>
+          <p class="sub">Stage 2 止损 | total +90.66 pt | $+18.13</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1733.066</strong></div>
+          <div><span>Stop</span><strong>1712.411</strong></div>
+          <div><span>SD</span><strong>20.655</strong></div>
+          <div><span>Bars</span><strong>92</strong></div>
+          <div><span>Bias55</span><strong>4.191%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+41.31 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+22.51 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+26.84 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T22_20221110_1600_post_n3_L.png" alt="T22 chart" />
+    </section>
+    
+    <section class="trade-card" id="T23">
+      <div class="trade-head">
+        <div>
+          <h2>T23 | 2023-03-15 13:00 | L | cross</h2>
+          <p class="sub">Stage 2 止损 | total +30.71 pt | $+6.14</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1908.553</strong></div>
+          <div><span>Stop</span><strong>1898.810</strong></div>
+          <div><span>SD</span><strong>9.743</strong></div>
+          <div><span>Bars</span><strong>26</strong></div>
+          <div><span>Bias55</span><strong>3.360%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+19.49 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+8.74 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+2.48 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T23_20230315_1300_cross_L.png" alt="T23 chart" />
+    </section>
+    
+    <section class="trade-card" id="T24">
+      <div class="trade-head">
+        <div>
+          <h2>T24 | 2023-03-15 13:30 | L | post_n2</h2>
+          <p class="sub">Stage 2 止损 | total +23.57 pt | $+4.71</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1911.849</strong></div>
+          <div><span>Stop</span><strong>1902.376</strong></div>
+          <div><span>SD</span><strong>9.473</strong></div>
+          <div><span>Bars</span><strong>25</strong></div>
+          <div><span>Bias55</span><strong>3.360%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+18.95 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+5.44 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (-0.81 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T24_20230315_1330_post_n2_L.png" alt="T24 chart" />
+    </section>
+    
+    <section class="trade-card" id="T25">
+      <div class="trade-head">
+        <div>
+          <h2>T25 | 2023-03-15 15:30 | L | post_n6</h2>
+          <p class="sub">三段全部止损 | total -46.33 pt | $-9.27</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>1923.854</strong></div>
+          <div><span>Stop</span><strong>1908.410</strong></div>
+          <div><span>SD</span><strong>15.444</strong></div>
+          <div><span>Bars</span><strong>20</strong></div>
+          <div><span>Bias55</span><strong>3.350%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-15.44 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-15.44 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-15.44 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T25_20230315_1530_post_n6_L.png" alt="T25 chart" />
+    </section>
+    
+    <section class="trade-card" id="T26">
+      <div class="trade-head">
+        <div>
+          <h2>T26 | 2025-04-21 02:30 | L | post_n6</h2>
+          <p class="sub">Stage 2 止损 | total +186.96 pt | $+37.39</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3355.526</strong></div>
+          <div><span>Stop</span><strong>3330.527</strong></div>
+          <div><span>SD</span><strong>24.999</strong></div>
+          <div><span>Bars</span><strong>69</strong></div>
+          <div><span>Bias55</span><strong>5.279%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+50.00 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+60.90 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+76.07 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T26_20250421_0230_post_n6_L.png" alt="T26 chart" />
+    </section>
+    
+    <section class="trade-card" id="T27">
+      <div class="trade-head">
+        <div>
+          <h2>T27 | 2025-04-22 12:30 | S | pre_cross</h2>
+          <p class="sub">三段全部止损 | total -16.58 pt | $-3.32</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3452.297</strong></div>
+          <div><span>Stop</span><strong>3457.824</strong></div>
+          <div><span>SD</span><strong>5.527</strong></div>
+          <div><span>Bars</span><strong>1</strong></div>
+          <div><span>Bias55</span><strong>4.475%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-5.53 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-5.53 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-5.53 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T27_20250422_1230_pre_cross_S.png" alt="T27 chart" />
+    </section>
+    
+    <section class="trade-card" id="T28">
+      <div class="trade-head">
+        <div>
+          <h2>T28 | 2025-09-02 16:00 | L | post_n3</h2>
+          <p class="sub">Stage 2 止损 | total +103.50 pt | $+20.70</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3497.955</strong></div>
+          <div><span>Stop</span><strong>3485.182</strong></div>
+          <div><span>SD</span><strong>12.773</strong></div>
+          <div><span>Bars</span><strong>65</strong></div>
+          <div><span>Bias55</span><strong>3.396%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+25.55 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+29.71 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+48.25 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T28_20250902_1600_post_n3_L.png" alt="T28 chart" />
+    </section>
+    
+    <section class="trade-card" id="T29">
+      <div class="trade-head">
+        <div>
+          <h2>T29 | 2025-09-02 16:30 | L | post_n4</h2>
+          <p class="sub">Stage 2 止损 | total +99.52 pt | $+19.90</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3502.129</strong></div>
+          <div><span>Stop</span><strong>3487.172</strong></div>
+          <div><span>SD</span><strong>14.957</strong></div>
+          <div><span>Bars</span><strong>64</strong></div>
+          <div><span>Bias55</span><strong>3.396%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+29.91 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+25.53 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+44.07 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T29_20250902_1630_post_n4_L.png" alt="T29 chart" />
+    </section>
+    
+    <section class="trade-card" id="T30">
+      <div class="trade-head">
+        <div>
+          <h2>T30 | 2025-09-02 17:00 | L | post_n5</h2>
+          <p class="sub">Stage 2 止损 | total +126.04 pt | $+25.21</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3511.050</strong></div>
+          <div><span>Stop</span><strong>3489.151</strong></div>
+          <div><span>SD</span><strong>21.899</strong></div>
+          <div><span>Bars</span><strong>63</strong></div>
+          <div><span>Bias55</span><strong>3.396%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+43.80 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+47.09 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+35.15 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T30_20250902_1700_post_n5_L.png" alt="T30 chart" />
+    </section>
+    
+    <section class="trade-card" id="T31">
+      <div class="trade-head">
+        <div>
+          <h2>T31 | 2025-09-02 17:30 | L | post_n6</h2>
+          <p class="sub">Stage 2 止损 | total +121.25 pt | $+24.25</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3512.899</strong></div>
+          <div><span>Stop</span><strong>3491.547</strong></div>
+          <div><span>SD</span><strong>21.352</strong></div>
+          <div><span>Bars</span><strong>62</strong></div>
+          <div><span>Bias55</span><strong>3.396%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+42.70 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+45.24 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+33.30 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T31_20250902_1730_post_n6_L.png" alt="T31 chart" />
+    </section>
+    
+    <section class="trade-card" id="T32">
+      <div class="trade-head">
+        <div>
+          <h2>T32 | 2025-10-17 14:30 | S | post_n3</h2>
+          <p class="sub">Stage 2 止损 | total +136.81 pt | $+27.36</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4293.377</strong></div>
+          <div><span>Stop</span><strong>4326.958</strong></div>
+          <div><span>SD</span><strong>33.581</strong></div>
+          <div><span>Bars</span><strong>40</strong></div>
+          <div><span>Bias55</span><strong>3.056%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+67.16 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+32.22 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+37.43 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T32_20251017_1430_post_n3_S.png" alt="T32 chart" />
+    </section>
+    
+    <section class="trade-card" id="T33">
+      <div class="trade-head">
+        <div>
+          <h2>T33 | 2025-10-20 14:30 | L | post_n6</h2>
+          <p class="sub">Stage 2 止损 | total +134.76 pt | $+26.95</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4293.874</strong></div>
+          <div><span>Stop</span><strong>4264.946</strong></div>
+          <div><span>SD</span><strong>28.928</strong></div>
+          <div><span>Bars</span><strong>32</strong></div>
+          <div><span>Bias55</span><strong>5.004%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+57.86 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+46.67 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (+30.23 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T33_20251020_1430_post_n6_L.png" alt="T33 chart" />
+    </section>
+    
+    <section class="trade-card" id="T34">
+      <div class="trade-head">
+        <div>
+          <h2>T34 | 2025-10-29 21:00 | S | post_n3</h2>
+          <p class="sub">Stage 2 止损 | total +53.19 pt | $+10.64</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3969.394</strong></div>
+          <div><span>Stop</span><strong>3992.114</strong></div>
+          <div><span>SD</span><strong>22.720</strong></div>
+          <div><span>Bars</span><strong>23</strong></div>
+          <div><span>Bias55</span><strong>3.341%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+45.44 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+11.27 pt) / trail_stop</span><span class="tag tag-pass">Stage 3: M30 merged cross (-3.53 pt)</span>
+      </div>
+      <img loading="lazy" src="charts/T34_20251029_2100_post_n3_S.png" alt="T34 chart" />
+    </section>
+    
+    <section class="trade-card" id="T35">
+      <div class="trade-head">
+        <div>
+          <h2>T35 | 2026-01-21 19:00 | S | cross</h2>
+          <p class="sub">三段全部止损 | total -42.82 pt | $-8.56</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4833.336</strong></div>
+          <div><span>Stop</span><strong>4849.812</strong></div>
+          <div><span>SD</span><strong>16.476</strong></div>
+          <div><span>Bars</span><strong>3</strong></div>
+          <div><span>Bias55</span><strong>2.962%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-16.48 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-9.87 pt) / trail_stop</span><span class="tag tag-stop">Stage 3: SL hit (-16.48 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T35_20260121_1900_cross_S.png" alt="T35 chart" />
+    </section>
+    
+    <section class="trade-card" id="T36">
+      <div class="trade-head">
+        <div>
+          <h2>T36 | 2026-01-21 19:30 | S | post_n2</h2>
+          <p class="sub">三段全部止损 | total -66.23 pt | $-13.25</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4821.131</strong></div>
+          <div><span>Stop</span><strong>4843.207</strong></div>
+          <div><span>SD</span><strong>22.076</strong></div>
+          <div><span>Bars</span><strong>2</strong></div>
+          <div><span>Bias55</span><strong>2.962%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-22.08 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-22.08 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-22.08 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T36_20260121_1930_post_n2_S.png" alt="T36 chart" />
+    </section>
+    
+    <section class="trade-card" id="T37">
+      <div class="trade-head">
+        <div>
+          <h2>T37 | 2026-01-26 20:30 | S | pre_cross</h2>
+          <p class="sub">Stage 3 止损 | total +74.92 pt | $+14.98</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>5064.439</strong></div>
+          <div><span>Stop</span><strong>5079.424</strong></div>
+          <div><span>SD</span><strong>14.985</strong></div>
+          <div><span>Bars</span><strong>13</strong></div>
+          <div><span>Bias55</span><strong>4.260%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+29.97 pt)</span><span class="tag tag-pass">Stage 2: 4.0R forced (+59.94 pt)</span><span class="tag tag-stop">Stage 3: SL hit (-14.98 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T37_20260126_2030_pre_cross_S.png" alt="T37 chart" />
+    </section>
+    
+    <section class="trade-card" id="T38">
+      <div class="trade-head">
+        <div>
+          <h2>T38 | 2026-01-26 21:00 | S | cross</h2>
+          <p class="sub">Stage 3 止损 | total +52.75 pt | $+10.55</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>5068.873</strong></div>
+          <div><span>Stop</span><strong>5079.424</strong></div>
+          <div><span>SD</span><strong>10.551</strong></div>
+          <div><span>Bars</span><strong>12</strong></div>
+          <div><span>Bias55</span><strong>4.260%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+21.10 pt)</span><span class="tag tag-pass">Stage 2: 4.0R forced (+42.20 pt)</span><span class="tag tag-stop">Stage 3: SL hit (-10.55 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T38_20260126_2100_cross_S.png" alt="T38 chart" />
+    </section>
+    
+    <section class="trade-card" id="T39">
+      <div class="trade-head">
+        <div>
+          <h2>T39 | 2026-02-02 15:30 | S | pre_cross</h2>
+          <p class="sub">三段全部止损 | total -59.55 pt | $-11.91</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4706.167</strong></div>
+          <div><span>Stop</span><strong>4726.017</strong></div>
+          <div><span>SD</span><strong>19.850</strong></div>
+          <div><span>Bars</span><strong>1</strong></div>
+          <div><span>Bias55</span><strong>7.507%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-19.85 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-19.85 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-19.85 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T39_20260202_1530_pre_cross_S.png" alt="T39 chart" />
+    </section>
+    
+    <section class="trade-card" id="T40">
+      <div class="trade-head">
+        <div>
+          <h2>T40 | 2026-02-02 17:00 | S | cross</h2>
+          <p class="sub">Stage 3 止损 | total +32.56 pt | $+6.51</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4719.504</strong></div>
+          <div><span>Stop</span><strong>4726.017</strong></div>
+          <div><span>SD</span><strong>6.513</strong></div>
+          <div><span>Bars</span><strong>14</strong></div>
+          <div><span>Bias55</span><strong>6.315%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+13.03 pt)</span><span class="tag tag-pass">Stage 2: 4.0R forced (+26.05 pt)</span><span class="tag tag-stop">Stage 3: SL hit (-6.51 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T40_20260202_1700_cross_S.png" alt="T40 chart" />
+    </section>
+    
+    <section class="trade-card" id="T41">
+      <div class="trade-head">
+        <div>
+          <h2>T41 | 2026-03-20 03:00 | L | pre_cross</h2>
+          <p class="sub">Stage 3 止损 | total +53.07 pt | $+10.61</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4661.837</strong></div>
+          <div><span>Stop</span><strong>4651.223</strong></div>
+          <div><span>SD</span><strong>10.614</strong></div>
+          <div><span>Bars</span><strong>18</strong></div>
+          <div><span>Bias55</span><strong>5.015%</strong></div>
+          <div><span>Stage count</span><strong>1</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+21.23 pt)</span><span class="tag tag-pass">Stage 2: 4.0R forced (+42.45 pt)</span><span class="tag tag-stop">Stage 3: SL hit (-10.61 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T41_20260320_0300_pre_cross_L.png" alt="T41 chart" />
+    </section>
+    
+    <section class="trade-card" id="T42">
+      <div class="trade-head">
+        <div>
+          <h2>T42 | 2026-03-20 12:30 | S | cross</h2>
+          <p class="sub">三段全部止损 | total -87.47 pt | $-17.49</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4658.184</strong></div>
+          <div><span>Stop</span><strong>4687.340</strong></div>
+          <div><span>SD</span><strong>29.156</strong></div>
+          <div><span>Bars</span><strong>3</strong></div>
+          <div><span>Bias55</span><strong>6.709%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-29.16 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-29.16 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-29.16 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T42_20260320_1230_cross_S.png" alt="T42 chart" />
+    </section>
+    
+    <section class="trade-card" id="T43">
+      <div class="trade-head">
+        <div>
+          <h2>T43 | 2026-03-20 13:00 | S | post_n2</h2>
+          <p class="sub">三段全部止损 | total -103.32 pt | $-20.66</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4645.077</strong></div>
+          <div><span>Stop</span><strong>4679.518</strong></div>
+          <div><span>SD</span><strong>34.441</strong></div>
+          <div><span>Bars</span><strong>2</strong></div>
+          <div><span>Bias55</span><strong>6.709%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-34.44 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-34.44 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-34.44 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T43_20260320_1300_post_n2_S.png" alt="T43 chart" />
+    </section>
+    
+    <section class="trade-card" id="T44">
+      <div class="trade-head">
+        <div>
+          <h2>T44 | 2026-03-20 13:30 | S | post_n3</h2>
+          <p class="sub">三段全部止损 | total -41.44 pt | $-8.29</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4665.106</strong></div>
+          <div><span>Stop</span><strong>4678.919</strong></div>
+          <div><span>SD</span><strong>13.813</strong></div>
+          <div><span>Bars</span><strong>1</strong></div>
+          <div><span>Bias55</span><strong>6.709%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-13.81 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-13.81 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-13.81 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T44_20260320_1330_post_n3_S.png" alt="T44 chart" />
+    </section>
+    
+    <section class="trade-card" id="T45">
+      <div class="trade-head">
+        <div>
+          <h2>T45 | 2026-03-24 02:00 | S | pre_cross</h2>
+          <p class="sub">Stage 2 + Stage 3 止损 | total +33.74 pt | $+6.75</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4377.812</strong></div>
+          <div><span>Stop</span><strong>4406.007</strong></div>
+          <div><span>SD</span><strong>28.195</strong></div>
+          <div><span>Bars</span><strong>14</strong></div>
+          <div><span>Bias55</span><strong>9.175%</strong></div>
+          <div><span>Stage count</span><strong>2</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-pass">Stage 1: 2.0R TP (+56.39 pt)</span><span class="tag tag-stop">Stage 2: trail/SL hit (+5.54 pt) / trail_stop</span><span class="tag tag-stop">Stage 3: SL hit (-28.19 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T45_20260324_0200_pre_cross_S.png" alt="T45 chart" />
+    </section>
+    
+    <section class="trade-card" id="T46">
+      <div class="trade-head">
+        <div>
+          <h2>T46 | 2026-03-24 20:30 | S | pre_cross</h2>
+          <p class="sub">三段全部止损 | total -34.87 pt | $-6.97</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4389.518</strong></div>
+          <div><span>Stop</span><strong>4401.140</strong></div>
+          <div><span>SD</span><strong>11.622</strong></div>
+          <div><span>Bars</span><strong>1</strong></div>
+          <div><span>Bias55</span><strong>5.326%</strong></div>
+          <div><span>Stage count</span><strong>3</strong></div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-stop">Stage 1: SL hit (-11.62 pt) / hard_stop</span><span class="tag tag-stop">Stage 2: trail/SL hit (-11.62 pt) / hard_stop</span><span class="tag tag-stop">Stage 3: SL hit (-11.62 pt) / hard_stop</span>
+      </div>
+      <img loading="lazy" src="charts/T46_20260324_2030_pre_cross_S.png" alt="T46 chart" />
+    </section>
+    
+    </div>
+  </div>
+</body>
+</html>

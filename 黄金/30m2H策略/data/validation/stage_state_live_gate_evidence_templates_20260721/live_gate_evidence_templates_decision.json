@@ -1,0 +1,11 @@
+﻿{
+  "decision_time": "2026-07-21T11:26:03",
+  "check_id": "stage_state_live_gate_evidence_templates",
+  "status": "templates_generated",
+  "gate_count": 10,
+  "evidence_template_count": 22,
+  "ready_to_live_trade": false,
+  "all_gate_status": "open",
+  "contains_real_credentials": false,
+  "recommended_next_action": "run_evidence_template_review_default_open"
+}

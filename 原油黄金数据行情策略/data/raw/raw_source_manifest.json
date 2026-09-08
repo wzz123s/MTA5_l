@@ -1,0 +1,88 @@
+﻿{
+  "strategy": "Oil_DataEvent",
+  "source_type": "mt5_api_history",
+  "source_id": "oil_dataevent_live",
+  "symbol": "USOILm",
+  "timeframes": [
+    "M30",
+    "H2",
+    "H4"
+  ],
+  "date_from_utc": "2019-01-01 00:00:00+00:00",
+  "date_to_utc": "2026-09-09 00:00:00+00:00",
+  "files": [
+    {
+      "timeframe": "M30",
+      "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\oil_dataevent_live\\USOILm_M30.csv",
+      "rows": 61967,
+      "first_time_utc": "2019-01-21 00:00:00+00:00",
+      "last_time_utc": "2026-09-08 14:30:00+00:00",
+      "sha256": "5222b90d5f337b0f9010a7a73441adbaebdc1e6d66d254c58c6760ab47510dfc",
+      "size": 6211757
+    },
+    {
+      "timeframe": "H2",
+      "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\oil_dataevent_live\\USOILm_H2.csv",
+      "rows": 16737,
+      "first_time_utc": "2019-01-21 00:00:00+00:00",
+      "last_time_utc": "2026-09-08 14:00:00+00:00",
+      "sha256": "13b6d23c0e4ec95e581f0b4b20d6141eacbf2d9750e645930030805e54eb8655",
+      "size": 1669743
+    },
+    {
+      "timeframe": "H4",
+      "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\oil_dataevent_live\\USOILm_H4.csv",
+      "rows": 9040,
+      "first_time_utc": "2019-01-21 00:00:00+00:00",
+      "last_time_utc": "2026-09-08 12:00:00+00:00",
+      "sha256": "c0fc8fec57a2ef366df8b1518474bf8df3ad71205c193bb1903597e26f25efc2",
+      "size": 904033
+    }
+  ],
+  "compatibility_raw_sha256": "5222b90d5f337b0f9010a7a73441adbaebdc1e6d66d254c58c6760ab47510dfc",
+  "generated_at_utc": "2026-09-08T14:54:10.216426+00:00",
+  "bundle_dir": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\oil_dataevent_live",
+  "bundle_sha256": "fcc802e2582ab504d623e57ac234ab8d86ce28ef239013bef117702a66ec6fcc",
+  "compatibility_raw_file": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\XAUUSDm30.csv",
+  "terminal_path_arg": "",
+  "server_arg": "",
+  "portable": false,
+  "snapshot": {
+    "terminal": {
+      "mt5_version": [
+        500,
+        6182,
+        "5 Sep 2026"
+      ],
+      "name": "MetaTrader 5",
+      "company": "MetaQuotes Ltd.",
+      "path": "F:\\Program Files\\MetaTrader 5",
+      "data_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\DAD3B8CC3EAC09C0C9725021DF0C7A65",
+      "commondata_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common",
+      "build": 6182,
+      "connected": true
+    },
+    "account": {
+      "account_connected": true,
+      "login_sha256": "ae4f250733c70c90ce7fcb0bf1f9864cbc58b0c45423ac73efbaa720c89b9055",
+      "server": "Exness-MT5Trial5",
+      "currency": "USD",
+      "trade_mode": 0,
+      "leverage": 2000
+    },
+    "symbol": {
+      "available": true,
+      "name": "USOILm",
+      "path": "Standard\\Energies\\USOILm",
+      "digits": 3,
+      "point": 0.001,
+      "trade_contract_size": 1000.0,
+      "currency_profit": "USD",
+      "currency_margin": "USD",
+      "spread": 20,
+      "trade_mode": 4,
+      "visible": true
+    }
+  },
+  "rule": "strategy_dedicated_raw_source_required; direct_mt5_api_required"
+}

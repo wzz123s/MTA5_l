@@ -1,0 +1,16 @@
+﻿{
+  "gap_id": "LIVE-GAP-003",
+  "gate_item": "InpSimMode=false gate",
+  "template_status": "template_only",
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "contains_real_credentials": false,
+  "fields": {
+    "set_path": "TEMPLATE_PLACEHOLDER",
+    "InpSimMode": "TEMPLATE_PLACEHOLDER",
+    "InpExportCSV": "TEMPLATE_PLACEHOLDER",
+    "InpExportTradeLedger": "TEMPLATE_PLACEHOLDER"
+  },
+  "manual_confirmation": "Approver types exact phrase: APPROVE_INPSIMMODE_FALSE.",
+  "fail_closed_action": "Abort live gate and continue with InpSimMode=true."
+}

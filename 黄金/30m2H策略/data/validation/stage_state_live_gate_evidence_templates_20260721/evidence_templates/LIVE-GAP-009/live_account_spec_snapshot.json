@@ -1,0 +1,18 @@
+﻿{
+  "gap_id": "LIVE-GAP-009",
+  "gate_item": "Broker/account/spec confirmation",
+  "template_status": "template_only",
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "contains_real_credentials": false,
+  "fields": {
+    "account_alias": "TEMPLATE_PLACEHOLDER",
+    "account_type": "TEMPLATE_PLACEHOLDER",
+    "leverage": "TEMPLATE_PLACEHOLDER",
+    "balance_cap": "TEMPLATE_PLACEHOLDER",
+    "allowed_symbol": "TEMPLATE_PLACEHOLDER",
+    "captured_at": "TEMPLATE_PLACEHOLDER"
+  },
+  "manual_confirmation": "Operator confirms this is the intended account and not a different terminal profile.",
+  "fail_closed_action": "Reject live gate if account/spec is stale or missing."
+}

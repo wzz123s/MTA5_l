@@ -1,0 +1,16 @@
+﻿{
+  "decision_time": "2026-07-23T19:45:12",
+  "check_id": "stage_state_autotrading_disable_connected_snapshot",
+  "status": "connected_session_autotrading_disabled_confirmed",
+  "terminal_connected": true,
+  "terminal_trade_allowed": false,
+  "terminal_tradeapi_disabled": false,
+  "emergency_stop_flag_exists": true,
+  "runner_stop_flag_exists": true,
+  "connected_session_autotrading_disable_confirmed": true,
+  "manual_ui_screenshot_supplied": false,
+  "orders_placed": false,
+  "runner_executed": false,
+  "blocker_failure_count": 0,
+  "ready_to_live_trade": false
+}

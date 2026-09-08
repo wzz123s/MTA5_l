@@ -1,0 +1,15 @@
+﻿{
+  "check_id": "stage_state_sim_only_chart_trial_package",
+  "status": "pass",
+  "ready_to_manual_chart_trial_with_sim_only": true,
+  "ready_to_startup_attach_trial": true,
+  "ready_to_sim_continuous_runner_execution": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "warning_failure_count": 0,
+  "local_ex5_sha256": "67910B7AD58F59CD134A505F37CBDAF32E298D17F0349DB27688AED64FA46D49",
+  "deployed_ex5_sha256": "67910B7AD58F59CD134A505F37CBDAF32E298D17F0349DB27688AED64FA46D49",
+  "sim_only_source": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA_SIM_ONLY.mq5",
+  "deployed_ex5": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\MQL5\\Experts\\Advisors\\30m2H_Strategy_EA_SIM_ONLY.ex5",
+  "deployed_set": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\MQL5\\Presets\\30m2H_Strategy_EA_SIM_ONLY.stage_state_sim_dryrun_20260719.set"
+}

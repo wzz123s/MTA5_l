@@ -1,0 +1,16 @@
+﻿{
+  "decision_time": "2026-07-21T12:00:22",
+  "check_id": "stage_state_live_gate_evidence_fill_plan_review",
+  "status": "pass_fill_plan_ready_live_blocked",
+  "review_completed": true,
+  "fill_plan_item_count": 22,
+  "auto_item_count": 5,
+  "manual_item_count": 13,
+  "rehearsal_item_count": 4,
+  "contains_secret_risk_count": 4,
+  "live_action_risk_count": 12,
+  "requires_user_approval_count": 15,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "collect_auto_safe_evidence_without_live_or_secret_values"
+}

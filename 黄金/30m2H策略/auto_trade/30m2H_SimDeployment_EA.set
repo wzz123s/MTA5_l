@@ -1,0 +1,96 @@
+; 30m2H 模拟盘部署参数包 (SimDeployment)
+; EA 版本: v3.36 (对齐链最终版, 编译 2026-08-12 21:42, ex5 156,428 bytes)
+; 基于: 30m2H_Strategy_EA.v334_tester.set (对齐冻结口径) + v3.36 语义
+; 生成时间: 2026-08-12
+; 对齐状态: 行级 186/279 精确 + 204/279 容差 | 笔级交集 62/73 (EA 侧 84.9%), 差异全归因
+;
+; ⚠️ 安全配置说明:
+;   - InpSimMode=true: 全虚拟信号模式 — 合成 ticket 完整运行三段生命周期
+;     (SIM OPEN/TRAIL/CLOSE 全部打印到 Experts 日志), 不产生任何真实订单
+;   - InpAllowRealTrading=false: 双闸第二道 — 即使误改 InpSimMode=false,
+;     非 Tester 环境下仍阻止真实下单 (EA v3.28 双闸逻辑)
+;   - InpUseM15EarlyEntry=false: v3.32+ 默认, v3.35 已硬移除调用点, 信号统一 M30 close
+;
+; 📋 监控方式 (SimMode 下):
+;   1. Experts 日志: "=== SIM OPEN/TRAIL/CLOSE ===" 标记 + VerboseDecisionDiag 逐层判定
+;   2. MQL5\Files\30m2H_strategy_signals_export.csv (每根 M30 bar 信号判定, 不受 SimMode 阻挡)
+;   3. 注意: trade ledger CSV 仅在 Strategy Tester 模式导出 (InpSimMode=true 时被 guard),
+;      实盘模拟监控不依赖它 — 与 Tester 对齐时的 ledger 口径区分开
+;
+; 📋 部署前检查:
+;   1. 确认 MT5 账户为模拟账户 (非真实账户)
+;   2. 确认 EA 编译无错误 (v3.36, compile_v336.log 0 errors)
+;   3. 确认图表为 XAUUSDm M30
+;   4. 确认 InpMagic=302036 与 1H(312026)/2H(332026) 不冲突
+;
+
+; === 账户与品种 ===
+InpMagic=302036||302036||1||3020360||N
+InpSymbol=XAUUSDm
+
+; === 风险与仓位 (对齐冻结口径, SimMode 下不生效但保持与回测一致) ===
+InpRiskPct=3.0||3.0||0.300000||30.000000||N
+InpStopLo=5000.0||5000.0||500.000000||50000.000000||N
+InpStopHi=35000.0||35000.0||3500.000000||350000.000000||N
+InpMaxPos=3||3||1||30||N
+InpMinLots=0.01||0.01||0.001000||0.100000||N
+InpMaxLots=10.0||10.0||1.000000||100.000000||N
+InpUseDynamicLots=true||false||0||true||N
+
+; === v3.0 三层过滤 ===
+InpBias55Threshold=3.0||3.0||0.300000||30.000000||N
+InpPreCrossGapPct=0.300||0.300||0.030000||3.000000||N
+InpPostNMin=2||2||1||20||N
+InpPostNMax=6||6||1||60||N
+InpUseLayer1=true||false||0||true||N
+InpUseH2EarlyGateQ2=true||false||0||true||N
+InpH2EarlyGateQ=2||2||1||20||N
+InpUseLayer3=true||false||0||true||N
+InpBias5TopPct=34.0||34.0||3.400000||340.000000||N
+InpBias5Lookback=500||500||1||5000||N
+
+; === M15 (v3.35 已移除独立触发, 统一 M30 close 路径) ===
+InpUseM15EarlyEntry=false||false||0||true||N
+InpEnableM15Slot2=false||false||0||true||N
+InpUseM15RescueTag=true||false||0||true||N
+InpM15Period=15||0||0||49153||N
+InpVerboseDecisionDiag=true||false||0||true||N
+
+; === 三段出场 (v3.10) ===
+InpStageCount=3||3||1||30||N
+InpStage1Lots=0.01||0.01||0.001000||0.100000||N
+InpStage2Lots=0.02||0.02||0.002000||0.200000||N
+InpStage3Lots=0.03||0.03||0.003000||0.300000||N
+InpStage1R=2.0||2.0||0.200000||20.000000||N
+InpStage2TrailR=1.5||1.5||0.150000||15.000000||N
+InpStage2ForceR=4.0||4.0||0.400000||40.000000||N
+InpH2CrossBars=3||3||1||30||N
+InpStage3On=true||false||0||true||N
+InpDebugStages=true||false||0||true||N
+
+; === 导出 (signals CSV 实时导出; trade ledger 仅 Tester) ===
+InpExportCSV=true||false||0||true||N
+InpExportTradeLedger=true||false||0||true||N
+InpExportStagePriceDiag=false||false||0||true||N
+InpExportM15EntryDiag=false||false||0||true||N
+
+; === 策略 ===
+InpFastMA=5||5||1||50||N
+InpSlowMA=13||13||1||130||N
+InpStopLookback=200||200||1||2000||N
+InpH2Thresh=0.0||0.0||0.000000||0.000000||N
+InpH2Period=16386||0||0||49153||N
+InpM30Period=30||0||0||49153||N
+InpH2SMA5=5||5||1||50||N
+InpH2SMA13=13||13||1||130||N
+InpH2SMA55=55||55||1||550||N
+InpH2SMA144=144||144||1||1440||N
+InpH2SMA233=233||233||1||2330||N
+
+; === 执行 ===
+InpSlippage=30||30||1||300||N
+InpCheckSec=1||1||1||100||N
+
+; === 运行时安全配置 (双闸) ===
+InpSimMode=true||false||0||true||N
+InpAllowRealTrading=false||false||0||true||N

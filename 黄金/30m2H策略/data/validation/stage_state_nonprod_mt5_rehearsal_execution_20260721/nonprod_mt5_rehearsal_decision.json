@@ -1,0 +1,21 @@
+﻿{
+  "decision_time": "2026-07-21T21:52:31",
+  "check_id": "stage_state_nonprod_mt5_rehearsal_execution",
+  "status": "nonprod_mt5_rehearsal_passed",
+  "nonprod_rehearsal_passed": true,
+  "final_balance": "2043.70",
+  "initial_deposit": 2000,
+  "profit": 43.7,
+  "signal_rows": 1180,
+  "trade_ledger_rows": 15,
+  "deal_history_rows": 30,
+  "sl_rows": 10,
+  "expert_exit_rows": 5,
+  "min_lot": 0.01,
+  "max_lot": 0.05,
+  "runner_executed": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "warning_count": 1,
+  "recommended_next_action": "update_live_gate_with_nonprod_rehearsal_evidence_then_keep_live_blocked_pending_real_live_risk_limits"
+}

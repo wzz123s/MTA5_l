@@ -1,0 +1,50 @@
+﻿{
+  "schema_version": 1,
+  "package": "stage_state_sim_continuous_runner_design_20260718",
+  "mode": "SIM_ONLY_DESIGN_TEMPLATE",
+  "live_trade_enabled": false,
+  "sim_only_lock": true,
+  "do_not_run": [
+    "auto_trade/auto_trader.py"
+  ],
+  "terminal": {
+    "path": "F:\\Program Files\\MetaTrader 5 EXNESS\\terminal64.exe",
+    "launch_requires_manual_approval": true,
+    "window_style": "hidden_or_manual"
+  },
+  "ea": {
+    "expert": "Advisors\\30m2H_Strategy_EA.ex5",
+    "local_ex5": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.ex5",
+    "parameter_set": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.stage_state_sim_dryrun_20260718.set",
+    "required_inputs": {
+      "InpSymbol": "XAUUSDm",
+      "InpRiskPct": "3.0",
+      "InpUseDynamicLots": "true",
+      "InpExportCSV": "true",
+      "InpExportTradeLedger": "true",
+      "InpSimMode": "true"
+    }
+  },
+  "chart": {
+    "symbol": "XAUUSDm",
+    "period": "M30"
+  },
+  "secrets": {
+    "store_credentials_in_this_config": false,
+    "source": "existing MT5 terminal session/profile or external secret store only"
+  },
+  "risk_controls": {
+    "max_real_positions_allowed": 0,
+    "max_real_orders_allowed": 0,
+    "daily_real_money_loss_allowed": 0,
+    "kill_switch_file": "F:\\use_code\\MTA5_l\\auto_trade\\RUNNER_STOP.flag",
+    "allowed_symbol": "XAUUSDm",
+    "allowed_period": "M30"
+  },
+  "monitoring": {
+    "heartbeat_file": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_continuous_runner_design_package_20260718\\sim_continuous_runner_heartbeat.json",
+    "signal_csv_max_age_minutes": 90,
+    "ledger_data_rows_expected": 0,
+    "alert_file": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_continuous_runner_design_package_20260718\\sim_continuous_runner_alerts.jsonl"
+  }
+}

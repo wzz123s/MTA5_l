@@ -1,0 +1,30 @@
+; 1H_M30_4H current candidate alignment profile
+; Generated 2026-07-26
+; Default is signal-only virtual ledger. Do not switch InpSimMode=false until Python-vs-EA alignment passes.
+
+InpMagic=312026||312026||1||3120260||N
+InpSymbol=XAUUSDm
+InpLots=0.01||0.01||0.001000||0.100000||N
+InpStopLoPt=8.0||8.0||0.800000||80.000000||N
+InpStopHiPt=28.0||28.0||2.800000||280.000000||N
+InpSideExtremeThresholdPct=2.0||2.0||0.200000||20.000000||N
+InpCloseMomentumMinPct=-0.4||-0.4||0.100000||4.000000||N
+InpShortVolWayMax=0.7||0.7||0.070000||7.000000||N
+InpH1StopLookback=6||6||1||60||N
+InpWayMergeMinLen=8||8||1||80||N
+InpM30Period=30||0||0||49153||N
+InpH1Period=16385||0||0||49153||N
+InpH4Period=16388||0||0||49153||N
+InpSimMode=true||false||0||true||N
+InpAllowRealTrading=false||false||0||true||N
+InpExportLedger=true||false||0||true||N
+InpLedgerFile=1H_M30_4H_current_candidate_trade_ledger.csv
+InpHistoryBarsM30=2500||2500||250||25000||N
+InpHistoryBarsH1=2500||2500||250||25000||N
+InpHistoryBarsH4=900||900||90||9000||N
+InpCheckSec=1||1||1||30||N
+InpSlippage=30||30||1||300||N
+InpMaxOpenPositions=1||1||1||10||N
+InpMaxSpreadPricePt=0.8||0.8||0.1||5.0||N
+InpMaxRiskUsd=30.0||30.0||1.0||300.0||N
+InpMinFreeMarginAfterTradeUsd=100.0||100.0||10.0||1000.0||N

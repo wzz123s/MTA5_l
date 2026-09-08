@@ -1,0 +1,21 @@
+﻿{
+  "decision_time": "2026-07-20T20:02:00",
+  "check_id": "stage_state_sim_continuous_runner_finite_trial",
+  "status": "pass",
+  "pass": true,
+  "ready_to_sim_continuous_runner_execution": true,
+  "ready_to_live_trade": false,
+  "cycles_requested": 12,
+  "cycles_completed": 12,
+  "interval_sec": 300.0,
+  "failed_cycles_count": 0,
+  "blocker_failure_count": 0,
+  "stopped_by_kill_switch": false,
+  "last_signal_csv_rows": 29,
+  "last_trade_ledger_rows": 0,
+  "last_positions_count": 0,
+  "last_orders_count": 0,
+  "config_path": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_only_chart_trial_package_20260719\\sim_continuous_runner_config_20260720.json",
+  "out_dir": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_continuous_runner_observation_window_20260720",
+  "kill_switch_file": "F:\\use_code\\MTA5_l\\auto_trade\\RUNNER_STOP.flag"
+}

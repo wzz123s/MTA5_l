@@ -1,0 +1,18 @@
+﻿{
+  "decision_time": "2026-07-21T17:26:42",
+  "check_id": "stage_state_live_package_hashes_and_set_parse_offline",
+  "status": "live_package_hashes_and_set_parse_collected_offline_live_blocked",
+  "hash_rows": 2,
+  "set_parse_collected": true,
+  "ex5_path": "auto_trade\\30m2H_Strategy_EA.ex5",
+  "set_path": "auto_trade\\30m2H_Strategy_EA.stage_state_frozen_20260718.set",
+  "InpSimMode": "false",
+  "InpExportCSV": "true",
+  "InpExportTradeLedger": "true",
+  "mt5_accessed": false,
+  "runner_executed": false,
+  "orders_placed": false,
+  "live_set_switched": false,
+  "ready_to_live_trade": false,
+  "recommended_next_action": "review_offline_hash_and_set_parse_then_update_closeout"
+}

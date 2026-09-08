@@ -1,0 +1,1 @@
+﻿{"event_time": "2026-07-23T19:33:10", "event_type": "LIVE_GAP_008_TEST_ALERT", "severity": "test", "channel": "local_file_only", "watched_by_operator": false, "message": "Monitoring alert write-path test. This is not a live trading alert approval.", "ready_to_live_trade": false}

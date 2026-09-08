@@ -1,0 +1,16 @@
+﻿{
+  "decision_time": "2026-07-23T20:54:05",
+  "check_id": "stage_state_post_monitoring_manual_confirmation_gate_update",
+  "status": "post_monitoring_manual_confirmation_update_live_still_blocked",
+  "gate_count": 10,
+  "closed_gate_count": 0,
+  "partially_satisfied_gate_count": 5,
+  "blocked_gate_count": 10,
+  "manual_confirmation_package_ready": true,
+  "local_probe_ready": true,
+  "watched_alert_channel_confirmed": true,
+  "operator_reconciliation_confirmed": true,
+  "live_gap_008_status": "partially_satisfied_policy_probe_and_manual_operator_confirmation_collected",
+  "ready_to_live_trade": false,
+  "recommended_next_action": "collect_human_signed_monitoring_confirmation_or_continue_final_approval_package_preparation"
+}

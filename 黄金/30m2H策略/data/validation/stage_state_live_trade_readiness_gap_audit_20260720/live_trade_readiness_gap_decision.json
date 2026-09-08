@@ -1,0 +1,17 @@
+﻿{
+  "decision_time": "2026-07-20T20:24:47",
+  "check_id": "stage_state_live_trade_readiness_gap_audit",
+  "status": "blocked",
+  "audit_completed": true,
+  "ready_to_continue_sim_only_monitoring": true,
+  "ready_to_live_trade": false,
+  "open_gap_count": 10,
+  "critical_gap_count": 7,
+  "major_gap_count": 3,
+  "positions_count": 0,
+  "orders_count": 0,
+  "sim_readiness_status": "pass",
+  "observation_status": "pass",
+  "hardcoded_credential_file_count": 3,
+  "recommended_next_action": "draft_live_trade_gate_checklist_without_enabling_live"
+}

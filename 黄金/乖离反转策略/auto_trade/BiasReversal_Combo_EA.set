@@ -1,0 +1,26 @@
+; BiasReversal_Combo_EA Tester 台账回放对齐参数包 (v9 口径)
+; 模式: SimMode=true + InpLedgerReplay=true -> 纯虚拟回放台账(不产生订单/信号)
+; 窗口建议: 2015.01.01 - 2026.08.21 (与 data/raw/XAUUSDm_H1.csv 同起讫, 保证 SMMA 全序列同 seed)
+InpMagicLong=372036
+InpMagicShort=372037
+InpSymbol=XAUUSDm
+InpEnableShort=false
+InpShortGateThr=3.5
+InpRiseThr=3.0
+InpWThr=0.5
+InpShortCdLoss=2
+InpShortCdHours=120
+InpLongMode=0
+InpLongGateThr=0.0
+InpRiskPct=1.0
+InpStopPct=1.2
+InpTpR=3.0
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportLedger=true
+InpVerboseDiag=false
+InpHistoryBars=600
+InpLedgerReplay=true
+InpReplayCostPct=0.05

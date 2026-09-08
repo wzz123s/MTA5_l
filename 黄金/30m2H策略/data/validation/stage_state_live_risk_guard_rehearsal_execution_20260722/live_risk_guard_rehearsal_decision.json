@@ -1,0 +1,28 @@
+﻿{
+  "decision_time": "2026-07-22T23:49:17",
+  "check_id": "stage_state_live_risk_guard_rehearsal_execution",
+  "status": "live_risk_guard_rehearsal_passed",
+  "guard_rehearsal_code_path_passed": true,
+  "nonprod_rehearsal_passed_exact_environment": true,
+  "final_balance": "2043.67",
+  "initial_deposit": 2000,
+  "profit": 43.67,
+  "signal_rows": 1180,
+  "trade_ledger_rows": 15,
+  "deal_history_rows": 30,
+  "sl_rows": 10,
+  "expert_exit_rows": 5,
+  "min_lot": 0.01,
+  "max_lot": 0.05,
+  "live_risk_block_count": 0,
+  "margin_order_calc_count": 5,
+  "requested_leverage": 2000,
+  "effective_leverage_seen": [
+    2000
+  ],
+  "runner_executed": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "warning_count": 1,
+  "recommended_next_action": "update_live_gate_with_guard_enabled_rehearsal_evidence"
+}

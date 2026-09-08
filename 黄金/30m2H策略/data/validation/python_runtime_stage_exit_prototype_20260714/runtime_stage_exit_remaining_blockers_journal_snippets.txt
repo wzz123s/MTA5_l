@@ -1,0 +1,51 @@
+﻿## runtime_stage_case_009
+CS	0	09:29:40.558	Trades	2022.03.08 01:30:09   deal #166 sell 0.01 XAUUSDm at 1981.254 done (based on order #166)
+CS	0	09:29:40.558	Trade	2022.03.08 01:30:09   position modified [#166 sell 0.01 XAUUSDm 1981.254 sl: 1990.971]
+CS	0	09:29:40.563	30m2H_Strategy_EA (XAUUSDm,M30)	2022.03.08 02:30:34   [STAGE3 CROSS EXIT] ticket=166 cross=GOLDEN pos_type=SELL
+CS	0	09:29:40.563	30m2H_Strategy_EA (XAUUSDm,M30)	2022.03.08 02:30:34   Closed ticket=166
+
+## runtime_stage_case_014
+CS	0	09:31:24.534	Trades	2025.04.21 00:00:00   deal #267 buy 0.01 XAUUSDm at 3348.279 done (based on order #267)
+CS	0	09:31:24.534	Trade	2025.04.21 00:00:00   position modified [#267 buy 0.01 XAUUSDm 3348.279 sl: 3326.544]
+CS	0	09:31:25.037	Trade	2025.04.22 22:04:38   stop loss triggered #267 buy 0.01 XAUUSDm 3348.279 sl: 3326.544 [#280 sell 0.01 XAUUSDm at 3326.544]
+
+## runtime_stage_case_024
+CS	0	09:32:03.378	Trades	2026.01.26 20:15:00   deal #367 sell 0.01 XAUUSDm at 5049.985 done (based on order #367)
+CS	0	09:32:03.378	Trade	2026.01.26 20:15:00   position modified [#367 sell 0.01 XAUUSDm 5049.985 sl: 5069.662]
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:31:50   [STAGE1 TP] ticket=367 rr=2.01 >= 2.00 -> close
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:31:50   [EXIT] stage 1 ticket=367
+CS	2	09:32:03.408	Trades	2026.01.26 21:31:50   failed market buy 0.01 XAUUSDm, close #367 sell 0.01 XAUUSDm 5049.985 [Market closed]
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:31:50   Close failed: ticket=367 err=4756
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:31:50   [EXIT RETRY] stage 1 ticket=367 close failed; keeping state
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:00   [STAGE1 TP] ticket=367 rr=2.01 >= 2.00 -> close
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:00   [EXIT] stage 1 ticket=367
+CS	2	09:32:03.408	Trades	2026.01.26 21:32:00   failed market buy 0.01 XAUUSDm, close #367 sell 0.01 XAUUSDm 5049.985 [Market closed]
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:00   Close failed: ticket=367 err=4756
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:00   [EXIT RETRY] stage 1 ticket=367 close failed; keeping state
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:10   [STAGE1 TP] ticket=367 rr=2.00 >= 2.00 -> close
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:10   [EXIT] stage 1 ticket=367
+CS	2	09:32:03.408	Trades	2026.01.26 21:32:10   failed market buy 0.01 XAUUSDm, close #367 sell 0.01 XAUUSDm 5049.985 [Market closed]
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:10   Close failed: ticket=367 err=4756
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:10   [EXIT RETRY] stage 1 ticket=367 close failed; keeping state
+CS	0	09:32:03.408	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:32:20   [STAGE1 TP] ticket=367 rr=2.06 >= 2.00 -> close
+...
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:20   [EXIT] stage 1 ticket=367
+CS	2	09:32:03.416	Trades	2026.01.26 21:57:20   failed market buy 0.01 XAUUSDm, close #367 sell 0.01 XAUUSDm 5049.985 [Market closed]
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:20   Close failed: ticket=367 err=4756
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:20   [EXIT RETRY] stage 1 ticket=367 close failed; keeping state
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:30   [STAGE1 TP] ticket=367 rr=2.12 >= 2.00 -> close
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:30   [EXIT] stage 1 ticket=367
+CS	2	09:32:03.416	Trades	2026.01.26 21:57:30   failed market buy 0.01 XAUUSDm, close #367 sell 0.01 XAUUSDm 5049.985 [Market closed]
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:30   Close failed: ticket=367 err=4756
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:30   [EXIT RETRY] stage 1 ticket=367 close failed; keeping state
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:40   [STAGE1 TP] ticket=367 rr=2.06 >= 2.00 -> close
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:40   [EXIT] stage 1 ticket=367
+CS	2	09:32:03.416	Trades	2026.01.26 21:57:40   failed market buy 0.01 XAUUSDm, close #367 sell 0.01 XAUUSDm 5049.985 [Market closed]
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:40   Close failed: ticket=367 err=4756
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:40   [EXIT RETRY] stage 1 ticket=367 close failed; keeping state
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:50   [STAGE1 TP] ticket=367 rr=2.06 >= 2.00 -> close
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:50   [EXIT] stage 1 ticket=367
+CS	2	09:32:03.416	Trades	2026.01.26 21:57:50   failed market buy 0.01 XAUUSDm, close #367 sell 0.01 XAUUSDm 5049.985 [Market closed]
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:50   Close failed: ticket=367 err=4756
+CS	0	09:32:03.416	30m2H_Strategy_EA (XAUUSDm,M30)	2026.01.26 21:57:50   [EXIT RETRY] stage 1 ticket=367 close failed; keeping state
+CS	0	09:32:03.455	Trade	2026.01.27 01:14:45   stop loss triggered #367 sell 0.01 XAUUSDm 5049.985 sl: 5069.662 [#371 buy 0.01 XAUUSDm at 5069.662]

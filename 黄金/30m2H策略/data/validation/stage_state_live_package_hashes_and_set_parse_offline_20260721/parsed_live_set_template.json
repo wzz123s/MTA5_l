@@ -1,0 +1,20 @@
+﻿{
+  "set_path": "auto_trade\\30m2H_Strategy_EA.stage_state_frozen_20260718.set",
+  "InpSimMode": "false",
+  "InpExportCSV": "true",
+  "InpExportTradeLedger": "true",
+  "InpSymbol": "XAUUSDm",
+  "InpRiskPct": "3.0",
+  "InpUseDynamicLots": "true",
+  "InpMinLots": "0.01",
+  "InpMaxLots": "10.0",
+  "InpSimMode_is_false": true,
+  "approval_phrase": "USER_APPROVES_OFFLINE_PARSE_REVIEWED_SET_TEMPLATE_ONLY",
+  "collection_mode": "offline_set_text_parse",
+  "mt5_accessed": false,
+  "runner_executed": false,
+  "orders_placed": false,
+  "live_set_switched": false,
+  "ready_to_live_trade": false,
+  "parsed_at": "2026-07-21T17:26:42"
+}

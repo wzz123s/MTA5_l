@@ -1,0 +1,915 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>仓位档位关键交易图形复盘</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --line: #dbe4ee;
+      --accent: #2563eb;
+      --accent2: #7c3aed;
+      --good: #15803d;
+      --bad: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap {
+      width: min(1380px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 20px 0 40px;
+    }
+    h1, h2, h3, p { margin: 0; }
+    .hero, .panel, .trade-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .hero p, .sub, .spec, td, li { color: var(--muted); }
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .overview .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfdff;
+    }
+    .metric span, .meta-grid span, .metric-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .metric strong, .meta-grid strong, .metric-box strong {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .chart-grid img, .trade-card img {
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      display: block;
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: #fbfdff;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .trade-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 440px;
+    }
+    .meta-grid > div, .metric-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fbfdff;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .metric-box small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .metric-box.peak {
+      border-color: #ddd6fe;
+      background: #faf5ff;
+    }
+    .exit-list {
+      margin: 0 0 10px 18px;
+      padding: 0;
+    }
+    .spec {
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .footnote {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    @media (max-width: 1100px) {
+      .overview, .chart-grid, .compare-grid {
+        grid-template-columns: 1fr;
+      }
+      .trade-head {
+        flex-direction: column;
+      }
+      .meta-grid {
+        min-width: 0;
+        width: 100%;
+      }
+    }
+    @media (max-width: 720px) {
+      .meta-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .overview {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>仓位档位关键交易图形复盘</h1>
+      <p>对比对象：平衡推荐 `0.5/1.0/1.5` vs 收益峰值 `0.5/0.5/2.0`。这里挑出最影响两套方案差额的前 20 笔交易，直接看图，不只看表。</p>
+      <div class="overview">
+        <div class="metric"><span>总差额</span><strong>$+234.19</strong></div>
+        <div class="metric"><span>最大拉开</span><strong>$+63.71</strong></div>
+        <div class="metric"><span>最大缩小</span><strong>$-7.49</strong></div>
+        <div class="metric"><span>前20覆盖</span><strong>$+223.16</strong></div>
+      </div>
+      <div class="chart-grid">
+        <div class="panel">
+          <h3>累计差额曲线</h3>
+          <p class="footnote">绿色点是正向拉开差距，红色点是反向缩小差距。</p>
+          <img src="gap_curve_top20.png" alt="gap curve" />
+        </div>
+        <div class="panel">
+          <h3>资金曲线对比</h3>
+          <p class="footnote">同样的交易、不同的三段仓位分配，曲线差异主要来自 Stage 3 权重。</p>
+          <img src="equity_compare_top20.png" alt="equity compare" />
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>前20关键交易总览</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>时间</th>
+            <th>Mode</th>
+            <th>方向</th>
+            <th>作用</th>
+            <th>单笔差额</th>
+            <th>累计差额</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><a href="#K01">K01</a></td><td>2026-01-29 16:30</td><td>pre_cross</td><td>空单</td><td>拉开收益差距</td><td>$+63.71</td><td>$+105.72</td></tr>
+<tr><td><a href="#K02">K02</a></td><td>2026-01-29 17:00</td><td>cross</td><td>空单</td><td>拉开收益差距</td><td>$+63.71</td><td>$+169.43</td></tr>
+<tr><td><a href="#K03">K03</a></td><td>2025-10-21 09:00</td><td>post_n3</td><td>空单</td><td>拉开收益差距</td><td>$+20.08</td><td>$+62.28</td></tr>
+<tr><td><a href="#K04">K04</a></td><td>2026-06-11 19:00</td><td>pre_cross</td><td>多单</td><td>拉开收益差距</td><td>$+15.09</td><td>$+219.10</td></tr>
+<tr><td><a href="#K05">K05</a></td><td>2026-06-11 19:30</td><td>cross</td><td>多单</td><td>拉开收益差距</td><td>$+15.09</td><td>$+234.19</td></tr>
+<tr><td><a href="#K06">K06</a></td><td>2026-03-20 15:00</td><td>post_n6</td><td>空单</td><td>拉开收益差距</td><td>$+12.17</td><td>$+173.04</td></tr>
+<tr><td><a href="#K07">K07</a></td><td>2026-06-09 16:30</td><td>post_n2</td><td>空单</td><td>拉开收益差距</td><td>$+12.17</td><td>$+199.15</td></tr>
+<tr><td><a href="#K08">K08</a></td><td>2026-06-09 16:00</td><td>cross</td><td>空单</td><td>拉开收益差距</td><td>$+11.90</td><td>$+186.98</td></tr>
+<tr><td><a href="#K09">K09</a></td><td>2025-04-22 15:30</td><td>post_n3</td><td>空单</td><td>拉开收益差距</td><td>$+8.11</td><td>$+21.10</td></tr>
+<tr><td><a href="#K10">K10</a></td><td>2026-01-26 20:30</td><td>pre_cross</td><td>空单</td><td>缩小收益差距</td><td>$-7.49</td><td>$+47.28</td></tr>
+<tr><td><a href="#K11">K11</a></td><td>2025-04-22 14:30</td><td>cross</td><td>空单</td><td>拉开收益差距</td><td>$+6.18</td><td>$+11.98</td></tr>
+<tr><td><a href="#K12">K12</a></td><td>2026-06-05 14:30</td><td>cross</td><td>空单</td><td>拉开收益差距</td><td>$+5.41</td><td>$+175.08</td></tr>
+<tr><td><a href="#K13">K13</a></td><td>2026-03-20 03:00</td><td>pre_cross</td><td>多单</td><td>缩小收益差距</td><td>$-5.31</td><td>$+160.87</td></tr>
+<tr><td><a href="#K14">K14</a></td><td>2026-01-26 21:00</td><td>cross</td><td>空单</td><td>缩小收益差距</td><td>$-5.28</td><td>$+42.01</td></tr>
+<tr><td><a href="#K15">K15</a></td><td>2026-06-09 17:00</td><td>post_n3</td><td>空单</td><td>拉开收益差距</td><td>$+4.86</td><td>$+204.00</td></tr>
+<tr><td><a href="#K16">K16</a></td><td>2025-10-29 20:30</td><td>post_n2</td><td>空单</td><td>缩小收益差距</td><td>$-4.83</td><td>$+56.92</td></tr>
+<tr><td><a href="#K17">K17</a></td><td>2025-10-20 13:30</td><td>post_n4</td><td>多单</td><td>拉开收益差距</td><td>$+3.94</td><td>$+47.04</td></tr>
+<tr><td><a href="#K18">K18</a></td><td>2025-04-22 16:00</td><td>post_n4</td><td>空单</td><td>缩小收益差距</td><td>$-3.80</td><td>$+17.30</td></tr>
+<tr><td><a href="#K19">K19</a></td><td>2025-10-17 12:30</td><td>pre_cross</td><td>空单</td><td>拉开收益差距</td><td>$+3.75</td><td>$+32.90</td></tr>
+<tr><td><a href="#K20">K20</a></td><td>2025-10-17 15:30</td><td>post_n5</td><td>空单</td><td>拉开收益差距</td><td>$+3.68</td><td>$+39.88</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    
+    <section class="trade-card" id="K01">
+      <div class="trade-head">
+        <div>
+          <h2>K01 | 2026-01-29 16:30 | 空单 | pre_cross</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+63.71 | 累计差额 $+105.72</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>5497.710</strong></div>
+          <div><span>Stop</span><strong>5507.910</strong></div>
+          <div><span>Bars</span><strong>106</strong></div>
+          <div><span>Bias55</span><strong>6.024%</strong></div>
+          <div><span>平衡推荐</span><strong>$+213.57</strong></div>
+          <div><span>收益峰值</span><strong>$+277.28</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+213.57</strong>
+          <small>+34.90R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+277.28</strong>
+          <small>+45.31R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 5477.311</li><li><strong>Stage 2</strong>: 4.0R forced @ 5456.911</li><li><strong>Stage 3</strong>: M30 merged cross @ 4819.798</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K01_20260129_1630_pre_cross_S.png" alt="K01 chart" />
+    </section>
+    
+    <section class="trade-card" id="K02">
+      <div class="trade-head">
+        <div>
+          <h2>K02 | 2026-01-29 17:00 | 空单 | cross</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+63.71 | 累计差额 $+169.43</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>5497.710</strong></div>
+          <div><span>Stop</span><strong>5507.910</strong></div>
+          <div><span>Bars</span><strong>105</strong></div>
+          <div><span>Bias55</span><strong>6.024%</strong></div>
+          <div><span>平衡推荐</span><strong>$+213.57</strong></div>
+          <div><span>收益峰值</span><strong>$+277.28</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+213.57</strong>
+          <small>+34.90R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+277.28</strong>
+          <small>+45.31R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 5477.311</li><li><strong>Stage 2</strong>: 4.0R forced @ 5456.911</li><li><strong>Stage 3</strong>: M30 merged cross @ 4819.798</li>
+      </ul>
+      <p class="spec">spec: too_wide</p>
+      <img loading="lazy" src="charts/K02_20260129_1700_cross_S.png" alt="K02 chart" />
+    </section>
+    
+    <section class="trade-card" id="K03">
+      <div class="trade-head">
+        <div>
+          <h2>K03 | 2025-10-21 09:00 | 空单 | post_n3</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+20.08 | 累计差额 $+62.28</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4331.364</strong></div>
+          <div><span>Stop</span><strong>4338.388</strong></div>
+          <div><span>Bars</span><strong>70</strong></div>
+          <div><span>Bias55</span><strong>2.249%</strong></div>
+          <div><span>平衡推荐</span><strong>$+75.70</strong></div>
+          <div><span>收益峰值</span><strong>$+95.78</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+75.70</strong>
+          <small>+17.96R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+95.78</strong>
+          <small>+22.73R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4317.315</li><li><strong>Stage 2</strong>: 4.0R forced @ 4303.267</li><li><strong>Stage 3</strong>: M30 merged cross @ 4102.450</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K03_20251021_0900_post_n3_S.png" alt="K03 chart" />
+    </section>
+    
+    <section class="trade-card" id="K04">
+      <div class="trade-head">
+        <div>
+          <h2>K04 | 2026-06-11 19:00 | 多单 | pre_cross</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+15.09 | 累计差额 $+219.10</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4101.651</strong></div>
+          <div><span>Stop</span><strong>4084.640</strong></div>
+          <div><span>Bars</span><strong>95</strong></div>
+          <div><span>Bias55</span><strong>2.554%</strong></div>
+          <div><span>平衡推荐</span><strong>$+82.70</strong></div>
+          <div><span>收益峰值</span><strong>$+97.79</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+82.70</strong>
+          <small>+8.10R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+97.79</strong>
+          <small>+9.58R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4135.674</li><li><strong>Stage 2</strong>: 4.0R forced @ 4169.696</li><li><strong>Stage 3</strong>: M30 merged cross @ 4320.608</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K04_20260611_1900_pre_cross_L.png" alt="K04 chart" />
+    </section>
+    
+    <section class="trade-card" id="K05">
+      <div class="trade-head">
+        <div>
+          <h2>K05 | 2026-06-11 19:30 | 多单 | cross</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+15.09 | 累计差额 $+234.19</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4101.651</strong></div>
+          <div><span>Stop</span><strong>4084.640</strong></div>
+          <div><span>Bars</span><strong>94</strong></div>
+          <div><span>Bias55</span><strong>2.554%</strong></div>
+          <div><span>平衡推荐</span><strong>$+82.70</strong></div>
+          <div><span>收益峰值</span><strong>$+97.79</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+82.70</strong>
+          <small>+8.10R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+97.79</strong>
+          <small>+9.58R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4135.674</li><li><strong>Stage 2</strong>: 4.0R forced @ 4169.696</li><li><strong>Stage 3</strong>: M30 merged cross @ 4320.608</li>
+      </ul>
+      <p class="spec">spec: too_wide</p>
+      <img loading="lazy" src="charts/K05_20260611_1930_cross_L.png" alt="K05 chart" />
+    </section>
+    
+    <section class="trade-card" id="K06">
+      <div class="trade-head">
+        <div>
+          <h2>K06 | 2026-03-20 15:00 | 空单 | post_n6</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+12.17 | 累计差额 $+173.04</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4661.896</strong></div>
+          <div><span>Stop</span><strong>4677.368</strong></div>
+          <div><span>Bars</span><strong>44</strong></div>
+          <div><span>Bias55</span><strong>7.850%</strong></div>
+          <div><span>平衡推荐</span><strong>$+70.55</strong></div>
+          <div><span>收益峰值</span><strong>$+82.73</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+70.55</strong>
+          <small>+7.60R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+82.73</strong>
+          <small>+8.91R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4630.952</li><li><strong>Stage 2</strong>: 4.0R forced @ 4600.007</li><li><strong>Stage 3</strong>: M30 merged cross @ 4478.287</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K06_20260320_1500_post_n6_S.png" alt="K06 chart" />
+    </section>
+    
+    <section class="trade-card" id="K07">
+      <div class="trade-head">
+        <div>
+          <h2>K07 | 2026-06-09 16:30 | 空单 | post_n2</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+12.17 | 累计差额 $+199.15</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4318.378</strong></div>
+          <div><span>Stop</span><strong>4329.565</strong></div>
+          <div><span>Bars</span><strong>96</strong></div>
+          <div><span>Bias55</span><strong>3.686%</strong></div>
+          <div><span>平衡推荐</span><strong>$+61.11</strong></div>
+          <div><span>收益峰值</span><strong>$+73.28</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+61.11</strong>
+          <small>+9.10R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+73.28</strong>
+          <small>+10.92R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4296.005</li><li><strong>Stage 2</strong>: 4.0R forced @ 4273.632</li><li><strong>Stage 3</strong>: M30 merged cross @ 4151.963</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K07_20260609_1630_post_n2_S.png" alt="K07 chart" />
+    </section>
+    
+    <section class="trade-card" id="K08">
+      <div class="trade-head">
+        <div>
+          <h2>K08 | 2026-06-09 16:00 | 空单 | cross</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+11.90 | 累计差额 $+186.98</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4321.120</strong></div>
+          <div><span>Stop</span><strong>4333.663</strong></div>
+          <div><span>Bars</span><strong>97</strong></div>
+          <div><span>Bias55</span><strong>3.686%</strong></div>
+          <div><span>平衡推荐</span><strong>$+63.29</strong></div>
+          <div><span>收益峰值</span><strong>$+75.19</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+63.29</strong>
+          <small>+8.41R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+75.19</strong>
+          <small>+9.99R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4296.034</li><li><strong>Stage 2</strong>: 4.0R forced @ 4270.948</li><li><strong>Stage 3</strong>: M30 merged cross @ 4151.963</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K08_20260609_1600_cross_S.png" alt="K08 chart" />
+    </section>
+    
+    <section class="trade-card" id="K09">
+      <div class="trade-head">
+        <div>
+          <h2>K09 | 2025-04-22 15:30 | 空单 | post_n3</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+8.11 | 累计差额 $+21.10</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3443.682</strong></div>
+          <div><span>Stop</span><strong>3450.656</strong></div>
+          <div><span>Bars</span><strong>63</strong></div>
+          <div><span>Bias55</span><strong>4.360%</strong></div>
+          <div><span>平衡推荐</span><strong>$+39.68</strong></div>
+          <div><span>收益峰值</span><strong>$+47.80</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+39.68</strong>
+          <small>+9.48R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+47.80</strong>
+          <small>+11.42R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 3429.734</li><li><strong>Stage 2</strong>: 4.0R forced @ 3415.787</li><li><strong>Stage 3</strong>: M30 merged cross @ 3334.653</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K09_20250422_1530_post_n3_S.png" alt="K09 chart" />
+    </section>
+    
+    <section class="trade-card" id="K10">
+      <div class="trade-head">
+        <div>
+          <h2>K10 | 2026-01-26 20:30 | 空单 | pre_cross</h2>
+          <p class="sub">缩小收益差距 | 单笔差额 $-7.49 | 累计差额 $+47.28</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>5064.439</strong></div>
+          <div><span>Stop</span><strong>5079.424</strong></div>
+          <div><span>Bars</span><strong>13</strong></div>
+          <div><span>Bias55</span><strong>4.260%</strong></div>
+          <div><span>平衡推荐</span><strong>$+10.49</strong></div>
+          <div><span>收益峰值</span><strong>$+3.00</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+10.49</strong>
+          <small>+1.17R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+3.00</strong>
+          <small>+0.33R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 5034.469</li><li><strong>Stage 2</strong>: 4.0R forced @ 5004.499</li><li><strong>Stage 3</strong>: SL hit @ 5079.424</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K10_20260126_2030_pre_cross_S.png" alt="K10 chart" />
+    </section>
+    
+    <section class="trade-card" id="K11">
+      <div class="trade-head">
+        <div>
+          <h2>K11 | 2025-04-22 14:30 | 空单 | cross</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+6.18 | 累计差额 $+11.98</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3445.557</strong></div>
+          <div><span>Stop</span><strong>3457.824</strong></div>
+          <div><span>Bars</span><strong>65</strong></div>
+          <div><span>Bias55</span><strong>4.360%</strong></div>
+          <div><span>平衡推荐</span><strong>$+45.54</strong></div>
+          <div><span>收益峰值</span><strong>$+51.72</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+45.54</strong>
+          <small>+6.19R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+51.72</strong>
+          <small>+7.03R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 3421.023</li><li><strong>Stage 2</strong>: 4.0R forced @ 3396.490</li><li><strong>Stage 3</strong>: M30 merged cross @ 3334.653</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K11_20250422_1430_cross_S.png" alt="K11 chart" />
+    </section>
+    
+    <section class="trade-card" id="K12">
+      <div class="trade-head">
+        <div>
+          <h2>K12 | 2026-06-05 14:30 | 空单 | cross</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+5.41 | 累计差额 $+175.08</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4446.221</strong></div>
+          <div><span>Stop</span><strong>4461.475</strong></div>
+          <div><span>Bars</span><strong>46</strong></div>
+          <div><span>Bias55</span><strong>3.377%</strong></div>
+          <div><span>平衡推荐</span><strong>$+49.80</strong></div>
+          <div><span>收益峰值</span><strong>$+55.21</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+49.80</strong>
+          <small>+5.44R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+55.21</strong>
+          <small>+6.03R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4415.713</li><li><strong>Stage 2</strong>: 4.0R forced @ 4385.204</li><li><strong>Stage 3</strong>: M30 merged cross @ 4331.065</li>
+      </ul>
+      <p class="spec">spec: too_wide</p>
+      <img loading="lazy" src="charts/K12_20260605_1430_cross_S.png" alt="K12 chart" />
+    </section>
+    
+    <section class="trade-card" id="K13">
+      <div class="trade-head">
+        <div>
+          <h2>K13 | 2026-03-20 03:00 | 多单 | pre_cross</h2>
+          <p class="sub">缩小收益差距 | 单笔差额 $-5.31 | 累计差额 $+160.87</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4661.837</strong></div>
+          <div><span>Stop</span><strong>4651.223</strong></div>
+          <div><span>Bars</span><strong>18</strong></div>
+          <div><span>Bias55</span><strong>5.015%</strong></div>
+          <div><span>平衡推荐</span><strong>$+7.43</strong></div>
+          <div><span>收益峰值</span><strong>$+2.12</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+7.43</strong>
+          <small>+1.17R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+2.12</strong>
+          <small>+0.33R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4683.064</li><li><strong>Stage 2</strong>: 4.0R forced @ 4704.292</li><li><strong>Stage 3</strong>: SL hit @ 4651.223</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K13_20260320_0300_pre_cross_L.png" alt="K13 chart" />
+    </section>
+    
+    <section class="trade-card" id="K14">
+      <div class="trade-head">
+        <div>
+          <h2>K14 | 2026-01-26 21:00 | 空单 | cross</h2>
+          <p class="sub">缩小收益差距 | 单笔差额 $-5.28 | 累计差额 $+42.01</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>5068.873</strong></div>
+          <div><span>Stop</span><strong>5079.424</strong></div>
+          <div><span>Bars</span><strong>12</strong></div>
+          <div><span>Bias55</span><strong>4.260%</strong></div>
+          <div><span>平衡推荐</span><strong>$+7.39</strong></div>
+          <div><span>收益峰值</span><strong>$+2.11</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+7.39</strong>
+          <small>+1.17R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+2.11</strong>
+          <small>+0.33R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 5047.771</li><li><strong>Stage 2</strong>: 4.0R forced @ 5026.669</li><li><strong>Stage 3</strong>: SL hit @ 5079.424</li>
+      </ul>
+      <p class="spec">spec: too_wide</p>
+      <img loading="lazy" src="charts/K14_20260126_2100_cross_S.png" alt="K14 chart" />
+    </section>
+    
+    <section class="trade-card" id="K15">
+      <div class="trade-head">
+        <div>
+          <h2>K15 | 2026-06-09 17:00 | 空单 | post_n3</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+4.86 | 累计差额 $+204.00</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4300.636</strong></div>
+          <div><span>Stop</span><strong>4325.659</strong></div>
+          <div><span>Bars</span><strong>95</strong></div>
+          <div><span>Bias55</span><strong>3.686%</strong></div>
+          <div><span>平衡推荐</span><strong>$+69.63</strong></div>
+          <div><span>收益峰值</span><strong>$+74.48</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+69.63</strong>
+          <small>+4.64R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+74.48</strong>
+          <small>+4.96R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4250.589</li><li><strong>Stage 2</strong>: 4.0R forced @ 4200.543</li><li><strong>Stage 3</strong>: M30 merged cross @ 4151.963</li>
+      </ul>
+      <p class="spec">spec: too_wide</p>
+      <img loading="lazy" src="charts/K15_20260609_1700_post_n3_S.png" alt="K15 chart" />
+    </section>
+    
+    <section class="trade-card" id="K16">
+      <div class="trade-head">
+        <div>
+          <h2>K16 | 2025-10-29 20:30 | 空单 | post_n2</h2>
+          <p class="sub">缩小收益差距 | 单笔差额 $-4.83 | 累计差额 $+56.92</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3981.190</strong></div>
+          <div><span>Stop</span><strong>3995.339</strong></div>
+          <div><span>Bars</span><strong>24</strong></div>
+          <div><span>Bias55</span><strong>3.341%</strong></div>
+          <div><span>平衡推荐</span><strong>$+16.63</strong></div>
+          <div><span>收益峰值</span><strong>$+11.80</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+16.63</strong>
+          <small>+1.96R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+11.80</strong>
+          <small>+1.39R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 3952.892</li><li><strong>Stage 2</strong>: 4.0R forced @ 3924.594</li><li><strong>Stage 3</strong>: M30 merged cross @ 3972.920</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K16_20251029_2030_post_n2_S.png" alt="K16 chart" />
+    </section>
+    
+    <section class="trade-card" id="K17">
+      <div class="trade-head">
+        <div>
+          <h2>K17 | 2025-10-20 13:30 | 多单 | post_n4</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+3.94 | 累计差额 $+47.04</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4262.725</strong></div>
+          <div><span>Stop</span><strong>4257.241</strong></div>
+          <div><span>Bars</span><strong>34</strong></div>
+          <div><span>Bias55</span><strong>3.933%</strong></div>
+          <div><span>平衡推荐</span><strong>$+23.90</strong></div>
+          <div><span>收益峰值</span><strong>$+27.84</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+23.90</strong>
+          <small>+7.26R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+27.84</strong>
+          <small>+8.46R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4273.693</li><li><strong>Stage 2</strong>: 4.0R forced @ 4284.661</li><li><strong>Stage 3</strong>: M30 merged cross @ 4324.106</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K17_20251020_1330_post_n4_L.png" alt="K17 chart" />
+    </section>
+    
+    <section class="trade-card" id="K18">
+      <div class="trade-head">
+        <div>
+          <h2>K18 | 2025-04-22 16:00 | 空单 | post_n4</h2>
+          <p class="sub">缩小收益差距 | 单笔差额 $-3.80 | 累计差额 $+17.30</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>3418.726</strong></div>
+          <div><span>Stop</span><strong>3449.234</strong></div>
+          <div><span>Bars</span><strong>62</strong></div>
+          <div><span>Bias55</span><strong>3.803%</strong></div>
+          <div><span>平衡推荐</span><strong>$+55.73</strong></div>
+          <div><span>收益峰值</span><strong>$+51.93</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+55.73</strong>
+          <small>+3.04R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+51.93</strong>
+          <small>+2.84R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 3357.711</li><li><strong>Stage 2</strong>: 4.0R forced @ 3296.695</li><li><strong>Stage 3</strong>: M30 merged cross @ 3334.653</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K18_20250422_1600_post_n4_S.png" alt="K18 chart" />
+    </section>
+    
+    <section class="trade-card" id="K19">
+      <div class="trade-head">
+        <div>
+          <h2>K19 | 2025-10-17 12:30 | 空单 | pre_cross</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+3.75 | 累计差额 $+32.90</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4327.701</strong></div>
+          <div><span>Stop</span><strong>4336.262</strong></div>
+          <div><span>Bars</span><strong>44</strong></div>
+          <div><span>Bias55</span><strong>4.001%</strong></div>
+          <div><span>平衡推荐</span><strong>$+30.09</strong></div>
+          <div><span>收益峰值</span><strong>$+33.84</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+30.09</strong>
+          <small>+5.86R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+33.84</strong>
+          <small>+6.59R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4310.580</li><li><strong>Stage 2</strong>: 4.0R forced @ 4293.458</li><li><strong>Stage 3</strong>: M30 merged cross @ 4255.945</li>
+      </ul>
+      <p class="spec">spec: ok</p>
+      <img loading="lazy" src="charts/K19_20251017_1230_pre_cross_S.png" alt="K19 chart" />
+    </section>
+    
+    <section class="trade-card" id="K20">
+      <div class="trade-head">
+        <div>
+          <h2>K20 | 2025-10-17 15:30 | 空单 | post_n5</h2>
+          <p class="sub">拉开收益差距 | 单笔差额 $+3.68 | 累计差额 $+39.88</p>
+        </div>
+        <div class="meta-grid">
+          <div><span>Entry</span><strong>4316.240</strong></div>
+          <div><span>Stop</span><strong>4322.117</strong></div>
+          <div><span>Bars</span><strong>38</strong></div>
+          <div><span>Bias55</span><strong>3.056%</strong></div>
+          <div><span>平衡推荐</span><strong>$+23.97</strong></div>
+          <div><span>收益峰值</span><strong>$+27.64</strong></div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="metric-box">
+          <span>平衡推荐 0.5/1.0/1.5</span>
+          <strong>$+23.97</strong>
+          <small>+6.80R</small>
+        </div>
+        <div class="metric-box peak">
+          <span>收益峰值 0.5/0.5/2.0</span>
+          <strong>$+27.64</strong>
+          <small>+7.84R</small>
+        </div>
+      </div>
+      <ul class="exit-list">
+        <li><strong>Stage 1</strong>: 2.0R TP @ 4304.485</li><li><strong>Stage 2</strong>: 4.0R forced @ 4292.731</li><li><strong>Stage 3</strong>: M30 merged cross @ 4255.945</li>
+      </ul>
+      <p class="spec">spec: too_wide</p>
+      <img loading="lazy" src="charts/K20_20251017_1530_post_n5_S.png" alt="K20 chart" />
+    </section>
+    
+  </div>
+</body>
+</html>

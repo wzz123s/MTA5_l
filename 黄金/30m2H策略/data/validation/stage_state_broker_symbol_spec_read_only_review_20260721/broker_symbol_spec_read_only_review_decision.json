@@ -1,0 +1,15 @@
+﻿{
+  "decision_time": "2026-07-21T17:00:37",
+  "check_id": "stage_state_broker_symbol_spec_read_only_review",
+  "status": "pass_broker_symbol_spec_read_only_live_blocked",
+  "review_completed": true,
+  "symbol": "XAUUSDm",
+  "broker_symbol_spec_rows": 1,
+  "terminal_spawned": false,
+  "orders_placed": false,
+  "runner_executed": false,
+  "live_set_switched": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "update_closeout_remaining_pending_auto_items"
+}

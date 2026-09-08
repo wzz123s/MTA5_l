@@ -1,0 +1,17 @@
+﻿{
+  "decision_time": "2026-07-22T08:33:11",
+  "check_id": "stage_state_post_nonprod_live_gate_update",
+  "status": "post_nonprod_gate_update_live_still_blocked",
+  "gate_count": 10,
+  "closed_gate_count": 0,
+  "partially_satisfied_gate_count": 1,
+  "blocked_gate_count": 10,
+  "nonprod_order_lifecycle_passed": true,
+  "final_balance": "2043.70",
+  "profit": 43.7,
+  "trade_ledger_rows": 15,
+  "deal_history_rows": 30,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "define_live_numeric_risk_limits_then_emergency_monitoring_rehearsals"
+}

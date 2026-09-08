@@ -1,0 +1,104 @@
+﻿{
+    "directory":  {
+                      "item":  [
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "0001628280-26-050596-index-headers.html",
+                                       "type":  "text.gif",
+                                       "size":  ""
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "0001628280-26-050596-index.html",
+                                       "type":  "text.gif",
+                                       "size":  ""
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "0001628280-26-050596.txt",
+                                       "type":  "text.gif",
+                                       "size":  ""
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "0001628280-26-050596-xbrl.zip",
+                                       "type":  "compressed.gif",
+                                       "size":  "37721"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "FilingSummary.xml",
+                                       "type":  "text.gif",
+                                       "size":  "1696"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "meta-06302026xexhibit991.htm",
+                                       "type":  "text.gif",
+                                       "size":  "273628"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "meta-20260729.htm",
+                                       "type":  "text.gif",
+                                       "size":  "28244"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "meta-20260729.xsd",
+                                       "type":  "text.gif",
+                                       "size":  "1798"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "meta-20260729_g1.jpg",
+                                       "type":  "image2.gif",
+                                       "size":  "16019"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "meta-20260729_htm.xml",
+                                       "type":  "text.gif",
+                                       "size":  "2707"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "meta-20260729_lab.xml",
+                                       "type":  "text.gif",
+                                       "size":  "21885"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "meta-20260729_pre.xml",
+                                       "type":  "text.gif",
+                                       "size":  "12522"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "MetaLinks.json",
+                                       "type":  "text.gif",
+                                       "size":  "17047"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "R1.htm",
+                                       "type":  "text.gif",
+                                       "size":  "38065"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "report.css",
+                                       "type":  "text.gif",
+                                       "size":  "2766"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-29 16:03:23",
+                                       "name":  "Show.js",
+                                       "type":  "text.gif",
+                                       "size":  "1085"
+                                   }
+                               ],
+                      "name":  "/Archives/edgar/data/1326801/000162828026050596",
+                      "parent-dir":  "/Archives/edgar/data/1326801"
+                  }
+}

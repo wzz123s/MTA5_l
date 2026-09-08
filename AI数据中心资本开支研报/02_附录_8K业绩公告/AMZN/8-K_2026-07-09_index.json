@@ -1,0 +1,128 @@
+﻿{
+    "directory":  {
+                      "item":  [
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "0001104659-26-082293-index-headers.html",
+                                       "type":  "text.gif",
+                                       "size":  ""
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "0001104659-26-082293-index.html",
+                                       "type":  "text.gif",
+                                       "size":  ""
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "0001104659-26-082293.txt",
+                                       "type":  "text.gif",
+                                       "size":  ""
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "0001104659-26-082293-xbrl.zip",
+                                       "type":  "compressed.gif",
+                                       "size":  "112705"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "amzn-20260709.xsd",
+                                       "type":  "text.gif",
+                                       "size":  "5085"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "amzn-20260709_def.xml",
+                                       "type":  "text.gif",
+                                       "size":  "29240"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "amzn-20260709_lab.xml",
+                                       "type":  "text.gif",
+                                       "size":  "40440"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "amzn-20260709_pre.xml",
+                                       "type":  "text.gif",
+                                       "size":  "27721"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "FilingSummary.xml",
+                                       "type":  "text.gif",
+                                       "size":  "1676"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "MetaLinks.json",
+                                       "type":  "text.gif",
+                                       "size":  "44084"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "R1.htm",
+                                       "type":  "text.gif",
+                                       "size":  "55909"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "report.css",
+                                       "type":  "text.gif",
+                                       "size":  "2767"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "Show.js",
+                                       "type":  "text.gif",
+                                       "size":  "1085"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "tm2619352d4_8k.htm",
+                                       "type":  "text.gif",
+                                       "size":  "63945"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "tm2619352d4_8k_htm.xml",
+                                       "type":  "text.gif",
+                                       "size":  "12118"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "tm2619352d4_ex1-1.htm",
+                                       "type":  "text.gif",
+                                       "size":  "402752"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "tm2619352d4_ex4-1.htm",
+                                       "type":  "text.gif",
+                                       "size":  "442576"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "tm2619352d4_ex4-1img001.jpg",
+                                       "type":  "image2.gif",
+                                       "size":  "5792"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "tm2619352d4_ex5-1.htm",
+                                       "type":  "text.gif",
+                                       "size":  "12829"
+                                   },
+                                   {
+                                       "last-modified":  "2026-07-09 16:46:08",
+                                       "name":  "tm2619352d4_ex5-1img001.jpg",
+                                       "type":  "image2.gif",
+                                       "size":  "3195"
+                                   }
+                               ],
+                      "name":  "/Archives/edgar/data/1018724/000110465926082293",
+                      "parent-dir":  "/Archives/edgar/data/1018724"
+                  }
+}

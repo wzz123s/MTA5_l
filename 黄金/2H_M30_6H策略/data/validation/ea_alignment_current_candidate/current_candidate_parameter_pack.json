@@ -1,0 +1,51 @@
+{
+  "strategy": "2H_M30_6H",
+  "date": "2026-08-10",
+  "status": "python_expected_exported__ea_aligned",
+  "candidate": {
+    "name": "2H_M30_6H__6h_bias5_13_55_signed_pos",
+    "description": "M30 SMA5/SMA13 cross + 6H bias5/13/55 signed > 0; StopSpec 2-10pt"
+  },
+  "timeframes": {
+    "signal": "M30",
+    "gate": "H6",
+    "context": "H2/M30"
+  },
+  "entry": {
+    "rule": "fixed_delay_1",
+    "description": "Open on the first M30 bar after an M30 SMA5/SMA13 cross."
+  },
+  "stop": {
+    "variant": "m30_prev_cross_sma13_extreme",
+    "distance_range_pt": [
+      2.0,
+      10.0
+    ],
+    "description": "Latest M30 SMA13 extreme before the cross, within 5pt tolerance."
+  },
+  "filters": {
+    "bias": "6H bias5_signed_pct > 0 and 6H bias13_signed_pct > 0 and 6H bias55_signed_pct > 0"
+  },
+  "exit": {
+    "historical": "Bar-by-bar stop check first, then opposite M30 SMA5/SMA13 cross at next open."
+  },
+  "reporting": {
+    "lot_for_report": 0.01,
+    "expected_trade_count": 179,
+    "expected_pnl_usd_001": 1546.4689999999996
+  },
+  "ea_ledger_required_columns": [
+    "entry_time",
+    "dir",
+    "entry",
+    "stop",
+    "exit_time",
+    "exit",
+    "exit_reason",
+    "pnl_points"
+  ],
+  "outputs": {
+    "python_expected_trade_ledger": "F:\\use_code\\MTA5_l\\2H_M30_6H策略\\data\\validation\\ea_alignment_current_candidate\\python_expected_trade_ledger.csv",
+    "python_expected_trade_ledger_minimal": "F:\\use_code\\MTA5_l\\2H_M30_6H策略\\data\\validation\\ea_alignment_current_candidate\\python_expected_trade_ledger_minimal.csv"
+  }
+}

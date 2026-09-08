@@ -1,0 +1,23 @@
+﻿{
+  "decision_time": "2026-07-24T19:54:06",
+  "check_id": "stage_state_post_manual_ea_load_evidence",
+  "status": "post_manual_ea_load_evidence_ready_to_monitor_live",
+  "terminal_connected": true,
+  "terminal_trade_allowed": true,
+  "account_alias": "MT5_ACCOUNT_***085",
+  "server": "Exness-MT5Trial5",
+  "symbol": "XAUUSDm",
+  "positions_count": 0,
+  "orders_count": 0,
+  "ea_loaded_evidence_seen": true,
+  "live_mode_evidence_seen": true,
+  "export_evidence_seen": true,
+  "log_hit_count": 40,
+  "current_log_hit_count": 40,
+  "orders_placed_by_collector": false,
+  "runner_executed_by_collector": false,
+  "ready_to_live_trade": true,
+  "blocker_failure_count": 0,
+  "manual_pending_count": 0,
+  "recommended_next_action": "monitor_live_ea_and_collect_first_tick_or_first_bar_evidence"
+}

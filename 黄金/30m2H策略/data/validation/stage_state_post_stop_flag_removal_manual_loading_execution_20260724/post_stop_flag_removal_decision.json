@@ -1,0 +1,21 @@
+﻿{
+  "decision_time": "2026-07-24T01:17:26",
+  "check_id": "stage_state_post_stop_flag_removal_manual_loading_execution",
+  "status": "stop_flags_removed_manual_ea_loading_pending",
+  "approval_items_signed": 6,
+  "approval_items_required": 6,
+  "loading_package_ready": true,
+  "stop_flags_removed": true,
+  "manual_ea_loading_pending": true,
+  "terminal64_process_count": 1,
+  "terminal_trade_allowed": false,
+  "positions_count": 0,
+  "orders_count": 0,
+  "orders_placed": false,
+  "runner_executed": false,
+  "ea_loaded": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "manual_pending_count": 1,
+  "recommended_next_action": "manually_load_ea_in_mt5_gui_then_collect_post_load_evidence"
+}

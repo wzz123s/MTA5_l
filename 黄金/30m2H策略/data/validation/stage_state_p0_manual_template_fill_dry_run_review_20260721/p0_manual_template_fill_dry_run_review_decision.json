@@ -1,0 +1,14 @@
+﻿{
+  "decision_time": "2026-07-21T12:21:17",
+  "check_id": "stage_state_p0_manual_template_fill_dry_run_review",
+  "status": "pass_p0_manual_dry_run_live_blocked",
+  "review_completed": true,
+  "p0_manual_items": 10,
+  "dry_run_files_reviewed": 10,
+  "markdown_files": 8,
+  "json_files": 2,
+  "required_fields_total": 52,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "draft_p0_rehearsal_prerequisite_dry_run"
+}

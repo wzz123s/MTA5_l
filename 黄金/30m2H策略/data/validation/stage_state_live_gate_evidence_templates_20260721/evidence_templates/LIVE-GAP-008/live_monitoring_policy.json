@@ -1,0 +1,19 @@
+﻿{
+  "gap_id": "LIVE-GAP-008",
+  "gate_item": "Live monitoring, alerts, and reconciliation",
+  "template_status": "template_only",
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "contains_real_credentials": false,
+  "fields": {
+    "order_alert": "TEMPLATE_PLACEHOLDER",
+    "position_alert": "TEMPLATE_PLACEHOLDER",
+    "pnl_alert": "TEMPLATE_PLACEHOLDER",
+    "margin_alert": "TEMPLATE_PLACEHOLDER",
+    "disconnect_alert": "TEMPLATE_PLACEHOLDER",
+    "stale_tick_alert": "TEMPLATE_PLACEHOLDER",
+    "ledger_mismatch_alert": "TEMPLATE_PLACEHOLDER"
+  },
+  "manual_confirmation": "Operator confirms alert channel is watched during live window.",
+  "fail_closed_action": "Do not start live without watched alerts."
+}

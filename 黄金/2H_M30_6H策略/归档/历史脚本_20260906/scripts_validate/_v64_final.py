@@ -1,0 +1,34 @@
+# -*- coding: utf-8 -*-
+"""v64 最终对比"""
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+import pandas as pd
+
+EA = r"C:\Users\3762\AppData\Roaming\MetaQuotes\Tester\DAD3B8CC3EAC09C0C9725021DF0C7A65\Agent-127.0.0.1-3000\MQL5\Files\2H_M30_6H_abc_trade_ledger.csv"
+PY = r"F:\use_code\MTA5_l\黄金\2H_M30_6H策略\auto_trade\python_expected_2025_2026\python_expected_2h_abc_2025_2026.csv"
+
+ea = pd.read_csv(EA, encoding='utf-8-sig')
+py = pd.read_csv(PY, encoding='utf-8-sig')
+
+ea['dir_n'] = ea['dir'].map({'BUY':'L','SELL':'S'})
+ea['entry_ts'] = pd.to_datetime(ea['entry_time'])
+py['entry_ts'] = pd.to_datetime(py['entry_time'])
+ea['key'] = ea['entry_ts'].dt.strftime('%Y.%m.%d %H:%M:%S') + '|' + ea['dir_n'] + '|S' + ea['stage'].astype(str)
+py['key'] = py['entry_ts'].dt.strftime('%Y.%m.%d %H:%M:%S') + '|' + py['dir'] + '|S' + py['stage'].astype(str)
+
+ea_set = set(ea['key']); py_set = set(py['key'])
+print("=== v64 最终对比 ===")
+print("EA 行数:", len(ea), " Python:", len(py))
+print("匹配:", len(ea_set & py_set), " missing:", len(py_set - ea_set), " extra:", len(ea_set - py_set))
+
+ea_tk = set(ea['entry_ts'].dt.strftime('%Y.%m.%d %H:%M:%S') + '|' + ea['dir_n'])
+py_tk = set(py['entry_ts'].dt.strftime('%Y.%m.%d %H:%M:%S') + '|' + py['dir'])
+print("交易数: EA", len(ea_tk), " Python", len(py_tk))
+print("交易级 missing:", len(py_tk - ea_tk), " extra:", len(ea_tk - py_tk))
+
+merged = ea[['key','entry','exit_price','pnl_points']].merge(
+    py[['key','entry','exit_price','pnl_points']], on='key', suffixes=('_ea','_py'), how='inner')
+print("\n匹配行数:", len(merged))
+print("entry_diff max:", round((merged['entry_ea']-merged['entry_py']).abs().max(), 4))
+print("exit_diff max:", round((merged['exit_price_ea']-merged['exit_price_py']).abs().max(), 4))
+print("exit_diff>0.01 行数:", ((merged['exit_price_ea']-merged['exit_price_py']).abs()>0.01).sum(), "/", len(merged))

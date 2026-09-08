@@ -1,0 +1,15 @@
+﻿{
+  "decision_time": "2026-07-23T19:33:10",
+  "check_id": "stage_state_live_monitoring_reconciliation_package",
+  "status": "live_monitoring_policy_and_local_reconciliation_probe_ready_manual_watch_pending",
+  "monitoring_policy_ready": true,
+  "local_alert_write_path_tested": true,
+  "reconciliation_probe_passed": true,
+  "watched_alert_channel_confirmed": false,
+  "operator_reconciliation_confirmed": false,
+  "terminal64_process_count": 1,
+  "live_gap_008_closed": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 2,
+  "recommended_next_action": "collect_watched_alert_channel_and_operator_reconciliation_confirmation"
+}

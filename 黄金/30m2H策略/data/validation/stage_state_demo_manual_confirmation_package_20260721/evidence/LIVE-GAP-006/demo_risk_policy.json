@@ -1,0 +1,30 @@
+﻿{
+  "gap_id": "LIVE-GAP-006",
+  "policy_scope": "nonprod_demo_rehearsal_only",
+  "account_alias": "MT5_DEMO_***085",
+  "account_type": "demo_nonproduction",
+  "starting_balance_cap": 2000,
+  "leverage": 2000,
+  "allowed_symbol": "XAUUSDm",
+  "risk_mode": "strategy_defined",
+  "strategy_inputs": {
+    "InpSymbol": "XAUUSDm",
+    "InpRiskPct": "3.0",
+    "InpUseDynamicLots": "true",
+    "InpMinLots": "0.01",
+    "InpMaxLots": "10.0",
+    "InpSimMode": "false"
+  },
+  "max_lot_mode": "strategy_defined",
+  "max_daily_loss": "not_live_defined_requires_operator_limit_before_real_money",
+  "max_drawdown": "not_live_defined_requires_operator_limit_before_real_money",
+  "max_orders": "strategy_defined_requires_rehearsal_verification",
+  "max_spread_points": "strategy_defined_requires_rehearsal_verification",
+  "margin_guard_pct": "strategy_defined_requires_rehearsal_verification",
+  "min_lot": "0.01",
+  "max_lot": "10.0",
+  "balance_cap": 2000,
+  "ready_to_nonprod_rehearsal": true,
+  "ready_to_live_trade": false,
+  "generated_at": "2026-07-21T18:08:14"
+}

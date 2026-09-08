@@ -1,0 +1,34 @@
+{
+  "strategy": "1H_M30_4H",
+  "combo": "1H_M30_4H",
+  "periods": "30M / 1H / 4H",
+  "focus_tf": "30M",
+  "primary_variant": "1H_M30_4H__1h_dir_align",
+  "stage": {
+    "stage1_r": 2.0,
+    "stage2_trail_r": 2.5,
+    "stage2_force_r": 4.0
+  },
+  "position": {
+    "units": "0.5/0.5/2.0",
+    "lots": "0.01/0.01/0.04",
+    "unit_lot": 0.02,
+    "start_capital": 500.0
+  },
+  "stop_spec": {
+    "primary": "2-8pt",
+    "secondary": "2-6pt",
+    "acceptable": "2-20pt",
+    "source": "stop_distance"
+  },
+  "feature_rules": {
+    "bias": "directional_signed_bias5_bias13_bias55",
+    "stopspec": "structural_stop_distance",
+    "recent2_any": "control_only",
+    "atr": "risk_filter_only"
+  },
+  "ea_status": "python_research_rebuilt__ea_pending",
+  "reference_ea": "30m2H策略/参考实现工程/auto_trade",
+  "research_set": "1H_M30_4H_Strategy_EA.mt5_raw_research_20260725.set",
+  "stage_model_status": "proxy_pending_ea_path_replay"
+}

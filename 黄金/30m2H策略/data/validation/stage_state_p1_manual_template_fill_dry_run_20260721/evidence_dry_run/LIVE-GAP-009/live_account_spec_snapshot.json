@@ -1,0 +1,25 @@
+﻿{
+  "gap_id": "LIVE-GAP-009",
+  "source_file": "live_account_spec_snapshot.json",
+  "dry_run_status": "redacted_placeholder_only",
+  "priority": "P1",
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "contains_real_credentials": false,
+  "generated_at": "2026-07-21T16:25:30",
+  "fields": {
+    "account_alias": "REDACTED_ACCOUNT_ALIAS",
+    "account_type": "REDACTED_ACCOUNT_TYPE",
+    "leverage": "REDACTED_LEVERAGE",
+    "balance_cap": "REDACTED_BALANCE_CAP",
+    "allowed_symbol": "REDACTED_ALLOWED_SYMBOL",
+    "captured_at": "REDACTED_CAPTURED_AT"
+  },
+  "confirmation_boundary": {
+    "confirmer": "user or delegated operator",
+    "prerequisite_source": "account/spec snapshot without account password",
+    "next_allowed_action": "fill the template with redacted/manual confirmation data only"
+  },
+  "forbidden_content": "do not store account password or token; real account numbers, passwords, tokens, API keys, or secret values",
+  "fail_closed_action": "Keep all live gates open and keep ready_to_live_trade=false."
+}

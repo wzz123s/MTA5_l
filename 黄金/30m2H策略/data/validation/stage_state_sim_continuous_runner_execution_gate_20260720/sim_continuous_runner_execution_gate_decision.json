@@ -1,0 +1,17 @@
+﻿{
+  "decision_time": "2026-07-20T08:35:46",
+  "check_id": "stage_state_sim_continuous_runner_execution_gate",
+  "status": "pass",
+  "ready_to_sim_continuous_runner_execution": true,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "forward_review_status": "pass",
+  "monitor_probe_status": "pass",
+  "signal_csv_rows": 6,
+  "trade_ledger_rows": 0,
+  "positions_count": 0,
+  "orders_count": 0,
+  "config_path": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_only_chart_trial_package_20260719\\sim_continuous_runner_config_20260720.json",
+  "forward_review_decision": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_only_chart_trial_package_20260719\\forward_review_20260720_config_01\\sim_continuous_runner_monitor_decision.json",
+  "monitor_probe_decision": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_only_chart_trial_package_20260719\\monitor_probe_20260720_config_01\\sim_continuous_runner_monitor_decision.json"
+}

@@ -1,0 +1,26 @@
+﻿{
+  "gap_id": "LIVE-GAP-008",
+  "source_file": "live_monitoring_policy.json",
+  "dry_run_status": "redacted_placeholder_only",
+  "priority": "P1",
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "contains_real_credentials": false,
+  "generated_at": "2026-07-21T16:25:30",
+  "fields": {
+    "order_alert": "PENDING_ORDER_ALERT",
+    "position_alert": "PENDING_POSITION_ALERT",
+    "pnl_alert": "PENDING_PNL_ALERT",
+    "margin_alert": "PENDING_MARGIN_ALERT",
+    "disconnect_alert": "PENDING_DISCONNECT_ALERT",
+    "stale_tick_alert": "PENDING_STALE_TICK_ALERT",
+    "ledger_mismatch_alert": "PENDING_LEDGER_MISMATCH_ALERT"
+  },
+  "confirmation_boundary": {
+    "confirmer": "user or delegated operator",
+    "prerequisite_source": "monitoring policy",
+    "next_allowed_action": "fill the template with redacted/manual confirmation data only"
+  },
+  "forbidden_content": "do not start live without watched alert channels",
+  "fail_closed_action": "Keep all live gates open and keep ready_to_live_trade=false."
+}

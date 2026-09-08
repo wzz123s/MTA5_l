@@ -1,0 +1,59 @@
+
+========================================
+  📋 1H_M30_4H EA 手动加载指引
+  生成时间: 2026-08-11 19:38
+========================================
+
+当前状态:
+  ✅ EA .ex5 已复制到终端: MQL5\Experts\1H_M30_4H_CurrentCandidate_EA.ex5
+  ✅ 部署参数已复制到终端: MQL5\Presets\1H_M30_4H_SimDeployment_EA.set
+  ✅ SHA256 已校验一致
+  
+终端信息:
+  • 路径: C:\Users\3762\AppData\Roaming\MetaQuotes\Terminal\DAD3B8CC...
+  • 账户: 277752085 (Exness-MT5Trial5, 模拟盘)
+  • 现有图表: 2H_M30_6H_CurrentCandidate_EA (XAUUSDm,M30)
+
+请在 MT5 中执行以下操作:
+
+1️⃣  打开 XAUUSDm M30 图表 (新建一个图表，或使用现有图表)
+2️⃣  在 Navigator 面板展开 Expert Advisors → Advisors
+3️⃣  拖拽 '1H_M30_4H_CurrentCandidate_EA' 到图表
+4️⃣  在弹出的配置窗口中:
+    [Common Tab]
+    ☑ Allow live trading
+    ☑ Allow DLL imports (如需要)
+    [Inputs Tab]
+    点击 'Load' → 选择 '1H_M30_4H_SimDeployment_EA.set'
+    🔴 验证以下安全参数:
+      SimMode = true
+      AllowRealTrading = false
+      MaxRiskUsd = 30.0
+      MaxOpenPositions = 1
+    点击 OK
+
+5️⃣  验证成功标志:
+    ✓ 图表右上角显示笑脸图标 😊
+    ✓ Experts 日志显示: "1H_M30_4H Current Candidate EA initialized"
+    ✓ 账单文件创建: MQL5\Files\1H_M30_4H_sim_deployment_trade_ledger.csv
+
+========================================
+  ⚠️  安全确认
+========================================
+✅ SIMULATION MODE only
+✅ NO real trades executed
+✅ Internal SimMode=true blocks all live orders
+✅ Max risk per trade: $30
+✅ Max positions: 1
+
+========================================
+  📊 定期监测清单
+========================================
+
+每日检查:
+  [ ] MT5 terminal64.exe 进程运行中
+  [ ] Experts 日志无异常错误
+  [ ] 模拟账单 CSV 持续更新
+  [ ] 首次信号触发后验证入场/止损参数
+
+观察期: 最低 30 天 / 推荐 90 天

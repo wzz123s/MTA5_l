@@ -1,0 +1,12 @@
+﻿{
+  "decision_time": "2026-07-21T12:33:40",
+  "check_id": "stage_state_p0_rehearsal_prerequisite_dry_run_review",
+  "status": "pass_p0_rehearsal_dry_run_live_blocked",
+  "review_completed": true,
+  "p0_rehearsal_items": 1,
+  "planned_steps_reviewed": 6,
+  "expected_evidence_samples": 1,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "start_p1_manual_template_fill_dry_run_with_redacted_values"
+}

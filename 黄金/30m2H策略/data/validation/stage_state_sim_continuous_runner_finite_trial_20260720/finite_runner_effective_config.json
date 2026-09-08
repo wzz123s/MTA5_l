@@ -1,0 +1,76 @@
+﻿{
+  "schema_version": 1,
+  "package": "stage_state_sim_only_forward_review_20260720",
+  "mode": "SIM_ONLY_FORWARD_REVIEW",
+  "live_trade_enabled": false,
+  "sim_only_lock": true,
+  "do_not_run": [
+    "auto_trade/auto_trader.py"
+  ],
+  "terminal": {
+    "path": "F:\\Program Files\\MetaTrader 5 EXNESS\\terminal64.exe",
+    "launch_requires_manual_approval": true,
+    "window_style": "hidden_or_manual"
+  },
+  "ea": {
+    "expert": "Advisors\\30m2H_Strategy_EA_SIM_ONLY.ex5",
+    "local_ex5": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA_SIM_ONLY.ex5",
+    "parameter_set": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA_SIM_ONLY.stage_state_sim_dryrun_20260719.set",
+    "required_inputs": {
+      "InpSymbol": "XAUUSDm",
+      "InpRiskPct": "3.0",
+      "InpUseDynamicLots": "true",
+      "InpExportCSV": "true",
+      "InpExportTradeLedger": "true",
+      "InpSimMode": "true"
+    }
+  },
+  "chart": {
+    "symbol": "XAUUSDm",
+    "period": "M30"
+  },
+  "secrets": {
+    "store_credentials_in_this_config": false,
+    "source": "existing MT5 terminal session/profile or external secret store only"
+  },
+  "risk_controls": {
+    "max_real_positions_allowed": 0,
+    "max_real_orders_allowed": 0,
+    "daily_real_money_loss_allowed": 0,
+    "kill_switch_file": "F:\\use_code\\MTA5_l\\auto_trade\\RUNNER_STOP.flag",
+    "allowed_symbol": "XAUUSDm",
+    "allowed_period": "M30"
+  },
+  "monitoring": {
+    "heartbeat_file": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_continuous_runner_finite_trial_20260720\\finite_runner_heartbeat.json",
+    "signal_csv_max_age_minutes": 90,
+    "ledger_data_rows_expected": 0,
+    "alert_file": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_sim_continuous_runner_finite_trial_20260720\\finite_runner_alerts.jsonl",
+    "preflight_allow_stale_archive": false,
+    "signal_csv_candidates": [
+      "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\MQL5\\Files\\30m2H_strategy_signals_export.csv"
+    ],
+    "trade_ledger_candidates": [
+      "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\MQL5\\Files\\30m2H_strategy_trade_ledger.csv"
+    ],
+    "log_candidates": [
+      "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\MQL5\\Logs\\20260720.log",
+      "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\MQL5\\Logs\\20260719.log",
+      "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\logs\\20260720.log",
+      "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\logs\\20260719.log"
+    ]
+  },
+  "execution_enabled": false,
+  "manual_chart_trial_required": false,
+  "forward_dryrun_review_required": true,
+  "credential_policy": {
+    "runner_uses_python_auto_trader": false,
+    "runner_uses_hardcoded_python_credentials": false,
+    "blocked_source_files": [
+      "auto_trade/auto_trader.py",
+      "auto_trade/verify_connection.py",
+      "auto_trade/signal_validator.py"
+    ]
+  },
+  "monitor_script": "F:\\use_code\\MTA5_l\\30m2H策略\\scripts\\validate\\sim_continuous_runner_monitor_20260719.py"
+}

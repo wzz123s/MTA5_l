@@ -1,0 +1,15 @@
+﻿{
+  "decision_time": "2026-07-21T12:11:04",
+  "check_id": "stage_state_manual_evidence_prerequisite_plan_review",
+  "status": "pass_manual_prerequisites_live_blocked",
+  "review_completed": true,
+  "remaining_prerequisite_items": 20,
+  "manual_items": 13,
+  "rehearsal_items": 4,
+  "pending_auto_items": 3,
+  "p0_items": 13,
+  "p1_items": 7,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "start_p0_manual_template_fill_dry_run_with_redacted_values"
+}

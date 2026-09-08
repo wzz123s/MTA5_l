@@ -1,0 +1,17 @@
+﻿{
+  "decision_time": "2026-07-21T16:52:05",
+  "check_id": "stage_state_final_closeout_report",
+  "status": "final_closeout_report_generated_live_blocked",
+  "sim_only_complete": true,
+  "bounded_sim_only_monitoring_optional": true,
+  "dry_run_closeout_complete": true,
+  "pending_auto_items": 3,
+  "shortest_path_steps_before_live_discussion": 3,
+  "live_trade_blocked": true,
+  "ready_to_live_trade": false,
+  "runner_executed": false,
+  "mt5_accessed_by_closeout": false,
+  "orders_placed": false,
+  "live_set_switched": false,
+  "recommended_next_action": "stop_expanding_dry_run_work_and_wait_for_user_real_approval_inputs"
+}

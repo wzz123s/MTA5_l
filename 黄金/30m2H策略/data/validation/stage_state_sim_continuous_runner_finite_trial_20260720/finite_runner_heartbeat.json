@@ -1,0 +1,17 @@
+﻿{
+  "decision_time": "2026-07-20T08:56:30",
+  "check_id": "sim_continuous_runner_monitor",
+  "mode": "monitor",
+  "status": "pass",
+  "pass": true,
+  "ready_to_sim_continuous_runner_execution": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "warning_count": 0,
+  "terminal_running": true,
+  "signal_csv_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\MQL5\\Files\\30m2H_strategy_signals_export.csv",
+  "signal_csv_rows": 6,
+  "trade_ledger_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16\\MQL5\\Files\\30m2H_strategy_trade_ledger.csv",
+  "trade_ledger_rows": 0,
+  "reason": "monitor_preflight_passed_execution_still_closed"
+}

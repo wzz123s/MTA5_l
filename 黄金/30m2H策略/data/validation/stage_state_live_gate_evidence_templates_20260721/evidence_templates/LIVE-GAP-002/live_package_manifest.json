@@ -1,0 +1,18 @@
+﻿{
+  "gap_id": "LIVE-GAP-002",
+  "gate_item": "Independent live package audit",
+  "template_status": "template_only",
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "contains_real_credentials": false,
+  "fields": {
+    "package_id": "TEMPLATE_PLACEHOLDER",
+    "ex5_path": "TEMPLATE_PLACEHOLDER",
+    "set_path": "TEMPLATE_PLACEHOLDER",
+    "startup_config_path": "TEMPLATE_PLACEHOLDER",
+    "deployment_path": "TEMPLATE_PLACEHOLDER",
+    "package_is_sim_only": "TEMPLATE_PLACEHOLDER"
+  },
+  "manual_confirmation": "Reviewer confirms the live package is intentionally separate from SIM_ONLY package.",
+  "fail_closed_action": "Use only SIM_ONLY package; do not attach a live package."
+}

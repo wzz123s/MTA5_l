@@ -1,0 +1,89 @@
+﻿{
+  "strategy": "30m2H",
+  "source_type": "mt5_api_history",
+  "source_id": "30m2h_mt5_20260811",
+  "symbol": "XAUUSDm",
+  "timeframes": [
+    "M30",
+    "H2",
+    "M15"
+  ],
+  "date_from_utc": "2018-01-01T00:00:00+00:00",
+  "date_to_utc": "2026-08-11T00:00:00+00:00",
+  "files": [
+    {
+      "timeframe": "M30",
+      "path": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\raw\\mt5_history\\30m2h_mt5_20260811\\XAUUSDm_M30.csv",
+      "rows": 100015,
+      "first_time_utc": "2018-02-22 04:00:00+00:00",
+      "last_time_utc": "2026-08-11 00:00:00+00:00",
+      "sha256": "5e13a3984de7b2fdda0c56b183666fafe34495c0d17b6df0510e3cf90354a27c",
+      "size": 10969691
+    },
+    {
+      "timeframe": "H2",
+      "path": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\raw\\mt5_history\\30m2h_mt5_20260811\\XAUUSDm_H2.csv",
+      "rows": 26668,
+      "first_time_utc": "2018-01-02 06:00:00+00:00",
+      "last_time_utc": "2026-08-11 00:00:00+00:00",
+      "sha256": "c3d8483aba0a179c8bf35e2d5e54d39dfb1ced0c9dd80e15d8b01e80653e8000",
+      "size": 2908796
+    },
+    {
+      "timeframe": "M15",
+      "path": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\raw\\mt5_history\\30m2h_mt5_20260811\\XAUUSDm_M15.csv",
+      "rows": 99994,
+      "first_time_utc": "2022-05-17 15:45:00+00:00",
+      "last_time_utc": "2026-08-11 00:00:00+00:00",
+      "sha256": "ecd200a2e9d5b05edac84152d8d34b90f61fa3c50d04f36b8d2ed2f23064038d",
+      "size": 11026673
+    }
+  ],
+  "compatibility_raw_sha256": "5e13a3984de7b2fdda0c56b183666fafe34495c0d17b6df0510e3cf90354a27c",
+  "generated_at_utc": "2026-08-11T12:03:32.140833+00:00",
+  "bundle_dir": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\raw\\mt5_history\\30m2h_mt5_20260811",
+  "bundle_sha256": "6f431e8cfbbbb4656f199ad3ddffa95eefa8e238a9496addd29d77e90b8e036a",
+  "compatibility_raw_file": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\raw\\XAUUSDm30.csv",
+  "terminal_path_arg": "",
+  "server_arg": "",
+  "portable": false,
+  "snapshot": {
+    "terminal": {
+      "mt5_version": [
+        500,
+        6090,
+        "31 Jul 2026"
+      ],
+      "name": "MetaTrader 5",
+      "company": "MetaQuotes Ltd.",
+      "path": "F:\\Program Files\\MetaTrader 5 EXNESS",
+      "data_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\B695BCB6C1E6864B6D96307B87B29F16",
+      "commondata_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common",
+      "build": 6090,
+      "connected": true
+    },
+    "account": {
+      "account_connected": true,
+      "login_sha256": "ae4f250733c70c90ce7fcb0bf1f9864cbc58b0c45423ac73efbaa720c89b9055",
+      "server": "Exness-MT5Trial5",
+      "currency": "USD",
+      "trade_mode": 0,
+      "leverage": 2000
+    },
+    "symbol": {
+      "available": true,
+      "name": "XAUUSDm",
+      "path": "Standard\\Forex\\XAUUSDm",
+      "digits": 3,
+      "point": 0.001,
+      "trade_contract_size": 100.0,
+      "currency_profit": "USD",
+      "currency_margin": "XAU",
+      "spread": 260,
+      "trade_mode": 4,
+      "visible": true
+    }
+  },
+  "rule": "strategy_dedicated_raw_source_required; direct_mt5_api_required",
+  "notes": "M15 数据受 Exness 服务器限制，仅 2022-05-17 起；M30/H2 自 2018 起。分段拉取避免单次请求上限。"
+}

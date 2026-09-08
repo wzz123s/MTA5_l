@@ -1,0 +1,21 @@
+﻿{
+  "decision_time": "2026-07-22T23:32:21",
+  "check_id": "stage_state_live_risk_guard_implementation",
+  "status": "live_risk_guard_implemented_compile_passed_guard_rehearsal_pending",
+  "source_check_count": 11,
+  "source_check_fail_count": 0,
+  "compile_passed": true,
+  "mq5_path": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.mq5",
+  "ex5_path": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.ex5",
+  "compile_log_path": "F:\\use_code\\MTA5_l\\auto_trade\\compile_live_risk_guard_20260722.log",
+  "metaeditor_process_exit_code_note": "tool output showed ExitCode=1, but compile log is the controlling evidence and reports 0 errors, 0 warnings",
+  "live_gap_006_code_implemented": true,
+  "live_gap_006_closed": false,
+  "ready_to_live_trade": false,
+  "why_not_closed": [
+    "numeric risk policy still needs explicit final confirmation after code implementation",
+    "new guard inputs have not yet been exercised in a guard-enabled non-production MT5 rehearsal",
+    "live alert and emergency stop handling remain outside this code-only check"
+  ],
+  "recommended_next_action": "prepare_and_run_guard_enabled_nonprod_mt5_rehearsal_then_update_live_gate"
+}

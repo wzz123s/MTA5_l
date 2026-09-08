@@ -1,0 +1,11 @@
+﻿{
+  "decision_time": "2026-07-21T16:51:54",
+  "check_id": "stage_state_pending_auto_evidence_prerequisite_plan_review",
+  "status": "pass_pending_auto_prerequisites_live_blocked",
+  "review_completed": true,
+  "pending_auto_items": 3,
+  "planned_steps_reviewed": 12,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "generate_final_strategy_closeout_report"
+}

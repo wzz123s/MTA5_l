@@ -1,0 +1,55 @@
+# Secrets / local config — never commit
+.env
+auto_trade/.env
+scripts/qq_push_config.json
+scripts/alerts_config.json
+scripts/alerts/
+
+# MT5 compiled artifacts — never commit (regenerate with MetaEditor)
+*.ex5
+*.chr
+
+# Runtime state / logs (regenerated on each run)
+auto_trade/monitor_state.json
+auto_trade/monitor.log
+auto_trade/scan_state.json
+auto_trade/scan.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# —— 20260908 目录整理 Phase4（D1 git 重建）新增 ——
+# 运行时产物（每周期再生）
+observation_dashboard/
+ea_alignment_logs/
+# 归档/备份层（只进不出）
+backup_20260907/
+archive/
+*_archive*/
+*/归档/
+*.bak
+*.bak_*
+*.zip
+# 数据层：csv/log 可由 MT5/管线再生，只跟踪 md 与 manifest
+**/data/**/*.csv
+**/data/**/*.log
+**/data/**/*.parquet
+base_data/
+# harness/IDE 会话状态
+.obsidian/
+.workbuddy/
+node_err.txt
+node_out.txt

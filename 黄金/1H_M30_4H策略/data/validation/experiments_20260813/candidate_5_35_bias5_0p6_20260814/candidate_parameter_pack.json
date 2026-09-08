@@ -1,0 +1,77 @@
+{
+  "strategy": "1H_M30_4H",
+  "candidate_name": "abc_5_35_bias5_0p6_20260814",
+  "candidate_label": "A+B+C 组合：三机会入场 + 段SMA13极值止损 + 三段退出 + H4 bias5同向过滤",
+  "data": {
+    "source_id": "1h_m30_4h_mt5_gen_20200101_20260814",
+    "symbol": "XAUUSDm",
+    "timeframes": ["M30", "H1", "H4"],
+    "range_utc": "2020-01-02 .. 2026-08-13"
+  },
+  "entry": {
+    "signal_timeframe": "M30",
+    "opportunities": ["pre_cross", "cross", "post_n2-6"],
+    "entry_price": "下一根 M30 开盘价（fixed_delay_1）",
+    "pre_cross_gap_pct": 0.3,
+    "dedupe_priority": "pre_cross > cross > post_n",
+    "stop": {
+      "pre_cross": "上一段 M30 SMA13 极值",
+      "cross": "上一段 M30 SMA13 极值",
+      "post_n": "当前 K 线 M30 SMA13"
+    },
+    "stop_spec_pt": [5.0, 35.0]
+  },
+  "filters": {
+    "pool": "SELL: 最近4根已收盘H1最高价 vs H4 SMA55 >= 2.0%; BUY: 最低价 <= -2.0%",
+    "h1_bias": "1H bias5_signed_pct > 0 且 1H bias13_signed_pct > 0",
+    "h4_bias5": "H4 bias5 同向 >= 0.6% (SELL: 极值价 vs H4 SMA5 >= 0.6%; BUY: <= -0.6%)"
+  },
+  "exit": {
+    "stage1": {"r": 2.0, "units": 0.5, "rule": "2.0R 止盈或 SL"},
+    "stage2": {"trail_r": 1.5, "force_r": 4.0, "units": 1.0, "rule": "1.5R 后 M30 SMA13 移动止盈; 4.0R 强平; 否则 M30 合并段反向穿越"},
+    "stage3": {"units": 1.5, "rule": "SL 优先; 否则 M30 合并段反向穿越收盘退出"}
+  },
+  "risk": {
+    "start_capital_usd": 500.0,
+    "recommended_risk_pct_per_trade": [0.5, 1.0],
+    "max_risk_pct_per_trade": 1.0,
+    "stage_units": [0.5, 1.0, 1.5],
+    "lot_min": 0.01,
+    "lot_max": 10.0,
+    "note": "3% 档最大回撤 70-85% 不可用; 0.5% 档 DD 19-29%, 1% 档 DD 32-50%"
+  },
+  "2020_2026_backtest": {
+    "trades": 559,
+    "wr_pct": 36.85,
+    "pf": 1.4554,
+    "ev_weighted_pt": 10.20,
+    "test_pf_calendar_2024_2026": 1.3067,
+    "test_pf_last30pct_trades": 1.0848,
+    "cost_pf_1pt_per_stage": 1.2962,
+    "cost_test_pf_1pt_per_stage": 0.9941,
+    "compounded_0_5pct_final": 1120.86,
+    "compounded_0_5pct_maxdd_pct": 19.17,
+    "compounded_1pct_final": 1619.45,
+    "compounded_1pct_maxdd_pct": 31.59,
+    "positive_years": "6/7 (2024 年亏损: PF 0.40, WR 14.9%)"
+  },
+  "deployment_defaults": {
+    "sim_mode": true,
+    "allow_real_trading": false,
+    "magic_suggested": 322036,
+    "max_open_positions": 1,
+    "spread_guard_pt": 0.8,
+    "max_risk_usd": 5.0,
+    "min_free_margin_usd": 100.0
+  },
+  "status": "python_research_validated__ea_pending__paper_monitor_ready",
+  "generated_at": "2026-08-14",
+  "evidence_links": [
+    "data/validation/experiments_20260813/combined_20260813/combined_summary.csv",
+    "data/validation/experiments_20260813/combined_20260813/validation_20260814/cost_sensitivity.csv",
+    "data/validation/experiments_20260813/combined_20260813/validation_20260814/compounding_risk_frontier.csv",
+    "data/validation/experiments_20260813/combined_20260813/validation_20260814/rolling_window_summary.csv",
+    "data/validation/experiments_20260813/combined_20260813/validation_20260814/walkforward_weak/walkforward_folds.csv",
+    "data/validation/experiments_20260813/combined_20260813/validation_20260814/walkforward_weak/recommended_mode_by_year.csv"
+  ]
+}

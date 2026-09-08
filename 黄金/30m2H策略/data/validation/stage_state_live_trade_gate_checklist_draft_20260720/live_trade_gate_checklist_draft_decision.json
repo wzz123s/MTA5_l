@@ -1,0 +1,12 @@
+﻿{
+  "decision_time": "2026-07-20T20:29:42",
+  "check_id": "stage_state_live_trade_gate_checklist_draft",
+  "status": "draft_complete",
+  "checklist_item_count": 10,
+  "critical_item_count": 7,
+  "major_item_count": 3,
+  "missing_definition_count": 0,
+  "missing_definitions": "",
+  "ready_to_live_trade": false,
+  "recommended_next_action": "run_live_gate_draft_review_default_false"
+}

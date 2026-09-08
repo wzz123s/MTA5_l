@@ -1,0 +1,12 @@
+﻿{
+  "decision_time": "2026-07-21T17:26:52",
+  "check_id": "stage_state_live_package_hashes_and_set_parse_offline_review",
+  "status": "pass_live_package_hashes_and_set_parse_offline_live_blocked",
+  "review_completed": true,
+  "hash_rows": 2,
+  "set_parse_collected": true,
+  "InpSimMode": "false",
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "update_final_closeout_after_all_pending_auto_collected"
+}

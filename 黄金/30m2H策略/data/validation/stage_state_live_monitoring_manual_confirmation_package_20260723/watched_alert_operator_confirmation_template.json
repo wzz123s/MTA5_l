@@ -1,0 +1,21 @@
+﻿{
+  "generated_at": "2026-07-23T20:14:07",
+  "source": "manual_confirmation_confirmed_by_user_response_annotation_20260723",
+  "account_alias": "MT5_ACCOUNT_***085",
+  "server": "Exness-MT5Trial5",
+  "symbol": "XAUUSDm",
+  "watched_alert_channel_confirmed": true,
+  "operator_reconciliation_confirmed": true,
+  "operator_alias": "owner_local",
+  "watched_alert_channels": {
+    "local_file": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_live_monitoring_reconciliation_package_20260723\\live_monitoring_alert_test_log.jsonl",
+    "terminal_journal": "MT5 Journal/Experts logs",
+    "external_watched_channel": "not_used_local_file_and_terminal_journal_watched"
+  },
+  "watch_frequency_sec": 60,
+  "reconciliation_frequency_sec": 300,
+  "mismatch_action": "create/keep EMERGENCY_STOP.flag and RUNNER_STOP.flag; stop new entries; review before resume",
+  "stop_action": "close MT5 Algo Trading / AutoTrading and keep stop flags until gate is rerun",
+  "ready_to_live_trade": false,
+  "credential_values_output": false
+}

@@ -1,0 +1,17 @@
+﻿{
+  "decision_time": "2026-07-23T20:54:32",
+  "check_id": "stage_state_final_live_gate_review_from_operator_approval",
+  "status": "final_live_gate_approval_preconditions_satisfied_loading_package_pending",
+  "gate_count": 10,
+  "closed_gate_count": 10,
+  "blocked_gate_count": 0,
+  "required_signoff_count": 9,
+  "required_approval_boolean_count": 10,
+  "signed_approval_boolean_count": 10,
+  "operator_alias_ready": true,
+  "stop_flags_present": true,
+  "ready_for_live_loading_package": true,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "prepare_exact_mt5_ea_live_loading_package_keep_stop_flags_until_explicit_approval"
+}

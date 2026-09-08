@@ -1,0 +1,38 @@
+; Gold_DataEvent_EA | 黄金数据行情策略 | SimMode
+; 依据 ea_parameter_pack.json v0.4.1（M3 验证：基线 PF 1.640 / V1_T2h PF 1.753 / 8年正收益）
+; 信号：6H bias5+13+55 signed>0 门 + M30 三机会 + Bias_5 top34% + 三段退出
+InpMagic=411101
+InpSymbol="XAUUSDm"
+InpRiskPct=1.0
+InpStopLoPt=5.0
+InpStopHiPt=35.0
+InpMaxOpenVirtual=3
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimStartBalance=500.0
+InpPreCrossGapPct=0.300
+InpPostNMin=2
+InpPostNMax=6
+InpSameDirCdBars=3
+InpLossCdLoss=2
+InpLossCdHours=120
+InpMergedMinLen=8
+InpH6SMA5=5
+InpH6SMA55=55
+InpM30SMA5=5
+InpM30SMA13=13
+InpStage1R=2.0
+InpStage2TrailR=1.5
+InpStage2ForceR=4.0
+InpStage1Units=0.5
+InpStage2Units=1.0
+InpStage3Units=1.5
+InpHistoryBars=600
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportCSV=true
+InpExportLedger=true
+InpVerboseDiag=true
+InpEventFilterOn=true
+InpEventFilterHrs=2
+InpEventCheckEvery=300

@@ -1,0 +1,14 @@
+﻿{
+  "decision_time": "2026-07-22T23:50:33",
+  "check_id": "stage_state_post_live_risk_guard_gate_update",
+  "status": "post_live_risk_guard_update_live_still_blocked",
+  "gate_count": 10,
+  "closed_gate_count": 0,
+  "partially_satisfied_gate_count": 2,
+  "blocked_gate_count": 10,
+  "guard_rehearsal_passed": true,
+  "leverage_basis_confirmed": true,
+  "live_gap_006_status": "partially_satisfied_guard_code_and_nonprod_rehearsal_passed",
+  "ready_to_live_trade": false,
+  "recommended_next_action": "complete_emergency_monitoring_alerts_and_final_live_approval_gates"
+}

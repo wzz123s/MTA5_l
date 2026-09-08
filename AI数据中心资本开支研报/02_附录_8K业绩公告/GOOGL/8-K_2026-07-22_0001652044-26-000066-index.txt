@@ -1,0 +1,257 @@
+﻿ 
+ 
+ 
+ 
+ 
+ EDGAR Filing Documents for 0001652044-26-000066 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ This page uses Javascript. Your browser either doesn't support Javascript or you have it turned off. To see this page as it is meant to appear please use a Javascript enabled browser.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ SEC.gov 
+ 
+ 
+ 
+ EDGAR 
+ 
+ 
+
+ 
+ 
+ Latest Filings 
+ 
+ 
+ Filings search tools 
+ 
+ 
+ 
+ Filing Detail 
+
+
+
+ 
+
+
+ 
+ 
+ 
+ SEC Home &#187; 
+ Company Search &#187; 
+ Current Page 
+ 
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ Form 8-K - Current report: 
+ 
+
+ 
+ SEC Accession No. 0001652044-26-000066
+ 
+
+ 
+
+ 
+ 
+ 
+ Filing Date
+
+ 2026-07-22
+
+ Accepted
+
+ 2026-07-22 16:01:36
+
+ Documents
+
+ 13
+
+ 
+
+ 
+ Period of Report
+
+ 2026-07-22
+
+ 
+
+ 
+ Items
+
+ Item 2.02: Results of Operations and Financial Condition
+Item 9.01: Financial Statements and Exhibits
+
+
+ 
+
+ 
+
+ 
+ 
+ 
+ Interactive Data 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ Document Format Files
+
+ 
+ 
+ Seq | 
+ Description | 
+ Document | 
+ Type | 
+ Size | 
+ 
+
+ 
+ 1 | 
+ 8-K | 
+ goog-20260722.htm iXBRL | 
+ 8-K | 
+ 65815 | 
+ 
+
+ 
+ 2 | 
+ EX-99.1 | 
+ googexhibit991q22026.htm | 
+ EX-99.1 | 
+ 371494 | 
+ 
+
+ 
+ | 
+ Complete submission text file | 
+ 0001652044-26-000066.txt | 
+ | 
+ 815591 | 
+ 
+
+ 
+ 
+
+
+
+ 
+ 
+ Data Files
+
+ 
+ 
+ Seq | 
+ Description | 
+ Document | 
+ Type | 
+ Size | 
+ 
+
+ 
+ 3 | 
+ XBRL TAXONOMY EXTENSION SCHEMA DOCUMENT | 
+ goog-20260722.xsd | 
+ EX-101.SCH | 
+ 10268 | 
+ 
+
+ 
+ 4 | 
+ XBRL TAXONOMY EXTENSION DEFINITION LINKBASE DOCUMENT | 
+ goog-20260722_def.xml | 
+ EX-101.DEF | 
+ 33134 | 
+ 
+
+ 
+ 5 | 
+ XBRL TAXONOMY EXTENSION LABEL LINKBASE DOCUMENT | 
+ goog-20260722_lab.xml | 
+ EX-101.LAB | 
+ 71660 | 
+ 
+
+ 
+ 6 | 
+ XBRL TAXONOMY EXTENSION PRESENTATION LINKBASE DOCUMENT | 
+ goog-20260722_pre.xml | 
+ EX-101.PRE | 
+ 36022 | 
+ 
+
+ 
+ 16 | 
+ EXTRACTED XBRL INSTANCE DOCUMENT | 
+ goog-20260722_htm.xml | 
+ XML | 
+ 22373 | 
+ 
+
+ 
+ 
+
+
+
+ 
+ 
+ 
+ Mailing Address
+ 1600 AMPHITHEATRE PARKWAY 
+ 
+MOUNTAIN VIEW CA 
+94043 
+ 
+
+ Business Address
+ 1600 AMPHITHEATRE PARKWAY 
+ 
+MOUNTAIN VIEW CA 
+94043 
+ 650-253-0000 
+ 
+
+ 
+ Alphabet Inc. (Filer)
+ CIK : 0001652044 (see all company filings) 
+ EIN. : 611767919 | State of Incorp.: DE | Fiscal Year End: 1231 
+Type: 8-K | Act: 34 | File No.: 001-37580 | Film No.: 261193706 
+ SIC : 7370 Services-Computer Programming, Data Processing, Etc.
+(CF Office: 06 Technology)
+
+
+
+ 
+
+
+
+ 
+
+
+

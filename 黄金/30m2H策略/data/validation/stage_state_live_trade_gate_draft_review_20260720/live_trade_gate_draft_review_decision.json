@@ -1,0 +1,15 @@
+﻿{
+  "decision_time": "2026-07-20T20:29:55",
+  "check_id": "stage_state_live_trade_gate_draft_review",
+  "status": "draft_review_pass_live_blocked",
+  "draft_review_completed": true,
+  "ready_to_continue_sim_only_monitoring": true,
+  "ready_to_live_trade": false,
+  "checklist_item_count": 10,
+  "open_gate_count": 10,
+  "blocker_failure_count": 0,
+  "positions_count": 0,
+  "orders_count": 0,
+  "checklist_path": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_live_trade_gate_checklist_draft_20260720\\live_trade_gate_checklist_draft.csv",
+  "recommended_next_action": "fill_live_gate_evidence_templates_without_enabling_live"
+}

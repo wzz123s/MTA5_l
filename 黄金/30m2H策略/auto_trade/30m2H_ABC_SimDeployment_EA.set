@@ -1,0 +1,33 @@
+; 30m2H ABC 组合模拟盘部署参数包 (2026-08-15)
+; 门控: |H2 bias55|>3% 且 |H2 bias5| 同号≥0.2% | 三机会 + 段SMA13止损 + 三段退出
+InpMagic=352036
+InpSymbol=XAUUSDm
+InpRiskPct=1.0
+InpStopLoPt=5.0
+InpStopHiPt=35.0
+InpMaxOpenVirtual=10
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimStartBalance=500.0
+InpPreCrossGapPct=0.300
+InpPostNMin=2
+InpPostNMax=6
+InpMergedMinLen=8
+InpBias55Threshold=3.0
+InpBias5MinPct=0.2
+InpH2SMA5=5
+InpH2SMA55=55
+InpM30SMA5=5
+InpM30SMA13=13
+InpStage1R=2.0
+InpStage2TrailR=1.5
+InpStage2ForceR=4.0
+InpStage1Units=0.5
+InpStage2Units=1.0
+InpStage3Units=1.5
+InpHistoryBars=600
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportCSV=true
+InpExportLedger=true
+InpVerboseDiag=true

@@ -1,0 +1,62 @@
+{
+  "strategy": "1H_M30_4H",
+  "date": "2026-07-26",
+  "status": "python_expected_exported__ea_aligned",
+  "candidate": {
+    "name": "fd1_8_28_side_pool_close_mom_ge_-0.4__short_vol_way_le_0.7",
+    "description": "8-28pt base + close momentum signed >= -0.4 + SHORT vol_way_s_way <= 0.7",
+    "control_candidate": "fd1_8_28_side_pool_close_mom_ge_-0.4__short_way_ge_0.3",
+    "control_description": "8-28pt base + close momentum signed >= -0.4 + SHORT way_s_way >= 0.3"
+  },
+  "timeframes": {
+    "signal": "M30",
+    "stop": "H1",
+    "opportunity": "recent 4 closed H1 vs H4 SMA55"
+  },
+  "entry": {
+    "rule": "fixed_delay_1",
+    "description": "Open on the first M30 bar after an M30 SMA5/SMA13 cross.",
+    "historical_price": "entry M30 open",
+    "live_price": "market entry as close to new-bar open as broker allows"
+  },
+  "stop": {
+    "variant": "h1_last6_hilo",
+    "distance_range_pt": [
+      8.0,
+      28.0
+    ],
+    "description": "First-bar entries use H1 structural stop from the last 6 closed H1 bars."
+  },
+  "filters": {
+    "bias": "1H bias5_signed_pct > 0 and 1H bias13_signed_pct > 0, already direction-adjusted",
+    "side_extreme_pool": "SELL: recent 4 closed H1 highest high vs H4 SMA55 >= 2%; BUY: recent 4 closed H1 lowest low vs H4 SMA55 <= -2%",
+    "momentum": "side_extreme_close_momentum_signed_pct >= -0.4",
+    "short_only": "For SELL only, side_extreme_vol_way_s_way <= 0.7",
+    "control_short_only": "For SELL only, side_extreme_way_s_way >= 0.3"
+  },
+  "exit": {
+    "historical": "Opposite M30 SMA5/SMA13 cross planned exit, with stop checked bar by bar first.",
+    "ea_required": "Export actual stop or opposite-cross exit reason for each trade."
+  },
+  "reporting": {
+    "lot_for_report": 0.01,
+    "usd_per_price_point_at_report_lot": 1.0,
+    "expected_trade_count": 88,
+    "expected_pnl_usd_001": 670.331,
+    "control_pnl_usd_001": 645.0649999999999
+  },
+  "ea_ledger_required_columns": [
+    "entry_time",
+    "dir",
+    "entry",
+    "stop",
+    "exit_time",
+    "exit",
+    "exit_reason",
+    "pnl_points"
+  ],
+  "outputs": {
+    "python_expected_trade_ledger": "F:\\use_code\\MTA5_l\\1H_M30_4H策略\\data\\validation\\ea_alignment_current_candidate\\python_expected_trade_ledger.csv",
+    "python_expected_trade_ledger_minimal": "F:\\use_code\\MTA5_l\\1H_M30_4H策略\\data\\validation\\ea_alignment_current_candidate\\python_expected_trade_ledger_minimal.csv"
+  }
+}

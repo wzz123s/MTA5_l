@@ -1,0 +1,49 @@
+; 2H_M30_6H 模拟盘部署参数包
+; 基于当前候选: 2H_M30_6H__6h_bias5_13_55_signed_pos
+; 生成时间: 2026-08-11
+; EA对齐状态: 179/179 fully matched (2026-08-11)
+;
+; ⚠️ 安全配置说明:
+;   - InpSimMode=true: 仅虚拟账单模式，不实际下单
+;   - InpAllowRealTrading=false: 二次确认禁止真实交易
+;   - 即使误操作切换到false，也有InpMaxRiskUsd限制单笔风险
+;
+; 📋 部署前检查:
+;   1. 确认MT5账户为模拟账户（非真实账户）
+;   2. 确认终端路径正确
+;   3. 确认EA编译无错误
+;   4. 确认数据文件已就位
+
+; === 账户与品种 ===
+InpMagic=332026||332026||1||3320260||N
+InpSymbol=XAUUSDm
+
+; === 当前候选参数 ===
+InpLots=0.01||0.01||0.001000||0.100000||N
+InpStopLoPt=2.0||2.0||0.200000||20.000000||N
+InpStopHiPt=10.0||10.0||1.000000||100.000000||N
+InpBias5MinPct=0.0||0.0||-5.000000||5.000000||N
+InpBias13MinPct=0.0||0.0||-5.000000||5.000000||N
+InpBias55MinPct=0.0||0.0||-5.000000||5.000000||N
+
+; === 时间周期 ===
+InpM30Period=30||0||0||49153||N
+InpH2Period=16386||0||0||49153||N
+InpH6Period=16389||0||0||49153||N
+
+; === 运行时安全配置 ===
+InpSimMode=true||false||0||true||N
+InpAllowRealTrading=false||false||0||true||N
+InpExportLedger=true||false||0||true||N
+InpLedgerFile=2H_M30_6H_sim_deployment_trade_ledger.csv
+InpHistoryBarsM30=2500||2500||250||25000||N
+InpHistoryBarsH2=1500||1500||150||15000||N
+InpHistoryBarsH6=800||800||80||8000||N
+InpCheckSec=1||1||1||30||N
+InpSlippage=30||30||1||300||N
+
+; === 实盘风控守卫（即使开启实盘也受限于以下参数）===
+InpMaxOpenPositions=1||1||1||10||N
+InpMaxSpreadPricePt=0.8||0.8||0.1||5.0||N
+InpMaxRiskUsd=30.0||30.0||1.0||300.0||N
+InpMinFreeMarginAfterTradeUsd=100.0||100.0||10.0||1000.0||N

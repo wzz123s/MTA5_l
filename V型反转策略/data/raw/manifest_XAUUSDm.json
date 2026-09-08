@@ -1,0 +1,89 @@
+{
+  "source": "MTA5_l_existing_mt5_history",
+  "symbol": "XAUUSDm",
+  "note": "数据来自 MTA5_l 项目已下载的 MT5 历史数据（2026-08-15 窗口），D1 由 H1 重采样",
+  "files": [
+    {
+      "timeframe": "M15",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_M15.csv",
+      "rows": 100734,
+      "first_utc": "2022-05-26 14:45:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 1102,
+      "sha256": "6211c53440e298da9353fdddc600c642c3481101758c11484a8fa320711b5ff2"
+    },
+    {
+      "timeframe": "M30",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_M30.csv",
+      "rows": 100367,
+      "first_utc": "2018-03-05 12:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 673,
+      "sha256": "7ef329361497326c9403cef933044804f4cdde5b04e210e02ddfaf12e33a4d43"
+    },
+    {
+      "timeframe": "H1",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_H1.csv",
+      "rows": 56878,
+      "first_utc": "2015-01-01 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 1381,
+      "sha256": "a04527842da9680065ad1b4288c72956ece070e34e20696a2d6e92cb5ffb7a72"
+    },
+    {
+      "timeframe": "H2",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_H2.csv",
+      "rows": 30090,
+      "first_utc": "2015-01-01 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 1338,
+      "sha256": "21566e69077e57c1a53a1d96ed4fe822d9dd91107df3735819224b0d453b9df2"
+    },
+    {
+      "timeframe": "H4",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_H4.csv",
+      "rows": 15988,
+      "first_utc": "2015-01-01 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 1337,
+      "sha256": "4232c73f453332cb2ab2a50fe2afda037fdecce284e0b26b2a4ac616b84f55bf"
+    },
+    {
+      "timeframe": "H6",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_H6.csv",
+      "rows": 11096,
+      "first_utc": "2015-01-01 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 614,
+      "sha256": "e0fe62f7ff22058e05ea8ba138ce80c48d0b8639c08ea43bfadad9bf1f76130a"
+    },
+    {
+      "timeframe": "H8",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_H8.csv",
+      "rows": 8655,
+      "first_utc": "2015-01-01 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": 451,
+      "sha256": "01315ebd927aedbe6b8b6eeefa64394ffe67ee58343795e6a41fa591d19a96a6"
+    },
+    {
+      "timeframe": "W1",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_W1.csv",
+      "rows": 609,
+      "first_utc": "2015-01-04 00:00:00+00:00",
+      "last_utc": "2026-08-30 00:00:00+00:00",
+      "gaps": 0,
+      "sha256": "9788eea0265dc4641d9edc314cc7dcbbaa465674d3a980203f1530b190536f73"
+    },
+    {
+      "timeframe": "D1",
+      "path": "F:\\use_code\\MTA5_l\\V型反转策略\\data\\raw\\XAUUSDm_D1.csv",
+      "rows": 3587,
+      "first_utc": "2015-01-01 00:00:00+00:00",
+      "last_utc": "2026-09-01 00:00:00+00:00",
+      "gaps": -1,
+      "note": "resampled from H1",
+      "sha256": "103b4fa31e83c8e7b032afd4e81de8a2d657008a1fb429d87b4540b6de41f49c"
+    }
+  ]
+}

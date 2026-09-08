@@ -1,0 +1,257 @@
+﻿ 
+ 
+ 
+ 
+ 
+ EDGAR Filing Documents for 0001628280-26-050596 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ This page uses Javascript. Your browser either doesn't support Javascript or you have it turned off. To see this page as it is meant to appear please use a Javascript enabled browser.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ SEC.gov 
+ 
+ 
+ 
+ EDGAR 
+ 
+ 
+
+ 
+ 
+ Latest Filings 
+ 
+ 
+ Filings search tools 
+ 
+ 
+ 
+ Filing Detail 
+
+
+
+ 
+
+
+ 
+ 
+ 
+ SEC Home &#187; 
+ Company Search &#187; 
+ Current Page 
+ 
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ Form 8-K - Current report: 
+ 
+
+ 
+ SEC Accession No. 0001628280-26-050596
+ 
+
+ 
+
+ 
+ 
+ 
+ Filing Date
+
+ 2026-07-29
+
+ Accepted
+
+ 2026-07-29 16:03:23
+
+ Documents
+
+ 13
+
+ 
+
+ 
+ Period of Report
+
+ 2026-07-29
+
+ 
+
+ 
+ Items
+
+ Item 2.02: Results of Operations and Financial Condition
+Item 9.01: Financial Statements and Exhibits
+
+
+ 
+
+ 
+
+ 
+ 
+ 
+ Interactive Data 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ Document Format Files
+
+ 
+ 
+ Seq | 
+ Description | 
+ Document | 
+ Type | 
+ Size | 
+ 
+
+ 
+ 1 | 
+ 8-K | 
+ meta-20260729.htm iXBRL | 
+ 8-K | 
+ 28244 | 
+ 
+
+ 
+ 2 | 
+ EX-99.1 | 
+ meta-06302026xexhibit991.htm | 
+ EX-99.1 | 
+ 273628 | 
+ 
+
+ 
+ 6 | 
+ | 
+ meta-20260729_g1.jpg | 
+ GRAPHIC | 
+ 16019 | 
+ 
+
+ 
+ | 
+ Complete submission text file | 
+ 0001628280-26-050596.txt | 
+ | 
+ 478017 | 
+ 
+
+ 
+ 
+
+
+
+ 
+ 
+ Data Files
+
+ 
+ 
+ Seq | 
+ Description | 
+ Document | 
+ Type | 
+ Size | 
+ 
+
+ 
+ 3 | 
+ XBRL TAXONOMY EXTENSION SCHEMA DOCUMENT | 
+ meta-20260729.xsd | 
+ EX-101.SCH | 
+ 1798 | 
+ 
+
+ 
+ 4 | 
+ XBRL TAXONOMY EXTENSION LABEL LINKBASE DOCUMENT | 
+ meta-20260729_lab.xml | 
+ EX-101.LAB | 
+ 21885 | 
+ 
+
+ 
+ 5 | 
+ XBRL TAXONOMY EXTENSION PRESENTATION LINKBASE DOCUMENT | 
+ meta-20260729_pre.xml | 
+ EX-101.PRE | 
+ 12522 | 
+ 
+
+ 
+ 16 | 
+ EXTRACTED XBRL INSTANCE DOCUMENT | 
+ meta-20260729_htm.xml | 
+ XML | 
+ 2707 | 
+ 
+
+ 
+ 
+
+
+
+ 
+ 
+ 
+ Mailing Address
+ 1 META WAY 
+ 
+MENLO PARK CA 
+94025 
+ 
+
+ Business Address
+ 1 META WAY 
+ 
+MENLO PARK CA 
+94025 
+ 650-543-4800 
+ 
+
+ 
+ Meta Platforms, Inc. (Filer)
+ CIK : 0001326801 (see all company filings) 
+ EIN. : 201665019 | State of Incorp.: DE | Fiscal Year End: 1231 
+Type: 8-K | Act: 34 | File No.: 001-35551 | Film No.: 261217312 
+ SIC : 7370 Services-Computer Programming, Data Processing, Etc.
+(CF Office: 06 Technology)
+
+
+
+ 
+
+
+
+ 
+
+
+

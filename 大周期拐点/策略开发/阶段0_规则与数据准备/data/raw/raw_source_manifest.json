@@ -1,0 +1,79 @@
+{
+  "generated_at": "2026-08-30T13:33:04.052964+00:00",
+  "source_type": "mt5_api_history",
+  "note": "MCT 大周期拐点策略 · 阶段0 原始数据包（独立数据源）",
+  "terminal_snapshot": {
+    "terminal_name": "MetaTrader 5",
+    "terminal_path": "F:\\Program Files\\MetaTrader 5",
+    "company": "MetaQuotes Ltd.",
+    "account": 277752085,
+    "account_hash": "ae4f250733c70c90",
+    "leveraged": 2000,
+    "server": "Exness-MT5Trial5",
+    "currency": "USD"
+  },
+  "symbols": [
+    {
+      "symbol": "XAUUSDm",
+      "source_id": "mct_mt5_xauusdm_usoilm_20260830_133303",
+      "files": [
+        {
+          "name": "XAUUSDm_D1.csv",
+          "rows": 3272,
+          "sha256": "55f345c8d907513b5a1f7529a0b6b7ed9b8759fbaa052e88c2495eacd9bcd609",
+          "timeframe": "D1",
+          "first": "2016-01-03 00:00:00",
+          "last": "2026-08-28 00:00:00"
+        },
+        {
+          "name": "XAUUSDm_H4.csv",
+          "rows": 15668,
+          "sha256": "557b419b307698f7cb551ece27c2c064d3421a0931613395ffc31bff7545f4f6",
+          "timeframe": "H4",
+          "first": "2016-01-03 00:00:00",
+          "last": "2026-08-28 20:00:00"
+        },
+        {
+          "name": "XAUUSDm_W1.csv",
+          "rows": 556,
+          "sha256": "f34b42d70d029e91edd36e2525da74d2bf005554e43567e427a30cb352943917",
+          "timeframe": "W1",
+          "first": "2016-01-03 00:00:00",
+          "last": "2026-08-23 00:00:00"
+        }
+      ],
+      "bundle_sha256": "cfb5d80a4b4b48d8d709f65d658927fd67cdedd6375c01d41843b307fcfce559"
+    },
+    {
+      "symbol": "USOILm",
+      "source_id": "mct_mt5_xauusdm_usoilm_20260830_133303",
+      "files": [
+        {
+          "name": "USOILm_D1.csv",
+          "rows": 2346,
+          "sha256": "3612e0f99a1d99db731fdc373273e98f8dc5a3019b16a78cdd944cc0aeb0e0b3",
+          "timeframe": "D1",
+          "first": "2019-01-21 00:00:00",
+          "last": "2026-08-28 00:00:00"
+        },
+        {
+          "name": "USOILm_H4.csv",
+          "rows": 8998,
+          "sha256": "641bcd8ce57489292b480065def7406d753daf7b92c0a468b0d15962eaf91a10",
+          "timeframe": "H4",
+          "first": "2019-01-21 00:00:00",
+          "last": "2026-08-28 20:00:00"
+        },
+        {
+          "name": "USOILm_W1.csv",
+          "rows": 395,
+          "sha256": "a882be92c5875e933a88dbcb11732aad2008438a19c857fc062c0da96a16dca0",
+          "timeframe": "W1",
+          "first": "2019-01-20 00:00:00",
+          "last": "2026-08-23 00:00:00"
+        }
+      ],
+      "bundle_sha256": "b7f90e957fe1e111daac038f631a89bcb16440411833f917f4cfbab73421b168"
+    }
+  ]
+}

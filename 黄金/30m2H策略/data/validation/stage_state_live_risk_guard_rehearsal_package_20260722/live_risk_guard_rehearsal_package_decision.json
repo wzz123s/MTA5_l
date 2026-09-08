@@ -1,0 +1,21 @@
+﻿{
+  "decision_time": "2026-07-22T23:47:44",
+  "check_id": "stage_state_live_risk_guard_rehearsal_package",
+  "status": "live_risk_guard_rehearsal_package_ready",
+  "ready_to_execute_nonprod_guard_rehearsal": true,
+  "ini": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.live_risk_guard_rehearsal_20260601_20260707_20260722.ini",
+  "set": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.live_risk_guard_rehearsal_20260601_20260707_20260722.set",
+  "report": "F:\\use_code\\MTA5_l\\auto_trade\\live_risk_guard_rehearsal_20260601_20260707_20260722_report.xml",
+  "terminal_exe": "F:\\Program Files\\MetaTrader 5 EXNESS\\terminal64.exe",
+  "symbol": "XAUUSDm",
+  "period": "M30",
+  "from_date": "2026.06.01",
+  "to_date": "2026.07.07",
+  "deposit": 2000,
+  "leverage": 2000,
+  "local_ex5_sha256": "26312e636d0dc99018646af28cbd91126eba64bc1adcbbe35a9d6622bddd3919",
+  "deployed_ex5_sha256": "26312e636d0dc99018646af28cbd91126eba64bc1adcbbe35a9d6622bddd3919",
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "run_terminal64_with_guard_enabled_tester_ini_then_collect_rehearsal_evidence"
+}

@@ -1,0 +1,27 @@
+﻿{
+  "decision_time": "2026-07-23T19:38:55",
+  "check_id": "stage_state_live_account_spec_snapshot_read_only",
+  "status": "live_account_spec_snapshot_collected_demo_context",
+  "account_alias": "MT5_ACCOUNT_***085",
+  "server": "Exness-MT5Trial5",
+  "symbol": "XAUUSDm",
+  "account_leverage": 2000,
+  "requested_leverage": 2000,
+  "balance": 2000.0,
+  "balance_cap": 2000.0,
+  "positions_count": 0,
+  "orders_count": 0,
+  "implied_leverage_unique_from_margin": [
+    1999,
+    2000,
+    2001
+  ],
+  "orders_placed": false,
+  "runner_executed": false,
+  "credential_values_output": false,
+  "live_gap_009_closed": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "warning_count": 0,
+  "recommended_next_action": "update_live_gate_with_demo_account_spec_snapshot_but_keep_live_blocked_pending_real_approval"
+}

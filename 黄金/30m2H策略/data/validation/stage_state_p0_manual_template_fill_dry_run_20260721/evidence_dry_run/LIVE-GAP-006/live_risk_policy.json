@@ -1,0 +1,27 @@
+﻿{
+  "gap_id": "LIVE-GAP-006",
+  "source_file": "live_risk_policy.json",
+  "dry_run_status": "redacted_placeholder_only",
+  "priority": "P0",
+  "gate_status": "open",
+  "ready_to_live_trade": false,
+  "contains_real_credentials": false,
+  "generated_at": "2026-07-21T12:21:13",
+  "fields": {
+    "max_daily_loss": "PENDING_MAX_DAILY_LOSS",
+    "max_drawdown": "PENDING_MAX_DRAWDOWN",
+    "max_orders": "PENDING_MAX_ORDERS",
+    "max_spread_points": "PENDING_MAX_SPREAD_POINTS",
+    "margin_guard_pct": "PENDING_MARGIN_GUARD_PCT",
+    "min_lot": "PENDING_MIN_LOT",
+    "max_lot": "PENDING_MAX_LOT",
+    "balance_cap": "PENDING_BALANCE_CAP"
+  },
+  "confirmation_boundary": {
+    "confirmer": "user plus operator",
+    "prerequisite_source": "operator-defined risk policy",
+    "next_allowed_action": "fill the template with redacted/manual confirmation data only"
+  },
+  "forbidden_content": "do not infer live risk from SIM_ONLY observation",
+  "fail_closed_action": "Keep all live gates open and keep ready_to_live_trade=false."
+}

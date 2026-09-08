@@ -1,0 +1,37 @@
+; 2H_M30_6H ABC 组合模拟盘部署参数包 (2026-08-15)
+; 门控: 6H bias5>0 且 bias55>0 (去掉 bias13) | 三机会 + 段SMA13止损 + 三段退出
+InpMagic=342036
+InpSymbol=XAUUSDm
+InpRiskPct=1.0
+InpStopLoPt=5.0
+InpStopHiPt=35.0
+InpMaxOpenVirtual=10
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimStartBalance=500.0
+InpPreCrossGapPct=0.300
+InpPostNMin=2
+InpPostNMax=6
+InpMergedMinLen=8
+InpH6SMA5=5
+InpH6SMA55=55
+InpM30SMA5=5
+InpM30SMA13=13
+InpM30SMA55=55
+InpNanRegOn=false
+InpNanRegPct=0.5
+InpStage1R=2.0
+InpStage2TrailR=1.5
+InpStage2ForceR=4.0
+InpStage1Units=0.5
+InpStage2Units=1.0
+InpStage3Units=1.5
+InpHistoryBars=600
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportCSV=true
+InpExportLedger=true
+InpVerboseDiag=true
+; 2026-09-04 关闭冷却闸门对齐回测口径(冷却作为风险工具后续单独评估)
+InpSameDirCdBars=0
+InpLossCdLoss=0

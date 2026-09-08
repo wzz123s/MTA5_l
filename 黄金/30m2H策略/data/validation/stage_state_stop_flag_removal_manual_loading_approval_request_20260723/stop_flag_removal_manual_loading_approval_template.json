@@ -1,0 +1,27 @@
+﻿{
+  "source": "stop_flag_removal_manual_ea_loading_approval_confirmed_by_user_20260724",
+  "generated_at": "2026-07-23T23:10:20",
+  "operator_alias": "owner_local",
+  "account_alias": "MT5_ACCOUNT_***085",
+  "server": "Exness-MT5Trial5",
+  "symbol": "XAUUSDm",
+  "timeframe": "M30",
+  "ea_ex5": "F:\\use_code\\MTA5_l\\auto_trade\\30m2H_Strategy_EA.ex5",
+  "set_snapshot": "F:\\use_code\\MTA5_l\\30m2H策略\\data\\validation\\stage_state_exact_mt5_ea_live_loading_package_20260723\\30m2H_Strategy_EA.live_loading_owner_local_20260723.set",
+  "approval_items": {
+    "remove_EMERGENCY_STOP_flag": true,
+    "remove_RUNNER_STOP_flag": true,
+    "manual_load_EA_on_XAUUSDm_M30": true,
+    "confirm_MT5_AutoTrading_can_be_enabled_after_EA_loaded": true,
+    "confirm_owner_local_watches_alerts_and_reconciliation": true,
+    "confirm_stop_if_unexpected_position_order_or_log_error": true
+  },
+  "ready_to_live_trade": false,
+  "do_not_include": [
+    "full account number",
+    "password",
+    "investor password",
+    "api token",
+    "secret key"
+  ]
+}

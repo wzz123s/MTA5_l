@@ -1,0 +1,41 @@
+; 1H_M30_4H ABC 组合模拟盘部署参数包 (2026-08-15)
+; IMP: 删 post_n5/6 + Stage1 1.5R | 门控: 4H池 + H4 bias5≥0.6% + 1H bias5&13
+InpMagic=312036
+InpSymbol=XAUUSDm
+InpRiskPct=1.0
+InpStopLoPt=5.0
+InpStopHiPt=35.0
+InpMaxOpenVirtual=10
+InpMinLots=0.01
+InpMaxLots=10.0
+InpSimStartBalance=500.0
+InpPreCrossGapPct=0.300
+InpPostNMin=2
+InpPostNMax=6
+InpMergedMinLen=8
+InpDropPostN5=true
+InpDropPostN6=true
+InpPoolBias55MinPct=2.0
+InpBias5MinPct=0.6
+InpVetoShortH4Uptrend=false
+InpH1SMA5=5
+InpH1SMA13=13
+InpH4SMA5=5
+InpH4SMA55=55
+InpM30SMA5=5
+InpM30SMA13=13
+InpStage1R=1.5
+InpStage2TrailR=1.5
+InpStage2ForceR=4.0
+InpStage1Units=0.5
+InpStage2Units=1.0
+InpStage3Units=1.5
+InpHistoryBars=600
+InpSimMode=true
+InpAllowRealTrading=false
+InpExportCSV=true
+InpExportLedger=true
+InpVerboseDiag=true
+; 2026-09-04 关闭冷却闸门对齐回测口径(冷却作为风险工具后续单独评估)
+InpSameDirCdBars=0
+InpLossCdLoss=0

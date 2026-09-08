@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K线精灵 · 你的交易小伴侣</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1d23;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  #scene {
+    position: relative;
+    width: 600px;
+    height: 700px;
+  }
+  #scene canvas {
+    display: block;
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+  #info {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  @media (max-width: 640px) {
+    #scene { width: 100vw; height: 100vh; }
+  }
+</style>
+</head>
+<body>
+<div id="scene">
+  <canvas id="c"></canvas>
+  <div id="info">单击摸头 · 双击喂食 · 长按举高高</div>
+</div>
+<script>
+// ─── K线精灵 · 交易小伴侣 ───
+// 一只住在你交易终端里的小家伙。
+// 他知道 XAUUSD, USOIL, 认识 good/bad 方向,
+// 懂得深夜复盘有多安静, 也懂得止盈那一刻的快乐。
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width = 600;
+const H = canvas.height = 700;
+
+// ─── 状态 ───
+const STATE = { IDLE:0, CURIOUS:1, HAPPY:2, SLEEPY:3, EXCITED:4 };
+let state = STATE.IDLE;
+let stateTimer = 0;
+let nextStateChange = 120;
+let blinkTimer = 0;
+let blink = 0;
+
+// 互动
+let petTargetX = null, petTargetY = null;
+let petLookX = 0, petLookY = 0;
+let petBounce = 0;
+let petHappy = 0;
+let petSleepiness = 0;
+let petSparkle = 0;
+let feedCount = 0;
+let thoughtBubble = null;
+let thoughtTimer = 0;
+let longPressTimer = null;
+let longPressed = false;
+let liftHeight = 0;
+
+// 粒子系统
+let particles = [];
+
+// ─── 时间 ───
+function getHour() { const d=new Date(); return d.getHours() + d.getMinutes()/60; }
+
+// ─── 对话 ───
+const thoughts = [
+  "📈 趋势好像走出来了",
+  "📉 这里会不会有支撑…",
+  "⛽ USOIL 在干嘛呢",
+  "🥇 XAU 今天有点意思",
+  "🧐 这段方向是 good",
+  "📊 SMA13 穿过去了",
+  "🤔 极值点…再想想",
+  "🎯 止盈到了！",
+  "🛑 止损设宽一点…",
+  "🌙 还在复盘啊",
+  "☕ 再来一杯咖啡",
+  "✨ 这次参数好像不错",
+  "⚡ 回测跑起来！",
+  "📝 记一笔交易日志",
+  "🔍 看看多周期对齐",
+  "💡 也许该换个过滤器",
+];
+const sleepyThoughts = [
+  "😴 zzz…",
+  "🛌 最后一根K线…",
+  "🌙 行情明天再看吧…",
+  "💤 好困…",
+];
+const happyThoughts = [
+  "🎉 盈利了！",
+  "⭐ 策略跑得漂亮",
+  "🥳 嘿嘿",
+  "🌈 方向对了～",
+  "🍀 Lucky trade!",
+];
+
+function randomThought(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ─── 画布背景 ───
+function drawBackground() {
+  const h = getHour();
+  let grad;
+  if (h >= 6 && h < 12) {
+    grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#2d3748'); grad.addColorStop(0.5,'#4a5568'); grad.addColorStop(1,'#1a202c');
+  } else if (h >= 12 && h < 18) {
+    grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#3d4f6f'); grad.addColorStop(0.5,'#2d3748'); grad.addColorStop(1,'#1a202c');
+  } else if (h >= 18 && h < 22) {
+    grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#553c2a'); grad.addColorStop(0.5,'#2d3748'); grad.addColorStop(1,'#1a202c');
+  } else {
+    grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#1a1d23'); grad.addColorStop(0.3,'#141820'); grad.addColorStop(1,'#0d1117');
+  }
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  // 网格 —— 像 TradingView
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let x=0; x<W; x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y=0; y<H; y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // 迷你K线 —— 背景装饰
+  const miniBars = [
+    {x:70, o:440,c:455,h:430,l:465, color:'#26a69a'},
+    {x:110, o:455,c:445,h:440,l:470, color:'#ef5350'},
+    {x:150, o:448,c:460,h:435,l:465, color:'#26a69a'},
+    {x:190, o:460,c:442,h:430,l:475, color:'#ef5350'},
+    {x:450, o:455,c:462,h:445,l:470, color:'#26a69a'},
+    {x:490, o:462,c:450,h:440,l:475, color:'#ef5350'},
+    {x:530, o:450,c:458,h:438,l:468, color:'#26a69a'},
+  ];
+  ctx.globalAlpha = 0.15;
+  miniBars.forEach(b => {
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(b.x,b.l); ctx.lineTo(b.x,b.h); ctx.stroke();
+    ctx.fillStyle = b.color;
+    ctx.fillRect(b.x-4, Math.min(b.o,b.c), 8, Math.abs(b.c-b.o));
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ─── 桌面 / 栖息地 ───
+function drawDesk() {
+  const dY = 520;
+  ctx.fillStyle = '#2a2d35';
+  ctx.beginPath();
+  ctx.roundRect(40, dY, W-80, H-dY-20, 12);
+  ctx.fill();
+  ctx.fillStyle = '#333740';
+  ctx.beginPath();
+  ctx.roundRect(40, dY, W-80, 6, 3);
+  ctx.fill();
+
+  // 迷你显示器
+  ctx.fillStyle = '#1a1e24';
+  ctx.beginPath();
+  ctx.roundRect(440, dY-120, 120, 90, 8);
+  ctx.fill();
+  ctx.fillStyle = '#0d1117';
+  ctx.beginPath();
+  ctx.roundRect(446, dY-114, 108, 72, 4);
+  ctx.fill();
+  // 显示器上的迷你图表
+  ctx.strokeStyle = '#26a69a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(450, dY-70);
+  ctx.lineTo(465, dY-80); ctx.lineTo(478, dY-60); ctx.lineTo(492, dY-65);
+  ctx.lineTo(505, dY-50); ctx.lineTo(520, dY-55); ctx.lineTo(535, dY-45);
+  ctx.lineTo(550, dY-48);
+  ctx.stroke();
+  ctx.strokeStyle = '#ef5350';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(450, dY-50);
+  ctx.lineTo(465, dY-55); ctx.lineTo(478, dY-50);
+  ctx.stroke();
+  ctx.fillStyle = '#26a69a';
+  ctx.font = '8px monospace';
+  ctx.fillText('XAUUSD', 450, dY-100);
+
+  // 键盘
+  ctx.fillStyle = '#1e2028';
+  ctx.beginPath();
+  ctx.roundRect(430, dY+10, 140, 30, 6);
+  ctx.fill();
+  for (let i=0; i<8; i++) {
+    ctx.fillStyle = '#2d303a';
+    ctx.fillRect(438+i*16, dY+16, 12, 8);
+  }
+
+  // 咖啡杯
+  const cx=140, cy=dY-15;
+  ctx.fillStyle = '#3d3a35';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 14, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#3d3a35';
+  ctx.beginPath();
+  ctx.roundRect(cx-12, cy-16, 24, 18, 4);
+  ctx.fill();
+  ctx.strokeStyle = '#5a5545';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx+14, cy-10, 5, -0.5, 0.5);
+  ctx.stroke();
+  // 咖啡蒸汽
+  const t = Date.now()/600;
+  ctx.strokeStyle = 'rgba(200,190,170,0.15)';
+  ctx.lineWidth = 1.5;
+  for (let i=0; i<3; i++) {
+    const yy = cy-20 - i*10 - Math.sin(t+i)*4;
+    ctx.beginPath();
+    ctx.moveTo(cx-4+i*4, yy); ctx.quadraticCurveTo(cx-2+i*4, yy-10, cx+i*4, yy-15);
+    ctx.stroke();
+  }
+
+  // 地球 (显示时间/市场状态)
+  const eh = getHour();
+  let marketText = '🟢 亚盘';
+  if (eh >= 8 && eh < 16) marketText = '🟡 欧盘';
+  if (eh >= 16 || eh < 5) marketText = '🔴 美盘';
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.font = '11px sans-serif';
+  ctx.fillText(marketText, 60, dY+45);
+  const timeStr = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+  ctx.fillText('🕐 '+timeStr, 60, dY+65);
+}
+
+// ─── 画宠物 ───
+function drawPet(cx, cy) {
+  const s = 1 + Math.sin(Date.now()/800)*0.02;
+  const bounce = petBounce * 10;
+  const lift = liftHeight * 4;
+  const baseY = cy + 280 - bounce - lift;
+  const bodyW = 80*s, bodyH = 90*s;
+  const breath = Math.sin(Date.now()/1200)*2;
+
+  ctx.save();
+  ctx.translate(cx, baseY + breath);
+
+  // 尾巴
+  const tailX = -38*s, tailY = 20;
+  ctx.fillStyle = '#d4a853';
+  ctx.beginPath();
+  ctx.ellipse(tailX, tailY+Math.sin(Date.now()/500)*3, 14*s, 12*s, 0.2, 0, Math.PI*2);
+  ctx.fill();
+
+  // 身体
+  const bodyGrad = ctx.createRadialGradient(0,0,10, 0,0,bodyW);
+  if (state === STATE.SLEEPY) {
+    bodyGrad.addColorStop(0,'#8b9dc3'); bodyGrad.addColorStop(1,'#5a6e8a');
+  } else if (state === STATE.EXCITED) {
+    bodyGrad.addColorStop(0,'#f7c948'); bodyGrad.addColorStop(1,'#d4a030');
+  } else if (state === STATE.HAPPY) {
+    bodyGrad.addColorStop(0,'#f0d060'); bodyGrad.addColorStop(1,'#c9a44a');
+  } else {
+    bodyGrad.addColorStop(0,'#e8c86a'); bodyGrad.addColorStop(1,'#c9a44a');
+  }
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, bodyW, bodyH, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // 身体纹理 — 小蜡烛K线图案
+  ctx.globalAlpha = 0.1;
+  for (let i=-3; i<=3; i++) {
+    const bx = i*15, by = -5+i*2;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(bx,-20+by); ctx.lineTo(bx,20+by); ctx.stroke();
+    ctx.fillRect(bx-2, -12+by, 4, 8);
+  }
+  ctx.globalAlpha = 1;
+
+  // 小爱心印记
+  ctx.fillStyle = 'rgba(255,100,100,0.3)';
+  ctx.font = '18px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('♡', 0, 20);
+
+  // 手臂
+  const armAngle = Math.sin(Date.now()/1000)*0.15;
+  const excitedArm = state===STATE.EXCITED ? 0.3 : 0;
+  ctx.strokeStyle = '#b8954a';
+  ctx.lineWidth = 8*s;
+  ctx.lineCap = 'round';
+  // 左臂
+  ctx.beginPath();
+  ctx.arc(-30*s, -5, 30, -1.2+armAngle+excitedArm, -0.2+armAngle+excitedArm);
+  ctx.stroke();
+  // 右臂
+  ctx.beginPath();
+  ctx.arc(30*s, -5, 30, Math.PI+0.2-armAngle-excitedArm, Math.PI+1.2-armAngle-excitedArm);
+  ctx.stroke();
+
+  // 小爪子
+  ctx.fillStyle = '#d4a853';
+  ctx.beginPath();
+  ctx.ellipse(-40*s + Math.sin(Date.now()/800)*2, 12, 8*s, 6*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(40*s + Math.sin(Date.now()/800+1)*2, 12, 8*s, 6*s, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // 脚
+  ctx.fillStyle = '#b8954a';
+  ctx.beginPath();
+  ctx.ellipse(-18*s, bodyH-5, 12*s, 8*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(18*s, bodyH-5, 12*s, 8*s, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // ─── 脸部 ───
+  const eyeY = -22;
+  const lookLerp = 0.08;
+  const lookTargetX = (petLookX - cx) * 0.05;
+  const lookTargetY = (petLookY - baseY) * 0.05;
+
+  const eyeW = 18*s, eyeH = 22*s;
+  const isSleepy = state === STATE.SLEEPY;
+  const isExcited = state === STATE.EXCITED;
+  const isHappy = state === STATE.HAPPY;
+  const blinkH = blink > 0 ? Math.abs(Math.sin(blink*0.5))*eyeH : eyeH;
+
+  for (let side of [-1,1]) {
+    const ex = side * 20*s;
+
+    // 眼白
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.ellipse(ex, eyeY + (isSleepy?4:0), eyeW*0.8, (isSleepy?6:blinkH)*0.8, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // 瞳孔
+    if (!isSleepy) {
+      const pupilSize = isExcited ? 14*s : 10*s;
+      const px = lookTargetX * 3;
+      const py = lookTargetY * 3;
+      ctx.fillStyle = isExcited ? '#553311' : '#3a2a1a';
+      ctx.beginPath();
+      ctx.arc(ex + px, eyeY + py, pupilSize*0.8, 0, Math.PI*2);
+      ctx.fill();
+      // 高光
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.beginPath();
+      ctx.arc(ex-3+px, eyeY-4+py, 4*s, 0, Math.PI*2);
+      ctx.fill();
+    } else {
+      // 睡着的眼睛
+      ctx.strokeStyle = '#3a2a1a';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(ex, eyeY+4, 12*s, 0.1, Math.PI-0.1);
+      ctx.stroke();
+    }
+  }
+
+  // 腮红
+  if (isHappy || isExcited) {
+    ctx.fillStyle = `rgba(255,150,150,${isExcited?0.4:0.25})`;
+    for (let side of [-1,1]) {
+      ctx.beginPath();
+      ctx.ellipse(side*32*s, -4, 12*s, 8*s, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  // 嘴巴
+  if (isHappy || isExcited) {
+    ctx.fillStyle = '#8a6a3a';
+    ctx.beginPath();
+    ctx.arc(0, 2, 8*s, 0, Math.PI);
+    ctx.fill();
+  } else if (isSleepy) {
+    ctx.strokeStyle = '#8a6a3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 10, 5*s, 0.1, Math.PI-0.1);
+    ctx.stroke();
+  } else {
+    ctx.strokeStyle = '#8a6a3a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 5, 5*s, 0.15, Math.PI-0.15);
+    ctx.stroke();
+  }
+
+  // 眉毛
+  if (isCurious()) {
+    ctx.strokeStyle = '#8a6a3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-20*s, -40); ctx.lineTo(-10*s, -44);
+    ctx.moveTo(20*s, -40); ctx.lineTo(10*s, -44);
+    ctx.stroke();
+  }
+
+  // 小耳朵
+  ctx.fillStyle = '#c9a44a';
+  ctx.beginPath();
+  ctx.ellipse(-40*s, -60*s, 15*s, 18*s, -0.3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(40*s, -60*s, 15*s, 18*s, 0.3, 0, Math.PI*2);
+  ctx.fill();
+  // 耳内
+  ctx.fillStyle = '#b08060';
+  ctx.beginPath();
+  ctx.ellipse(-40*s, -60*s, 8*s, 10*s, -0.3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(40*s, -60*s, 8*s, 10*s, 0.3, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // ─── 对话框 ───
+  if (thoughtBubble && thoughtTimer > 0) {
+    const bx = cx + 50, by = baseY - 140;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.beginPath();
+    ctx.roundRect(bx, by, 160, 36, 10);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#333';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(thoughtBubble, bx+80, by+18);
+    // 小尾巴
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.beginPath();
+    ctx.moveTo(bx+20, by+36); ctx.lineTo(bx+30, by+46); ctx.lineTo(bx+40, by+36);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ─── 星星粒子 ───
+  if (isHappy || isExcited) {
+    particles.push({
+      x: cx + (Math.random()-0.5)*60,
+      y: baseY - 40 + (Math.random()-0.5)*40,
+      vx: (Math.random()-0.5)*2,
+      vy: -Math.random()*3 - 1,
+      life: 60,
+      size: 3+Math.random()*4,
+      type: Math.random()<0.5 ? 'star' : 'sparkle'
+    });
+  }
+}
+
+function isCurious() { return state === STATE.CURIOUS; }
+
+// ─── 粒子更新 ───
+function updateParticles() {
+  for (let i=particles.length-1; i>=0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    if (p.life <= 0) { particles.splice(i,1); continue; }
+    const alpha = p.life/60;
+    if (p.type === 'star') {
+      ctx.fillStyle = `rgba(255,215,0,${alpha})`;
+      ctx.font = `${p.size*3}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('✦', p.x, p.y);
+    } else {
+      ctx.fillStyle = `rgba(255,255,200,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+}
+
+// ─── ZZZ 粒子 ───
+let zzzParticles = [];
+function updateZZZ() {
+  if (state === STATE.SLEEPY) {
+    if (Math.random() < 0.03) {
+      zzzParticles.push({ x:200+Math.random()*40, y:200+Math.random()*20, vy:-0.5-Math.random(), life:80, size:10+Math.random()*8 });
+    }
+  }
+  for (let i=zzzParticles.length-1; i>=0; i--) {
+    const z = zzzParticles[i];
+    z.y += z.vy;
+    z.life--;
+    if (z.life <= 0) { zzzParticles.splice(i,1); continue; }
+    ctx.fillStyle = `rgba(200,220,255,${z.life/80*0.3})`;
+    ctx.font = `${z.size}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('💤', z.x, z.y);
+  }
+}
+
+// ─── 更新状态 ───
+function updateState() {
+  stateTimer++;
+  if (stateTimer >= nextStateChange) {
+    stateTimer = 0;
+    const r = Math.random();
+    const h = getHour();
+    if (h >= 22 || h < 6) {
+      if (r < 0.4) state = STATE.SLEEPY;
+      else if (r < 0.55) state = STATE.IDLE;
+      else if (r < 0.7) state = STATE.CURIOUS;
+      else if (r < 0.85) state = STATE.HAPPY;
+      else state = STATE.EXCITED;
+    } else if (h >= 6 && h < 9) {
+      if (r < 0.3) state = STATE.EXCITED;
+      else if (r < 0.5) state = STATE.HAPPY;
+      else if (r < 0.7) state = STATE.CURIOUS;
+      else if (r < 0.9) state = STATE.IDLE;
+      else state = STATE.SLEEPY;
+    } else {
+      if (r < 0.3) state = STATE.IDLE;
+      else if (r < 0.5) state = STATE.CURIOUS;
+      else if (r < 0.7) state = STATE.HAPPY;
+      else if (r < 0.85) state = STATE.EXCITED;
+      else state = STATE.SLEEPY;
+    }
+    nextStateChange = 150 + Math.floor(Math.random() * 200);
+  }
+}
+
+// ─── 互动 ───
+function onPetClick(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+  const cx = W/2, baseY = 300;
+  const dx = x - cx, dy = y - baseY;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist < 100) {
+    state = STATE.HAPPY;
+    stateTimer = 0;
+    nextStateChange = 80;
+    petBounce = 0.5;
+    petHappy = 1;
+    feedCount++;
+    thoughtBubble = feedCount % 5 === 0
+      ? randomThought(happyThoughts)
+      : randomThought(thoughts);
+    thoughtTimer = 120;
+    for (let i=0; i<12; i++) {
+      particles.push({
+        x: cx + (Math.random()-0.5)*50,
+        y: baseY + (Math.random()-0.5)*50,
+        vx: (Math.random()-0.5)*3,
+        vy: -Math.random()*4 - 1,
+        life: 40+Math.random()*30,
+        size: 2+Math.random()*5,
+        type: Math.random()<0.4 ? 'star' : 'sparkle'
+      });
+    }
+  }
+}
+
+function onPetDoubleClick(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+  const cx = W/2, baseY = 300;
+  const dx = x - cx, dy = y - baseY;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist < 120) {
+    state = STATE.EXCITED;
+    stateTimer = 0;
+    nextStateChange = 120;
+    petBounce = 1;
+    thoughtBubble = randomThought(happyThoughts);
+    thoughtTimer = 150;
+    for (let i=0; i<20; i++) {
+      particles.push({
+        x: cx + (Math.random()-0.5)*60,
+        y: baseY - 30 + (Math.random()-0.5)*60,
+        vx: (Math.random()-0.5)*4,
+        vy: -Math.random()*5 - 2,
+        life: 50+Math.random()*40,
+        size: 2+Math.random()*5,
+        type: Math.random()<0.5 ? 'star' : 'sparkle'
+      });
+    }
+  }
+}
+
+function onPetMouseMove(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  petLookX = (e.clientX - rect.left) * scaleX;
+  petLookY = (e.clientY - rect.top) * scaleY;
+}
+
+function onPetMouseDown(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+  const cx = W/2, baseY = 300;
+  const dx = x - cx, dy = y - baseY;
+  if (Math.sqrt(dx*dx + dy*dy) < 100) {
+    longPressTimer = setTimeout(() => {
+      longPressed = true;
+      liftHeight = 1;
+      state = STATE.EXCITED;
+      stateTimer = 0;
+      nextStateChange = 100;
+      thoughtBubble = '🚀 举高高！';
+      thoughtTimer = 100;
+    }, 600);
+  }
+}
+
+function onPetMouseUp() {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  if (longPressed) {
+    longPressed = false;
+    liftHeight = 0;
+  }
+}
+
+canvas.addEventListener('click', onPetClick);
+canvas.addEventListener('dblclick', onPetDoubleClick);
+canvas.addEventListener('mousemove', onPetMouseMove);
+canvas.addEventListener('mousedown', onPetMouseDown);
+canvas.addEventListener('mouseup', onPetMouseUp);
+canvas.addEventListener('mouseleave', onPetMouseUp);
+
+// ─── 动画循环 ───
+function animate() {
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawDesk();
+
+  updateState();
+
+  blinkTimer++;
+  if (blinkTimer > 180 + Math.random()*100) { blink = 8; blinkTimer = 0; }
+  if (blink > 0) blink--;
+
+  if (petBounce > 0) petBounce *= 0.92;
+  if (petBounce < 0.01) petBounce = 0;
+  if (petHappy > 0) petHappy *= 0.96;
+  if (thoughtTimer > 0) thoughtTimer--;
+  if (thoughtTimer <= 0) thoughtBubble = null;
+
+  drawPet(W/2, 300);
+
+  updateParticles();
+  updateZZZ();
+
+  const stateNames = ['平静', '好奇', '开心', '犯困', '兴奋'];
+  const stateEmojis = ['😌', '🤔', '😊', '😴', '🥳'];
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(stateEmojis[state] + ' ' + stateNames[state], W/2, 650);
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+
+// roundRect polyfill
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'number') r = [r];
+    const tl = r[0]||0, tr = r[1]||tl, br = r[2]||tr, bl = r[3]||br;
+    this.moveTo(x+tl, y);
+    this.lineTo(x+w-tr, y);
+    this.quadraticCurveTo(x+w, y, x+w, y+tr);
+    this.lineTo(x+w, y+h-br);
+    this.quadraticCurveTo(x+w, y+h, x+w-br, y+h);
+    this.lineTo(x+bl, y+h);
+    this.quadraticCurveTo(x, y+h, x, y+h-bl);
+    this.lineTo(x, y+tl);
+    this.quadraticCurveTo(x, y, x+tl, y);
+    this.closePath();
+  };
+}
+</script>
+</body>
+</html>

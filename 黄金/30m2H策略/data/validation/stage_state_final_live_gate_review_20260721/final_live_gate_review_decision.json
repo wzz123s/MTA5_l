@@ -1,0 +1,20 @@
+﻿{
+  "decision_time": "2026-07-21T17:36:54",
+  "check_id": "stage_state_final_live_gate_review",
+  "status": "final_live_gate_review_blocked",
+  "gate_count": 10,
+  "closed_gate_count": 0,
+  "blocked_gate_count": 10,
+  "auto_evidence_collected_count": 5,
+  "pending_auto_items_remaining": 0,
+  "manual_evidence_real_count": 0,
+  "manual_evidence_dry_run_count": 13,
+  "rehearsal_real_count": 0,
+  "rehearsal_dry_run_count": 4,
+  "runner_executed": false,
+  "orders_placed": false,
+  "live_set_switched": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "stop_until_real_manual_approval_and_real_nonprod_rehearsal_evidence_are_provided"
+}

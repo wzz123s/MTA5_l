@@ -1,0 +1,14 @@
+﻿{
+  "decision_time": "2026-07-21T12:05:47",
+  "check_id": "stage_state_live_gate_auto_safe_evidence_review",
+  "status": "pass_auto_safe_evidence_live_blocked",
+  "review_completed": true,
+  "auto_items_total": 5,
+  "auto_items_collected": 2,
+  "auto_items_pending": 3,
+  "credential_pattern_file_count": 3,
+  "runner_executed": false,
+  "ready_to_live_trade": false,
+  "blocker_failure_count": 0,
+  "recommended_next_action": "manual_evidence_prerequisite_plan_or_continue_sim_only_monitoring"
+}

@@ -1,0 +1,118 @@
+﻿{
+  "strategy": "gold_data_event",
+  "source_type": "mt5_api_history",
+  "source_id": "gold_mt5_20190101",
+  "symbol": "XAUUSDm",
+  "timeframes": [
+    "M15",
+    "M30",
+    "H1",
+    "H2",
+    "H4",
+    "H6"
+  ],
+  "date_from_utc": "2019-01-01 00:00:00+00:00",
+  "date_to_utc": "2026-08-30 00:00:00+00:00",
+  "files": [
+    {
+      "timeframe": "M15",
+      "path": "E:\\ai_hermes\\trading_video_nan\\finance\\nan\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_mt5_20190101\\XAUUSDm_M15.csv",
+      "rows": 100633,
+      "first_time_utc": "2022-05-26 14:45:00+00:00",
+      "last_time_utc": "2026-08-28 20:45:00+00:00",
+      "sha256": "e06cbc88bb087b8f9a1e62cf19c39608658ee366352bf1ecef38358a44a91bc1",
+      "size": 11097701
+    },
+    {
+      "timeframe": "M30",
+      "path": "E:\\ai_hermes\\trading_video_nan\\finance\\nan\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_mt5_20190101\\XAUUSDm_M30.csv",
+      "rows": 90603,
+      "first_time_utc": "2019-01-02 00:00:00+00:00",
+      "last_time_utc": "2026-08-28 20:30:00+00:00",
+      "sha256": "418f7104615bee5bf150f29bfdf21ecf1d6b18e943194d0b1c1755bfe9cd1c1d",
+      "size": 9951972
+    },
+    {
+      "timeframe": "H1",
+      "path": "E:\\ai_hermes\\trading_video_nan\\finance\\nan\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_mt5_20190101\\XAUUSDm_H1.csv",
+      "rows": 45391,
+      "first_time_utc": "2019-01-02 00:00:00+00:00",
+      "last_time_utc": "2026-08-28 20:00:00+00:00",
+      "sha256": "6c6062f4ed2ca01457d60d3ba46ea1ca98fcde34cfd6395a2521f710aac51c62",
+      "size": 4950087
+    },
+    {
+      "timeframe": "H2",
+      "path": "E:\\ai_hermes\\trading_video_nan\\finance\\nan\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_mt5_20190101\\XAUUSDm_H2.csv",
+      "rows": 23752,
+      "first_time_utc": "2019-01-02 00:00:00+00:00",
+      "last_time_utc": "2026-08-28 20:00:00+00:00",
+      "sha256": "3a82efd613569d89d442a45bc46a46b2a087ff4953e9c6f1753189ec5f2a0732",
+      "size": 2595764
+    },
+    {
+      "timeframe": "H4",
+      "path": "E:\\ai_hermes\\trading_video_nan\\finance\\nan\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_mt5_20190101\\XAUUSDm_H4.csv",
+      "rows": 12382,
+      "first_time_utc": "2019-01-02 00:00:00+00:00",
+      "last_time_utc": "2026-08-28 20:00:00+00:00",
+      "sha256": "5641ecb9f541a273abcf053c12eccc432c4e0382d37b3109391c0c882e33bb19",
+      "size": 1357908
+    },
+    {
+      "timeframe": "H6",
+      "path": "E:\\ai_hermes\\trading_video_nan\\finance\\nan\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_mt5_20190101\\XAUUSDm_H6.csv",
+      "rows": 8438,
+      "first_time_utc": "2019-01-02 00:00:00+00:00",
+      "last_time_utc": "2026-08-28 18:00:00+00:00",
+      "sha256": "2b8b4d08cb97d9cfdf40ddb9b01beddf0fca481d7e06143e7f84c4d31bc72c0e",
+      "size": 926600
+    }
+  ],
+  "compatibility_raw_sha256": "418f7104615bee5bf150f29bfdf21ecf1d6b18e943194d0b1c1755bfe9cd1c1d",
+  "generated_at_utc": "2026-08-30T12:27:02.088155+00:00",
+  "bundle_dir": "E:\\ai_hermes\\trading_video_nan\\finance\\nan\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_mt5_20190101",
+  "bundle_sha256": "cc6cedde9fd07a3770f98af0babf49292acaa5b9efcf167f824274494cd7c0d3",
+  "compatibility_raw_file": "E:\\ai_hermes\\trading_video_nan\\finance\\nan\\原油黄金数据行情策略\\data\\raw\\XAUUSDm30.csv",
+  "terminal_path_arg": "",
+  "server_arg": "",
+  "portable": false,
+  "snapshot": {
+    "terminal": {
+      "mt5_version": [
+        500,
+        6140,
+        "21 Aug 2026"
+      ],
+      "name": "MetaTrader 5",
+      "company": "MetaQuotes Ltd.",
+      "path": "F:\\Program Files\\MetaTrader 5",
+      "data_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\DAD3B8CC3EAC09C0C9725021DF0C7A65",
+      "commondata_path": "C:\\Users\\3762\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common",
+      "build": 6140,
+      "connected": true
+    },
+    "account": {
+      "account_connected": true,
+      "login_sha256": "ae4f250733c70c90ce7fcb0bf1f9864cbc58b0c45423ac73efbaa720c89b9055",
+      "server": "Exness-MT5Trial5",
+      "currency": "USD",
+      "trade_mode": 0,
+      "leverage": 2000
+    },
+    "symbol": {
+      "available": true,
+      "name": "XAUUSDm",
+      "path": "Standard\\Forex\\XAUUSDm",
+      "digits": 3,
+      "point": 0.001,
+      "trade_contract_size": 100.0,
+      "currency_profit": "USD",
+      "currency_margin": "XAU",
+      "spread": 260,
+      "trade_mode": 4,
+      "visible": true
+    }
+  },
+  "rule": "strategy_dedicated_raw_source_required; direct_mt5_api_required"
+}
