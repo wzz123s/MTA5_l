@@ -2,11 +2,13 @@
 
 > 本文件是进项目的**第一份读物**（人 AI 皆同）。只指向权威文件、不复述内容（复述即漂移）。
 > 建立：2026-09-08（目录整理 Phase 1）｜维护规则见 00_项目规则.md R7
-> 数据截至：2026-09-08 21:30（本地）
+> 数据截至：2026-09-09 01:20（本地）
 
 ## 1. 一句话工程定义
 
-黄金/原油多策略量化研究工程：Python 研究管线 + MQL5 EA 模拟盘 + 自动监控告警；账户为 **Exness DEMO（277752085）**，全链路只读监控不下单（唯一例外：1H_M30_4H 实盘部署图表 SimMode=false，见 §5）。
+黄金/原油多策略量化研究工程：Python 研究管线 + MQL5 EA 模拟盘 + 自动监控告警；账户为 **Exness DEMO（277752085）**。
+
+**交易口径（2026-09-09 实测纠偏）**：原表述"全链路只读监控不下单"**不成立**。终端 `trade_expert=True`（自动交易总闸开），**9 个挂载实例中 6 个在 DEMO 真实下单**（chart02 CurrentCandidate、chart03 1H ABC、chart04 2H ABC、chart06 主线 Strategy_EA、chart07 30m2H ABC live、chart09 乖离反转；均经 `chart*.chr` 读出 SimMode=false + AllowRealTrading=true）；窗口 2025-01-01~2026-09-09 共 **121 笔成交 / 59 个持仓**，balance 2667.61 = 入金 2089.46 + **交易净盈利 578.15**。工作区全部 `*SimDeployment*.set` 写 SimMode=true/AllowReal=false，与终端实参**不一致** → `.set` 非真相源，真相源是 `chart*.chr`（T12，可脚本化反向导出）。证据与建议见 `00_文档中心\问题记录.md` §二十三。
 
 ## 2. 策略状态总表
 
@@ -22,9 +24,11 @@
 | 原油 4H 门策略 | USOIL4H_Gate_On2H | ✅修BUG-6 | 72/72 | 面板监控（**EA 已摘除**） | 待调整 |
 | 原油黄金数据行情策略（金） | Gold_DataEvent_EA | ✅修BUG-7 | ⏳Tester 未跑 | 是（SimMode） | 运行观察 |
 | 原油黄金数据行情策略（油） | Oil_DataEvent_EA | ✅修BUG-7 | ledger 无成交（EA 已摘除） | 面板监控 | 待调整 |
-| 大周期拐点策略 | MCT_EA 阶段5 | ✅无新P0/P1 | 26/26 | 是（SimMode） | 观察期自 09-06，等首笔信号 |
+| 大周期拐点策略 | MCT_EA 阶段5 | ✅无新P0/P1 | 26/26 | diag 在写、台账仅表头 | ⚠️**观察期空转**：EA 自认末根 bar 停在 2026.08.30 20:00，每根新 bar 判 `entry_skip_not_last` → 永远等不到首笔信号；**根因在 EA 侧 bar 序列读取，非行情源**（实测 USOILm H4 末根 = 09-08 16:00、D1 = 09-08 00:00，数据新鲜）。挂 chart12(USOILm,H4)、SimMode=true 不下单（T15／§二十三⑦） |
 | V 型反转策略 | 纯研究 | ✅定论 | — | 否 | 降级观察（优势消失） |
 | 黄金 H1_M30_H4 / 2H_1H_6H、原油 USOIL_1H/2H/30m | 文档型研究线 | 已盘点/立项 | — | 否 | 另立项，无 EA |
+
+> **2026-09-09 注（§二十三⑥）**：本表"监控=是"仅指 signals/gate 导出链路活着（实测 0.1h 前仍在更新）；**成交台账链路是断的**——4 个 `*_trade_ledger.csv` 因 MQL5 未加 `FILE_SHARE_READ` 被 EA 独占句柄，Python 侧 `PermissionError` 读不到；`30m2H_abc_trade_ledger.csv`／`MCT_trade_ledger.csv`／`30m2H_strategy_deal_history.csv` 仅有表头。故"监控中"≠"成交可见"，监测报告与 dashboard 里没有真实成交数据（T14）。各 EA 真下单状态见 §1 与 §二十三①。
 
 ## 3. 目录地图（一级）
 
@@ -34,15 +38,14 @@
 | `黄金\ 原油\ 原油黄金数据行情策略\ 大周期拐点\ V型反转策略\ 宏观日历研究\` | 策略与共享研究域 | 按策略骨架规范；冻结区禁 |
 | `scripts\` | 跨策略工具与监控脚本 | 共享库钉死；一次性脚本走 _archive |
 | `observation_dashboard\ ea_alignment_logs\` | 运行时产物 / Tester 对齐工作区 | **禁动** |
-| `backup_20260907\` | 一次性归档（后续备份进 `archive\`） | 只进不出 |
-| `项目文档\` | 已退役（内容进 00_文档中心） | — |
+| `archive\` | 统一归档层，现存 `backup_20260907\`、`AI数据中心资本开支研报\`、`插件调研\` | 只进不出 |
 | 冻结区全表 | 见整理方案 §六 | **禁动** |
 
 ## 4. 共享层（挪走即断链，全清单见整理方案 §五）
 
 - 监控五件套：`scripts\{monitor_all_strategies, monitor_cycle, qq_snapshot, watch_signal_alerts, qq_digest_push}.py`
 - 公共库：`scripts\{strategy_research_common, replay_raw_signals_with_stops}.py`
-- 跨策略引擎与认证基准：`黄金\30m2H策略\参考实现工程\`（multi_tf_matrix + base_data + position_sizing_strict_certify_20260627）
+- 跨策略引擎与认证基准：`黄金\30m2H策略\参考实现工程\`（multi_tf_matrix + base_data + position_sizing_strict_certify_20260627）；⚠️ 其 `auto_trade\auto_trader.py` 具备**独立实盘下单能力**（两处 `mt5.order_send`，magic=302025），窗口内无 302025 成交、启用状态无文档登记（§二十三⑪）
 - 监控适配器：MCT / DataEvent 两 adapter（留在各自策略目录）
 - 事件日历：`宏观日历研究\data\calendar_export.csv`
 - 骨架母本：`00_文档中心\公共方法论\其他策略复用流程.md`
@@ -59,7 +62,11 @@ MT5 终端(DAD3B8) 挂 8 EA ──Files导出──> signals/ledger/gate CSV
                                              │
    DSH 网关(profile qqbot) ← qq_snapshot ────┴─ QQ 推送（2min 事件 / 30min 总览）
 ```
-**单点**：DSH Web 进程关闭 = 30 分钟监测循环停。注意 1H_M30_4H_CurrentCandidate 挂图 SimMode=false 且 AllowRealTrading=true（DEMO 账户），与"只读监控"表述有出入——保持关注，变更需走人工决策。
+**单点**：DSH Web 进程关闭 = 30 分钟监测循环停。
+
+**盲区（2026-09-09 实测，§二十三⑥）**：上图"Files导出 → 监控"这条线**只对 signals/gate 成立**；成交台账有 4 个文件被 EA 独占句柄（`PermissionError`）、3 个仅有表头 → 监测报告与 dashboard 里**没有真实成交**，这正是"只读监控不下单"误判的技术根源（T14）。
+
+**实参纠正（01:40 已确证）**：原文"唯一例外 1H_M30_4H_CurrentCandidate"方向对、数量错——终端实参中 **6 个实例** SimMode=false + AllowRealTrading=true（见 §1）。CurrentCandidate 的 `AllowRealTrading` 初判"未确证"（其 init 打印不含该字段、9 天日志无 `Order skipped` 行），后经 **`chart02.chr` 读出 `InpAllowRealTrading=true`** 确证在真下单；窗口内无 magic 312026 成交只说明它尚未触发信号，不代表闸是关的。EA 参数变更需走人工决策。
 
 ## 6. 当前开放事项（权威登记处见括注）
 
@@ -68,16 +75,29 @@ MT5 终端(DAD3B8) 挂 8 EA ──Files导出──> signals/ledger/gate CSV
 | T1 | **30m2H v3.37 对齐验收口径未定**：全窗重跑完成（67 信号 vs 认证 102），信号级对齐仅 13.7%（±60min）；根因=认证管线默认 `ea_executable_diag=False`（含 M15 replace/rescue + 静态 Layer3），≠ EA 可执行口径；**下一步=用 ea_executable_diag=True 重生成认证基线后公平复比**，暂勿据此判定 EA 缺陷 | 黄金\30m2H策略\data\validation\mainline_v337_tester_20260907\30m2H_v337_对齐报告_20260908_v2_m15fixed.md |
 | T2 | TODO-8：2H V4 missing 40 笔排查（H6 bar 边界/band 时序） | 00_文档中心\策略审查状态.md §S2-3 |
 | T3 | 原油三策略（2H/4H门/数据行情油）待调整：归因→编译→SimMode 恢复挂载 | 各策略 待调整记录_*20260907.md |
-| T4 | Gold_DataEvent Tester 未跑（工具链就绪）；MCT 观察期等首笔平仓 | 策略审查状态.md |
+| T4 | Gold_DataEvent Tester 未跑（工具链就绪）；~~MCT 观察期等首笔平仓~~ → **MCT 部分已失效，转 T15**（数据源滞后 9 天，观察期空转） | 策略审查状态.md ／ §二十三⑦ |
 | T5 | 乖离反转/1H·2H 旧版 CurrentCandidate BUG 审查（低优先级）；H1_M30_H4 研究线微钻 | 策略审查状态.md §S2 |
-| T6 | 目录整理 Phase 2-4（validation 沉底/大对象瘦身/git 重建）| 目录整理方案_20260908.md |
+| T6 | ✅ **已执行（09-08）**：Phase 2 一次性脚本与 validation 沉底 + Phase 3 大对象压缩 + Phase 4 git 重建（首提交 2657 文件、.gitignore 扩排除）；**残留 D5**：`ea_alignment_logs\_scratch`（100 个 Tester UI 驱动脚本）收口待 30m2H 主线验收闭环后做 | 00_README §7（09-08 23:15 条）＋整理方案 §七 D5 |
 | T7 | 2H_1H_6H 七个空骨架目录去留、P9 三版规范文档权威裁决 | 整理方案（待用户确认） |
 | T8 | ✅ **已按中间方案执行（09-08）**：全树扫描 1430 个现役文本 → 零引用 6 目录归档 _archive、被引用 230 个不动；validation 根生成 **目录索引.md**（230 行：修改日/文件数/体积/保留原因）；"≤20"仅约束新增实验（R6）| 黄金\30m2H策略\data\validation\目录索引.md |
 | T9 | ✅ **已执行（09-08）**：base_data_backup(60MB) 与 V反 features×4 逐文件 sha256 校验全过 → 原件送回收站（共回收 ~99MB，zip 副本在位）；**tester_agent 原件按决定保留至 T1 收口** | 00_文档中心\归档\整理清单\t9_verify_report_20260908.txt |
 | T10 | D4 裁决收口：原油 6H/8H 门与金叉实验被原油 2H 现役管线脚本引用 → **原地保留不归档**（用户 09-08 确认）| 00_README（本条即登记） |
+| T11 | **P0 归因 BUG（未修）**：`2H_M30_6H_ABC_EA` / `30m2H_ABC_EA` 缺 `g_trade.SetExpertMagicNumber(InpMagic)`（1H ABC 09-02 已修、主线 09-01 已修但不彻底）→ 平仓 deal 落 magic=0；**15/59 持仓开平 magic 错配**，按 magic 统计使 2H ABC 显示 −279.62（真实 **+68.17**）、1H ABC −68.82（真实 **+161.76**）、主线 S3 0.00（真实 **+177.87**） | 问题记录 §二十三③④⑤ |
+| T12 | **P0 配置漂移**：工作区全部 `*SimDeployment*.set` 写 SimMode=true/AllowReal=false，终端实参为 false/true → `.set` 非真相源、R1④ 失效、事故无法复现参数；需终端实参反向导出为权威 `.set` 入库 | §二十三① |
+| T13 | **P0 双挂**：`30m2H_ABC_EA` 两实例同 magic 352036、同图表周期（**chart07** SimMode=false/AllowReal=true 与 **chart14** SimMode=true/AllowReal=false，终端日志 09-08 00:21:30.935 与 00:21:31.093 各一条 loaded successfully），共写一份台账 → sim 实例 init 把 `30m2H_abc_trade_ledger.csv` 清成仅表头，352036 的 6 笔成交在台账中消失；signals_export 亦互相覆盖 | §二十三⑧＋补充取证1 |
+| T14 | **P1 台账断链**：4 个 ledger `PermissionError`（MQL5 缺 `FILE_SHARE_READ`）+ 3 个仅表头 → 监控看不到成交；另 `monitor_magic_302025.py`/`scan_magic_302025.py` 仍指向已废弃 magic 302025；adapter 内部台账读取的异常处理**未核实** | §二十三⑥⑫ |
+| T15 | **P1 MCT 空转**：EA 自认末根 bar 停在 2026.08.30 20:00，每根新 bar 判 `entry_skip_not_last` → 观察期（09-06 起）实际无任何入场评估。**根因更正：不是行情源滞后**——实测 USOILm H4 末根 09-08 16:00、D1 末根 09-08 00:00（数据新鲜），是 **EA 侧 bar 序列读取/缓存停在 8 天前**；挂载已确证 chart12(USOILm,H4)、OnInit 无 Print 故 Experts 日志查不到。修好后观察期起点重算 | §二十三⑦＋补充取证 |
+| T16 | **P1 人工干预未留档**：08-29 00:49 乖离空头 372037 被人工平仓（comment `manual close (TP overdue)`，+177.05），`00_文档中心\` 全目录 grep 命中 0 条；且该空单浮盈 177 点期间 EA 退出逻辑始终未触发（退出逻辑缺陷线索）。做空门禁判定：**非门禁失效**（两笔开空 08-22/08-24 早于 09-04 停用结论） | §二十三⑨ |
+| T17 | **口径**：盈亏归因须用 position_id 血缘而非 deal magic；台账/EA 日志用服务器时间而 `deal.time` 转本地 **+8h**，T1 逐笔对齐若不统一会系统性错配；magic→EA 映射表（此前无任何文档登记）已建于 §二十三② | §二十三②③⑩ |
+| T18 | **P1 监控读错图表**：`monitor_all_strategies.py` L214 `read_ea_input()` 硬编码 `chart10.chr`、唯一调用点 L537 不传 chart_file → 恒读 chart10=**Gold_DataEvent_EA**，而 `ea_inputs` 只给 BiasReversal 配了 `InpLongMode` → **在 Gold_DataEvent 图表里找乖离反转参数**，必然返回 None → dashboard/报告「EA模式」列**从来没有内容**；且解析只支持数字（bool 读不出）、chart 编号会随增删重排（chart05/08/11 已空）→ 应按 EA 名扫描全部 `.chr` | §二十三 补充取证3 |
+| T19 | **P1 归因配置缺口**：`STRATEGY_CONFIGS.magics` ①缺历史 magic 302025/302026/302027/302028 → 6 月 9 个持仓（合计 −137.50）监控完全看不到；②粒度过粗：`30m2H`=[302036~302039,**352036**] 把主线与 ABC 合并一行、`1H_M30_4H`=[**312026**,312036] 把 CurrentCandidate 与 ABC 合并、`BiasReversal`=[372036,372037] 多空合并；③`read_real_positions()` 只读 `positions_get()` 不读 `history_deals_get()` → 监控设计上**没有"已实现盈亏"这个量**，只有浮盈。另 L621 报告脚注写死"只读监控不下单"= §1 错话源头 | §二十三 补充取证4·5 |
+| T20 | **P1 部署脚本图表假设已失效（比重跑监控更危险）**：`rebuild_and_attach_mct.py`/`attach_mct_ea_to_chart.py` 认 chart12=Oil_DataEvent、chart13=MCT；`deploy_combo_ea.py` 认 TARGET=chart10。实测 chart12=**MCT_EA**、chart13=空、chart10=**Gold_DataEvent_EA** → 重跑会往空图表写 MCT、或把乖离 EA 块写进 chart10 **顶掉 Gold_DataEvent** 并重启终端（违 AGENTS.md C 段）。**修好前不要重跑这三个脚本**；应改为按 EA 名扫描 `chart*.chr` 定位 + 执行前 dry-run 确认 | §二十三 补充取证二4 |
+| T21 | **口径（重要）**：MT5 `DEAL_REASON` 字段**不可靠**——`comment='[sl 4670.599]'` 的亏损平仓被记 `reason=TP`、`comment='manual close (TP overdue)'` 的人工平仓被记 `reason=SL`；全窗口 `EXPERT` 0 笔而 magic=0 的 13 笔被记 12×SL+1×CLIENT。故归因**只用 position_id 血缘 + 开仓 magic**，禁用 `deal.magic`（平仓侧）与 `deal.reason`；平仓类型以 `comment` 前缀 + EA 台账 `local_exit_reason` 交叉判定。另 `signals_export.csv` 是**滚动窗口**（实测仅 47 行≈24h）不含历史 → 历史信号↔成交比对只能走台账 | §二十三 补充取证二1·2·6 |
 
 ## 7. 最近变更日志（滚动 10 条，R7）
 
+- 2026-09-09 01:20 **DEMO 实挂下单盘面只读取证 + 文档纠偏（未改任何 EA 代码/终端设置）**：应用户质疑「模拟账户就是要大胆下单找问题」，以 MetaTrader5 API 只读查询 + Experts 日志原文 + 源码同层读回 + position_id 血缘还原，证实 §1「全链路只读监控不下单」不成立（`trade_expert=True`、**9 实例中 6 个真下单**、121 笔成交、balance 2667.61=入金 2089.46+交易净利 **578.15**）。根因锁定 `CTrade` 未设 ExpertMagicNumber：2H ABC / 30m2H ABC **仍缺**（1H ABC 09-02 已修、主线 09-01 修而不彻=平仓恒 base magic）→ 15/59 持仓开平 magic 错配、三策略盈亏被误判为亏损/零收益。另查出：台账 4 处 `PermissionError`+3 处仅表头（=监控盲区与本文档误判的技术根源）、MCT 观察期空转、`30m2H_ABC_EA` 双挂同 magic 清空台账、08-29 人工平仓 `manual close (TP overdue)` 未留档、magic 312026 潜伏冲突、服务器/本地时间差 8h。产出 `问题记录.md` **§二十三**（含 magic→EA 权威映射表、血缘对照表、分级建议 P0×3/P1×4/P2×3）；本文件 §1/§2/§4/§5 按实测纠偏、§6 新增 T11~T21、T4 的 MCT 部分转 T15。**01:40 补充取证更正两处**：①实例 9 个（终端日志 9 条 loaded successfully）、真下单 **6** 个——CurrentCandidate 经 `chart02.chr` 读出 `InpAllowRealTrading=true` 确证在真下单（初判"8 个中 5 个、CurrentCandidate 未确证"作废）；②MCT 根因**不是数据源滞后**，实测 USOILm H4/D1 末根均为 09-08（数据新鲜），是 EA 侧 bar 序列停在 08-30 20:00。同轮确证 chart→EA 全映射（chart07/chart14 双挂同 magic 352036）、`read_ea_input` 恒读 chart10 致「EA模式」列恒空（T18）、`magics` 配置缺历史 magic 且粒度过粗（T19）、`.chr` 可解析 bool 故 T12 可全自动反向导出 `.set`。取证脚本 7 个 `scripts\_tmp_*_20260909.py` 待归档（R4）。**01:50 二次更正（自我纠错）**：以 `deal.reason` 复核后，§二十三④"13 笔 magic=0 全部是 EA 所为、非人工"的断言**作废**（实测 12×SL + 1×CLIENT、`EXPERT` 全窗口 0 笔），且 `DEAL_REASON` 字段本身不可靠（`comment='[sl 4670.599]'` 的亏损平仓被记 `reason=TP`、人工 `manual close (TP overdue)` 被记 `reason=SL`）→ 归因**禁用** `deal.reason`（T21）。magic=0 主因仍是 EA 主动退出路径（源码 BUGFIX 注释 + 台账 7 行按 `deal_ticket` 逐笔交叉验证支持；其中行6 stage2 trail 修改 182 次而 magic 保留，**推翻"改 SL 致 magic=0"假说**）。另查出 chart 编号漂移致三个部署脚本图表假设全部失效（T20：`deploy_combo_ea.py` 重跑会把乖离 EA 写进 chart10 **顶掉 Gold_DataEvent** 并重启终端）；并**撤回**"EA 每 30 分钟周期重载"推测（仅 09-07 晚 3 批呈 29~30 分钟间隔，09-08 00:21 后 25h 稳定，台账清空时刻与最后一批 init 吻合）。详见 §二十三 补充取证二
+- 2026-09-09 00:45 **文档一致性修正 6 处（纯文档，无文件移动）**：①整理方案头部状态行由"方案待确认、未执行任何移动/删除"改为"D1~D5 已拍板、Phase 0~4 执行完毕"，并注明 §一/§二 为执行前快照；②整理方案 R3 登记位置 §5→§4（对齐 00_项目规则.md 与本文件实际编号）；③本文件 §6 T6 标 ✅已执行，残留 D5（`_scratch` 收口）显式留档不丢；④本文件 §3 目录地图同步盘面（`backup_20260907\` 已迁入 `archive\`、补 `archive\` 行、移除已不存在的 `项目文档\` 行）；⑤**R1~R9 去分叉（用户裁决 A）**：撤掉整理方案内的规则草案表，改为指向 `00_项目规则.md` §一 的单源指针，仅保留权威版未收录的"谁改谁记"原则，原表 git 可溯；⑥**填平 §五c 编号缺口**：整理方案 五b→五d 之间原无 §五c 标题，却有 4 处引用（含 00_项目规则.md 头部）全为死链 → 将"00_项目规则.md 内容规范"子标题提级为 `## 五c` 接通全部引用，并把 §五b 第 7 段的"见 §五c 规则第 4 条"改指 `00_项目规则.md` §三 收尾义务第 1 条。另按滚动 10 条裁掉最旧 2 条（09-04/09-05，git 可溯）
 - 2026-09-08 23:15 **目录整理 Phase 2/3/4 执行完毕**：乖离反转根 21 脚本归位 scripts\（syspath 精确改写、编译 0 失败）+ 策略 README 建立；H1_M30_H4 根级 20 md 归位说明文档；30m2H validation 30 目录沉 _archive\2026-07（白名单 236 偏保守→T8）；auto_trade .bak 7 个归位；Phase3 三组 .zip 生成（原件保留→T9）；**git 重建**（首提交 2657 文件，.gitignore 扩数据/产物排除）；机检 scripts\check_project_rules.py 上线（首跑 17 违规=R4×4 已修+T8/T9 登记）
 - 2026-09-08 21:30 **目录整理 Phase 0/1 完成**：根级 24 散文件收口入 00_文档中心/各策略；12 空目录+56 pycache 清出；母本《其他策略复用流程》提级；新建 00_README/00_项目规则/AGENTS.md；monitor_cycle 频率文案改"DSH tool-jobs 30 分钟"并核实 v3.37 验收已落盘（→T1）
 - 2026-09-08 21:07 30m2H M15 孤儿句柄修复重编译部署，Tester 全窗重跑成功（零行为回归）
@@ -86,6 +106,3 @@ MT5 终端(DAD3B8) 挂 8 EA ──Files导出──> signals/ledger/gate CSV
 - 2026-09-07 20:42 原油三 EA 从 MT5 摘除（用户决策，登记待调整）
 - 2026-09-07 19:55 backup_20260907 归档 533 文件；策略审查状态 09-07 快照建立
 - 2026-09-06 22:xx 乖离反转 351/351=100% 闭环；2H V4 带通落地
-- 2026-09-05 QQ 推送链路上线（后 09-07 体检发现一度停摆，详见监控运维文档）
-- 2026-09-06 14:40 MCT 阶段5 模拟盘挂载，观察期起点
-- 2026-09-04 问题记录基线建立（BUG-1~15 系列）
