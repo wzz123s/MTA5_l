@@ -291,6 +291,65 @@ def trading_gate(charts: dict[str, dict]) -> list[dict]:
     return rows
 
 
+def chart_layout() -> tuple[dict, dict]:
+    """返回 ({EA 名: [chart 文件...]}, {chart 文件: EA 名})。
+
+    部署脚本据此**动态定位**，不再硬编码 chartNN——编号会随图表增删重排：
+    实测 chart05/08/11 已空（原油三 EA 摘除）、chart12 从 Oil_DataEvent 变成了 MCT_EA。
+    见 00_README T20。
+    """
+    by_ea = {ea: list(rec["charts"]) for ea, rec in read_chart_params().items()}
+    by_chart = {c: ea for ea, cs in by_ea.items() for c in cs}
+    return by_ea, by_chart
+
+
+def guard_deploy(script: str, target_ea: str, target_chart: str,
+                 template_chart: str = "", template_ea: str = "") -> None:
+    """部署脚本前置守卫（T20）：不通过即 SystemExit，绝不带着失效假设去改终端。
+
+    判据（均可核验，不写死编号）：
+      1) target_ea 已挂在别的 chart → 再挂即双挂（同 magic 互相覆盖台账/信号，T13）
+      2) target_chart 当前挂着别的 EA → 继续会顶掉它
+      3) template_chart 的实际 EA != template_ea → chart 编号已漂移，模板假设失效
+    默认拒绝；仅当命令行带 --force 才放行（放行前仍打印实际盘面）。
+    重启/强杀终端属 AGENTS.md C 段禁区，本守卫不代劳，只拦"基于错误假设的写入"。
+    """
+    import sys
+    # 注意：这里**不要** reconfigure stdout。守卫的输出总是给人看的（人工在 cmd 里跑部署脚本），
+    # cmd 默认 GBK 能正常显示中文，只有 ⚠ 这类非 GBK 字符会炸 → 故本函数一律用 ASCII 标记 "!!"。
+    # （markdown_section 里的 ⚠️ 是写进 UTF-8 报告文件的，不受此限制。）
+    force = "--force" in sys.argv
+    by_ea, by_chart = chart_layout()
+    print(f"[guard:{script}] 当前 chart→EA 实际盘面：")
+    for c, ea in sorted(by_chart.items()):
+        mark = "   <== 目标" if c == target_chart else ("   <== 模板" if c == template_chart else "")
+        print(f"    {c}: {ea}{mark}")
+    problems = []
+    hit = by_ea.get(target_ea)
+    if hit:
+        problems.append(f"{target_ea} 已挂在 {hit} → 再挂即双挂（同 magic 互相覆盖台账/信号，见 T13）")
+    owner = by_chart.get(target_chart)
+    if owner and owner != target_ea:
+        problems.append(f"{target_chart} 当前挂的是 {owner} → 继续会顶掉它")
+    if template_chart:
+        towner = by_chart.get(template_chart)
+        if towner != template_ea:
+            problems.append(f"模板假设 {template_chart}={template_ea}，实测={towner or '无 EA'} → chart 编号已漂移")
+    if not problems:
+        print(f"[guard:{script}] 盘面与脚本假设一致，放行")
+        return
+    for p in problems:
+        print(f"[guard:{script}] !! {p}")
+    if force:
+        print(f"[guard:{script}] --force 已给出：视为你已核对实际盘面，继续（风险自负）")
+        return
+    raise SystemExit(
+        f"[abort:{script}] 上述 {len(problems)} 项与脚本内硬编码假设冲突，已中止（未改任何文件/终端）。\n"
+        f"  处置：①目标 EA 若已在跑，通常无需重跑本脚本；②确需重挂，先在终端手工摘除旧实例，"
+        f"或把脚本改为按 EA 名动态定位 chart；③明知风险仍要跑：加 --force。\n"
+        f"  依据：00_README T20 ／ 00_文档中心\\问题记录.md §二十三 补充取证二4。")
+
+
 def check_ledgers() -> dict[str, str]:
     """台账可读性体检：ok / header_only / PermissionError / missing / n_rows。"""
     res = {}

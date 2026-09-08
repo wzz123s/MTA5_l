@@ -41,6 +41,23 @@ EXPERT = ("<expert>" + CRLF +
           "</inputs>" + CRLF +
           "</expert>")
 
+# --- T20 守卫（2026-09-09 加）：本脚本原假设 chart09=模板 / chart10=目标 已失效。
+# 实测 chart09=BiasReversal_Combo_EA（已挂）、chart10=Gold_DataEvent_EA → 盲跑会：
+#   ①把 chart10 的 expert 块换成乖离反转（InpSimMode=false + AllowRealTrading=true）→ 顶掉 Gold_DataEvent；
+#   ②造成乖离反转双挂（同 magic 372036/372037，台账与信号文件互相覆盖，见 T13）；
+#   ③末尾 taskkill /F /IM terminal64.exe 强杀终端 → 打断全部 9 个实例（其中 6 个在真下单），
+#     违 AGENTS.md C 段「不得对 MT5 终端做杀进程/重启等打断 EA 的操作」。
+# 另：本脚本的备份两行是死代码（`shutil.copy2(backup, TARGET) if False else None`），
+#     写 chart10 前**没有任何备份**。默认拒绝执行；确需重跑加 --force 并先手工摘除旧实例。
+import sys as _sys
+_sys.path.insert(0, r"F:\use_code\MTA5_l\scripts")
+try:
+    import live_attribution as _la
+except ImportError as _e:
+    raise SystemExit(f"[abort] 无法加载 T20 守卫 live_attribution（{_e}）→ 拒绝盲跑部署脚本")
+_la.guard_deploy("deploy_combo_ea.py", "BiasReversal_Combo_EA", "chart10.chr",
+                 template_chart="chart09.chr", template_ea="BiasReversal_Combo_EA")
+
 # 1) copy ex5
 shutil.copy2(r"F:\use_code\MTA5_l\黄金\乖离反转策略\auto_trade\BiasReversal_Combo_EA.ex5", DST / "BiasReversal_Combo_EA.ex5")
 print("ex5 copied")

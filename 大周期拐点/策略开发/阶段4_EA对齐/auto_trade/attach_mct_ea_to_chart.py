@@ -31,6 +31,18 @@ TERMINAL_EXE = Path(r"F:\Program Files\MetaTrader 5\terminal64.exe")
 LOG_DIR = BASE / "logs"
 FILES_DIR = BASE / "MQL5" / "Files"
 
+# --- T20 守卫（2026-09-09 加）：本脚本假设 chart13.chr 已含 MCT_EA expert 块，
+# 实测 chart13.chr 仅 2122B 且无 <expert> 块，而 MCT_EA 实际挂在 chart12.chr（USOILm,H4，
+# 终端日志 09-08 00:21:31.059 loaded successfully，MCT_diag.csv 持续在写）。
+# 盲跑会把空图表加进 order.wnd 并**重启主终端**（打断 9 个实例、其中 6 个在真下单）却挂不上 EA。
+# 默认拒绝执行；确需重跑加 --force。依据 00_README T20。
+sys.path.insert(0, r"F:\use_code\MTA5_l\scripts")
+try:
+    import live_attribution as _la
+except ImportError as _e:
+    raise SystemExit(f"[abort] 无法加载 T20 守卫 live_attribution（{_e}）→ 拒绝盲跑部署脚本")
+_la.guard_deploy("attach_mct_ea_to_chart.py", "MCT_EA", "chart13.chr")
+
 
 def read_utf16(p: Path) -> str:
     raw = p.read_bytes()

@@ -31,6 +31,22 @@ FILES_DIR = BASE / "MQL5" / "Files"
 
 CRLF = "\r\n"
 
+# --- T20 守卫（2026-09-09 加）：本脚本假设 chart12=Oil_DataEvent_EA（结构模板）、
+# chart13=MCT_EA（目标），实测 **chart12 已经是 MCT_EA**、chart13 是无 expert 块的空图表
+# （Oil_DataEvent_EA 实际在 chart10，且原油三 EA 已于 09-07 从终端摘除）。
+# 盲跑会以 MCT 自己的图表为模板再造一个 chart13=MCT_EA → **MCT 双挂**（同 magic 411103，
+# MCT_diag.csv / MCT_trade_ledger.csv 被两实例交替覆盖），并重启主终端打断全部 EA。
+# 默认拒绝执行；确需重跑加 --force。依据 00_README T20。
+import sys
+
+sys.path.insert(0, r"F:\use_code\MTA5_l\scripts")
+try:
+    import live_attribution as _la
+except ImportError as _e:
+    raise SystemExit(f"[abort] 无法加载 T20 守卫 live_attribution（{_e}）→ 拒绝盲跑部署脚本")
+_la.guard_deploy("rebuild_and_attach_mct.py", "MCT_EA", "chart13.chr",
+                 template_chart="chart12.chr", template_ea="Oil_DataEvent_EA")
+
 MCT_INPUTS = [
     ("InpMagic", "411103"), ("InpSymbol", "USOILm"),
     ("InpRiskPct", "1.0"), ("InpLots", "0.01"), ("InpSimStartBalance", "500.0"),
