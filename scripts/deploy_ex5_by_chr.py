@@ -91,10 +91,19 @@ def plan(only: set[str] | None) -> list[dict]:
             target = hits[0]
             mounted = False
         dup = find_terminal_ex5(ea)
-        rows.append({
-            "ea": ea, "src": src, "target": target, "mounted": mounted,
-            "note": ("双副本：" + "、".join(str(x.parent.name) for x in dup) if len(dup) > 1 else ""),
-        })
+        note = ("双副本：" + "、".join(str(x.parent.name) for x in dup) if len(dup) > 1 else "")
+        # 防版本回退：源比目标旧 → 拒绝投递。终端侧可能被独立编译过（例如
+        # USOIL2H_CrossConfirm_EA 终端 09-06 15:36 比工程内 09-04 22:29 新），
+        # 覆盖即丢失该改动。判据是时间戳比较，不写死 EA 名单（A2.5）。
+        if target.exists() and src.stat().st_mtime < target.stat().st_mtime:
+            rows.append({
+                "ea": ea, "src": src, "target": None, "mounted": mounted,
+                "note": "源({:%m-%d %H:%M}) 比目标({:%m-%d %H:%M}) 旧 → 拒绝投递(防版本回退)".format(
+                    datetime.fromtimestamp(src.stat().st_mtime),
+                    datetime.fromtimestamp(target.stat().st_mtime)),
+            })
+            continue
+        rows.append({"ea": ea, "src": src, "target": target, "mounted": mounted, "note": note})
     return rows
 
 

@@ -17,7 +17,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-sys.stdout.reconfigure(encoding="utf-8")
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
 CONFIG = ROOT / "scripts" / "alerts_config.json"
 STATE = ROOT / "scripts" / "alerts" / "watch_state.json"
