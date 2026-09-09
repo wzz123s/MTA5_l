@@ -143,7 +143,7 @@ int InitLedger()
       return INVALID_HANDLE;
 
    string fileName = InpLedgerFile;
-   g_ledger_handle = FileOpen(fileName, FILE_CSV | FILE_WRITE | FILE_ANSI, ',');
+   g_ledger_handle = FileOpen(fileName, FILE_CSV | FILE_WRITE | FILE_ANSI | FILE_SHARE_READ, ',');
    if(g_ledger_handle == INVALID_HANDLE)
    {
       Print("Failed to open ledger file: ", fileName);

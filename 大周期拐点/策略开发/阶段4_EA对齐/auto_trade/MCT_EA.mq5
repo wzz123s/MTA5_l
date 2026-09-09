@@ -102,12 +102,12 @@ bool g_pos_open[2];
 //+------------------------------------------------------------------+
 int CsvHandle(string fname)
 {
-   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
 }
 
 void CsvLedgerHeader()
 {
-   int h = FileOpen(g_ledger, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   int h = FileOpen(g_ledger, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
    if(h != INVALID_HANDLE)
    {
       if(FileSize(h) == 0)
@@ -120,7 +120,7 @@ void CsvLedgerHeader()
    }
    if(InpExportDiag)
    {
-      int d = FileOpen(g_diag, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+      int d = FileOpen(g_diag, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
       if(d != INVALID_HANDLE)
       {
          if(FileSize(d) == 0)
@@ -136,7 +136,7 @@ void Diag(const datetime bt, const string kind, const int dir,
           const double price, const string detail)
 {
    if(!InpExportDiag) return;
-   int d = FileOpen(g_diag, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   int d = FileOpen(g_diag, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
    if(d == INVALID_HANDLE) return;
    FileSeek(d, 0, SEEK_END);
    FileWrite(d, TimeToString(bt), kind, dir, DoubleToString(price, 5), detail);
@@ -147,7 +147,7 @@ void CsvLedgerRow(const VPos &p, datetime exit_time, double exit_price,
                   string reason)
 {
    if(!InpExportLedger) return;
-   int h = FileOpen(g_ledger, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   int h = FileOpen(g_ledger, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
    if(h == INVALID_HANDLE) return;
    FileSeek(h, 0, SEEK_END);
    double pnl_pts = p.realized;

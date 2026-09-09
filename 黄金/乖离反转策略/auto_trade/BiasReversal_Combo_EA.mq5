@@ -733,8 +733,8 @@ int OnInit()
    {
       // BUG-05 修复: FILE_READ|FILE_WRITE 追加模式（不再截断历史台账）
       bool is_replay = g_rp_requested;
-      int open_flags = is_replay ? (FILE_WRITE | FILE_CSV | FILE_ANSI)
-                                 : (FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI);  // 回放: 每次回测截断清空(ABC 同款)
+      int open_flags = is_replay ? (FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ)
+                                 : (FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ);  // 回放: 每次回测截断清空(ABC 同款)
       g_ledger_handle = FileOpen(g_ledger_csv, open_flags, ',');
       if(g_ledger_handle != INVALID_HANDLE)
       {

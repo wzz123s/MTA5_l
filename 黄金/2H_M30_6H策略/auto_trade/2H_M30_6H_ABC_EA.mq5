@@ -123,7 +123,7 @@ VirtualTrade g_trades[];
 //+------------------------------------------------------------------+
 int CsvHandle(string fname)
 {
-   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
 }
 
 void CsvSignalsHeader()
@@ -139,8 +139,8 @@ void CsvSignalsHeader()
 void CsvLedgerHeader()
 {
    // BUG-05 修复: 实盘追加；BUG-11b: SimMode 下 FILE_WRITE 截断（每次回测清空，避免旧台账混合）
-   int flags = InpSimMode ? (FILE_WRITE | FILE_CSV | FILE_ANSI)
-                          : (FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI);
+   int flags = InpSimMode ? (FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ)
+                          : (FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ);
    g_ledger_handle = FileOpen(g_ledger_csv, flags, ',');
    if(g_ledger_handle != INVALID_HANDLE)
    {
@@ -755,6 +755,13 @@ int OnInit()
    g_loss_streak = 0;
    g_loss_cd_until = 0;
    ArrayResize(g_trades, 0);
+   // BUGFIX(2026-09-09): CTrade had no expert magic, so PositionClose() sent magic=0
+   // -> close deals unattributable. 实测（问题记录 §二十三③④，position_id 血缘还原）：
+   // 本 EA 有 3 笔平仓 deal magic 落 0（08-21 21:46 +71.39 / 08-24 22:14 +150.67 /
+   // 08-25 19:53 +125.73），致按 deal.magic 统计本策略为 -279.62，而血缘还原后为 +68.17。
+   // Same fix as 1H_M30_4H_ABC_EA(2026-09-02) / 30m2H_Strategy_EA v3.35 Fix 3.
+   // Opens set req.magic explicitly; this makes ALL orders carry InpMagic.
+   g_trade.SetExpertMagicNumber(InpMagic);
    if(InpExportCSV) CsvSignalsHeader();
    if(InpExportLedger) CsvLedgerHeader();
    Print("2H_M30_6H ABC EA initialized. SimMode=", InpSimMode,
@@ -948,7 +955,7 @@ void OnTick()
    }
    if(InpExportCSV)
    {
-      int h = FileOpen(g_signals_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+      int h = FileOpen(g_signals_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
       if(h != INVALID_HANDLE)
       {
          FileSeek(h, 0, SEEK_END);

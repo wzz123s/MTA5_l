@@ -117,7 +117,7 @@ VirtualTrade g_trades[];
 //+------------------------------------------------------------------+
 int CsvHandle(string fname)
 {
-   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
 }
 
 void CsvSignalsHeader()
@@ -133,7 +133,7 @@ void CsvSignalsHeader()
 void CsvLedgerHeader()
 {
    // BUG-05 修复: 追加模式（FILE_READ|FILE_WRITE 不截断），仅空文件写表头
-   int h = FileOpen(g_ledger_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   int h = FileOpen(g_ledger_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
    if(h != INVALID_HANDLE)
    {
       if(FileSize(h) == 0)
@@ -158,7 +158,7 @@ void CsvGateHeader()
 void CsvGateState(const datetime now, const int blackout, const string ev_name,
                   const datetime ev_time, const int imp, const string cur)
 {
-   int h = FileOpen(g_gate_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   int h = FileOpen(g_gate_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
    if(h != INVALID_HANDLE)
    {
       FileSeek(h, 0, SEEK_END);
@@ -405,7 +405,7 @@ void RecordStageExit(int slot, int stage, datetime exit_time, double exit_price,
 
    if(InpExportLedger)
    {
-      int h = FileOpen(g_ledger_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+      int h = FileOpen(g_ledger_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
       if(h != INVALID_HANDLE)
       {
          FileSeek(h, 0, SEEK_END);
@@ -920,7 +920,7 @@ void OnTick()
 
    if(InpExportCSV)
    {
-      int h = FileOpen(g_signals_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+      int h = FileOpen(g_signals_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
       if(h != INVALID_HANDLE)
       {
          FileSeek(h, 0, SEEK_END);

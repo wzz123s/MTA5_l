@@ -119,7 +119,7 @@ VirtualTrade g_trades[];
 //+------------------------------------------------------------------+
 int CsvHandle(string fname)
 {
-   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
 }
 
 void CsvSignalsHeader()
@@ -136,8 +136,8 @@ void CsvLedgerHeader()
 {
    // BUG-11b/05: SimMode 下 FILE_WRITE 截断（每次回测清空，避免旧台账混合）；实盘追加。
    // BUG-12 (A2 同步): 保持句柄打开供 RecordStageExit 复用（对齐 2H/30m2H 修复）。
-   int flags = InpSimMode ? (FILE_WRITE | FILE_CSV | FILE_ANSI)
-                          : (FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI);
+   int flags = InpSimMode ? (FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ)
+                          : (FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ);
    g_ledger_handle = FileOpen(g_ledger_csv, flags, ',');
    if(g_ledger_handle != INVALID_HANDLE)
    {
@@ -889,7 +889,7 @@ void OnTick()
 
    if(InpExportCSV)
    {
-      int h = FileOpen(g_signals_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+      int h = FileOpen(g_signals_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
       if(h != INVALID_HANDLE)
       {
          FileSeek(h, 0, SEEK_END);

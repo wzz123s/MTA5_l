@@ -118,7 +118,7 @@ VirtualTrade g_trades[];
 //+------------------------------------------------------------------+
 int CsvHandle(string fname)
 {
-   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   return FileOpen(fname, FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
 }
 
 void CsvSignalsHeader()
@@ -378,7 +378,7 @@ void RecordStageExit(int slot, int stage, datetime exit_time, double exit_price,
 
    if(InpExportLedger)
    {
-      int h = FileOpen(g_ledger_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+      int h = FileOpen(g_ledger_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
       if(h != INVALID_HANDLE)
       {
          FileSeek(h, 0, SEEK_END);
@@ -723,7 +723,12 @@ int OnInit()
    g_loss_streak = 0;
    g_loss_cd_until = 0;
    ArrayResize(g_trades, 0);
-
+   // BUGFIX(2026-09-09): CTrade had no expert magic -> PositionClose() would send magic=0,
+   // making close deals unattributable. 本 EA 属**潜伏**未爆发：实测 magic 352036 的 3 笔平仓
+   // (08-26 04:30~08:25) 全由服务器 SL 触发（comment '[sl 4644.186]'，故 magic 得以保留），
+   // EA 主动平仓路径尚未走过；一旦触发即产生 magic=0（问题记录 §二十三④）。
+   // Same fix as 1H_M30_4H_ABC_EA(2026-09-02) / 2H_M30_6H_ABC_EA(2026-09-09).
+   g_trade.SetExpertMagicNumber(InpMagic);
 
    if(InpExportCSV) CsvSignalsHeader();
    if(InpExportLedger) CsvLedgerHeader();
@@ -882,7 +887,7 @@ void OnTick()
 
    if(InpExportCSV)
    {
-      int h = FileOpen(g_signals_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+      int h = FileOpen(g_signals_csv, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
       if(h != INVALID_HANDLE)
       {
          FileSeek(h, 0, SEEK_END);

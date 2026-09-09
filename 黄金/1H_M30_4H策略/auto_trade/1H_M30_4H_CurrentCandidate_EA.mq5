@@ -492,7 +492,7 @@ bool OpenLedger()
 {
    if(!InpExportLedger)
       return true;
-   g_ledger_handle = FileOpen(InpLedgerFile, FILE_WRITE | FILE_CSV | FILE_ANSI, ',');
+   g_ledger_handle = FileOpen(InpLedgerFile, FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
    if(g_ledger_handle == INVALID_HANDLE)
    {
       Print("Cannot open ledger file: ", InpLedgerFile, " err=", GetLastError());
