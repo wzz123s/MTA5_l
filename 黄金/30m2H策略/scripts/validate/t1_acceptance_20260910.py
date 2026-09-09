@@ -14,8 +14,10 @@ from __future__ import annotations
 
 import os
 import sys
+import bisect
 
 import pandas as pd
+import numpy as np
 
 ROOT = r"F:\use_code\MTA5_l"
 REF = os.path.join(ROOT, "黄金", "30m2H策略", "参考实现工程")
@@ -27,7 +29,6 @@ import _build_expected_ledger as ble  # noqa: E402
 import _current_baseline as cb  # noqa: E402
 
 DST = os.path.join(ROOT, "黄金", "30m2H策略", "data", "validation", "mainline_v337_tester_20260907")
-EA_SIG = os.path.join(DST, "30m2H_strategy_signals_export_t1export3_20260910.csv")
 EA_LED = os.path.join(DST, "30m2H_strategy_trade_ledger.csv")
 OUT_LED = os.path.join(DST, "30m2H_python_acceptance_expected_trade_ledger_mp3.csv")
 OUT_MD = os.path.join(DST, "T1_验收报告_acceptance_run_20260910.md")
@@ -60,12 +61,39 @@ def norm(f):
 
 
 def main() -> None:
-    print("loading EA Layer1 truth:", EA_SIG, flush=True)
-    es = read_csv(EA_SIG)
-    es["bar_time"] = pd.to_datetime(es["bar_time"], format="%Y.%m.%d %H:%M", errors="coerce")
-    es = es[["bar_time", "h2_comp_bias55", "q2_early_pass"]].dropna()
-    es["layer1_ea"] = (es["h2_comp_bias55"] > 3.0) | (es["q2_early_pass"] == 1)
-    ea_map = dict(zip(es["bar_time"], es["layer1_ea"].astype(int)))
+    print("loading df/h2 once for Python Layer1 replica...", flush=True)
+    dfx, h2x, _ = cb.load_market_context()
+    dfx = dfx.copy().reset_index(drop=True)
+    dfx["date"] = pd.to_datetime(dfx["date"])
+    h2x = h2x.copy().reset_index(drop=True)
+    h2x["date"] = pd.to_datetime(h2x["date"])
+    h2x = h2x[h2x["SMA_55"].notna()].reset_index(drop=True)
+    close_map = dict(zip(dfx["date"], dfx["close"].astype(float)))
+    ht = h2x["date"].values.astype("datetime64[ns]")
+    s55 = h2x["SMA_55"].values.astype(float)
+
+    def layer1_python(t_open):
+        tick = np.datetime64(t_open) + np.timedelta64(30, "m")
+        idx = int(bisect.bisect_right(ht, tick)) - 1
+        if idx < 0:
+            return False
+        cur_open = pd.Timestamp(ht[idx])
+        completed_b55 = abs((h2x["close"].iloc[idx] - h2x["SMA_55"].iloc[idx]) / h2x["SMA_55"].iloc[idx]) * 100
+        if completed_b55 > 3.0:
+            return True
+        if idx < 1 or t_open < cur_open or s55[idx] == 0:
+            return False
+        prev_open = pd.Timestamp(ht[idx - 1])
+        if t_open < prev_open:
+            return False
+        elapsed = int((t_open - prev_open) / pd.Timedelta(minutes=30))
+        if elapsed < 2:
+            return False
+        partial = close_map.get(pd.Timestamp(t_open))
+        if partial is None:
+            return False
+        est55 = s55[idx] + (partial - s55[idx]) / 55.0
+        return bool(abs((partial - est55) / est55) * 100 > 3.0)
 
     orig = cb.apply_layer3_ea_executable
 
@@ -73,14 +101,13 @@ def main() -> None:
         threshold, out = orig(final_acc, h2, top_pct=top_pct, lookback=lookback)
         keep = []
         for _, row in out.iterrows():
-            ev = pd.Timestamp(row["date"]) + pd.Timedelta(minutes=30)
-            if bool(ea_map.get(ev, 1)):
+            if layer1_python(pd.Timestamp(row["date"])):
                 keep.append(row)
         return threshold, pd.DataFrame(keep).reset_index(drop=True)
 
     cb.apply_layer3_ea_executable = gate_wrapper
 
-    print("building Python expected ledger (ea + rolling + MAXPOS3 + EA Layer1 truth)...", flush=True)
+    print("building Python expected ledger (ea + rolling + MAXPOS3 + Python Layer1 replica)...", flush=True)
     ble.LEDGER_PATH = OUT_LED
     ble.SUMMARY_PATH = OUT_MD.replace("_acceptance_run", "_summary")
     ble.build_ledger(ea_executable=True, rolling_merged=True, max_pos_sim=3)
