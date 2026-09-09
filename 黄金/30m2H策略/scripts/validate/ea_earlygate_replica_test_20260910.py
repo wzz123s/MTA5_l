@@ -46,7 +46,7 @@ def sim_q2(t_open: pd.Timestamp) -> tuple[bool, float, int]:
     elapsed = int((t_open - prev_open) / pd.Timedelta(minutes=30))
     if elapsed < 2:
         return False, 0.0, elapsed
-    prev_sma55 = sma55[idx - 1]
+    prev_sma55 = sma55[idx]  # calibrated h2 date=decision/close: idx is EA shift1
     partial = close_map.get(pd.Timestamp(t_open))
     if partial is None or prev_sma55 == 0:
         return False, 0.0, elapsed
