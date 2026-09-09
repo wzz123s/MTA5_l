@@ -11,58 +11,58 @@
     "H6"
   ],
   "date_from_utc": "2018-01-01 00:00:00+00:00",
-  "date_to_utc": "2026-09-09 00:00:00+00:00",
+  "date_to_utc": "2026-09-10 00:00:00+00:00",
   "files": [
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\黄金\\乖离反转策略\\data\\raw\\mt5_history\\bias_reversal_live\\XAUUSDm_M30.csv",
-      "rows": 100047,
+      "rows": 100087,
       "first_time_utc": "2018-03-22 01:30:00+00:00",
-      "last_time_utc": "2026-09-08 15:00:00+00:00",
-      "sha256": "9b925de6d302c0d71a63b584989f416a2a74007c90a40423a634a44f0f59ad07",
-      "size": 10975345
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "4a5d2e9a92efe7ddd72dbe864307291399e1c18a5a68b358d5eb9b7efa5eba27",
+      "size": 10979769
     },
     {
       "timeframe": "H1",
       "path": "F:\\use_code\\MTA5_l\\黄金\\乖离反转策略\\data\\raw\\mt5_history\\bias_reversal_live\\XAUUSDm_H1.csv",
-      "rows": 51388,
+      "rows": 51408,
       "first_time_utc": "2018-01-02 06:00:00+00:00",
-      "last_time_utc": "2026-09-08 15:00:00+00:00",
-      "sha256": "a99e37f3d6401abab59d08b7d3da51b267564c088451f5a4f5b002c0aebdf040",
-      "size": 5594859
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "71e71a8a233d3711cf61c0d9f96fec7921fb789133688cdb75ff5908e34def2b",
+      "size": 5597060
     },
     {
       "timeframe": "H2",
       "path": "F:\\use_code\\MTA5_l\\黄金\\乖离反转策略\\data\\raw\\mt5_history\\bias_reversal_live\\XAUUSDm_H2.csv",
-      "rows": 26914,
+      "rows": 26925,
       "first_time_utc": "2018-01-02 06:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "fd55c8693e4235ef06b9858814b85709cef8660167720aa6ec9034b4e910c365",
-      "size": 2935961
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "1dd66225904d9d1018506a44161b08a768642849cc1ec48b622c9535654e5c3c",
+      "size": 2937177
     },
     {
       "timeframe": "H4",
       "path": "F:\\use_code\\MTA5_l\\黄金\\乖离反转策略\\data\\raw\\mt5_history\\bias_reversal_live\\XAUUSDm_H4.csv",
-      "rows": 14036,
+      "rows": 14042,
       "first_time_utc": "2018-01-02 04:00:00+00:00",
-      "last_time_utc": "2026-09-08 12:00:00+00:00",
-      "sha256": "9e1f4e83da4215ed6bac885c01d3b4211e403abf58d9d70970f5285fe21b92eb",
-      "size": 1536906
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "5b6a00940d58cb3ea1696ec65a58b44fb95424102f396b10640e46d0595d5214",
+      "size": 1537569
     },
     {
       "timeframe": "H6",
       "path": "F:\\use_code\\MTA5_l\\黄金\\乖离反转策略\\data\\raw\\mt5_history\\bias_reversal_live\\XAUUSDm_H6.csv",
-      "rows": 9568,
+      "rows": 9572,
       "first_time_utc": "2018-01-02 06:00:00+00:00",
-      "last_time_utc": "2026-09-08 12:00:00+00:00",
-      "sha256": "0d8e9e6dc3e7a7a3bee5a873eb6a8cc6a9d48f10ff311d39350e3812f372a5e6",
-      "size": 1049018
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "ce4bfc48a1d9009675832cf7177c79386cf05d6c607130a93fe5bfa4b6c9c1e5",
+      "size": 1049461
     }
   ],
-  "compatibility_raw_sha256": "9b925de6d302c0d71a63b584989f416a2a74007c90a40423a634a44f0f59ad07",
-  "generated_at_utc": "2026-09-08T15:24:11.213270+00:00",
+  "compatibility_raw_sha256": "4a5d2e9a92efe7ddd72dbe864307291399e1c18a5a68b358d5eb9b7efa5eba27",
+  "generated_at_utc": "2026-09-09T12:24:12.425878+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\黄金\\乖离反转策略\\data\\raw\\mt5_history\\bias_reversal_live",
-  "bundle_sha256": "de864ec72d7726a985c83d043d17b2d40a9c856a72da43ece1081a5a62d281cb",
+  "bundle_sha256": "883fea2af30fd722108f10243f59bdba0c98574ac786731feb6f4584ca3e9cb8",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\黄金\\乖离反转策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",

@@ -8,31 +8,31 @@
     "H2"
   ],
   "date_from_utc": "2020-01-01 00:00:00+00:00",
-  "date_to_utc": "2026-09-09 00:00:00+00:00",
+  "date_to_utc": "2026-09-10 00:00:00+00:00",
   "files": [
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\原油\\原油2H策略\\data\\raw\\mt5_history\\usoil2h_live\\USOILm_M30.csv",
-      "rows": 61692,
+      "rows": 61732,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 15:00:00+00:00",
-      "sha256": "61e74df6e10f51ca1d049dcb7869642e7ce74d0beb930ee24d94630fcd25d6af",
-      "size": 6184235
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "9ce7d9f0bf3199bce74539a052a33d5f227366e5b5253b6b1f9ae14fdaa375aa",
+      "size": 6188255
     },
     {
       "timeframe": "H2",
       "path": "F:\\use_code\\MTA5_l\\原油\\原油2H策略\\data\\raw\\mt5_history\\usoil2h_live\\USOILm_H2.csv",
-      "rows": 16461,
+      "rows": 16472,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "ba1237e21533ad0dd2931edeba07c224e29f46c26adeee78ee7021741fc6fb06",
-      "size": 1642397
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "57a0b800fd1180003e0e49e6d73540e52dc58a162d8fbbb7fca101871d5ae71d",
+      "size": 1643496
     }
   ],
-  "compatibility_raw_sha256": "61e74df6e10f51ca1d049dcb7869642e7ce74d0beb930ee24d94630fcd25d6af",
-  "generated_at_utc": "2026-09-08T15:24:06.708301+00:00",
+  "compatibility_raw_sha256": "9ce7d9f0bf3199bce74539a052a33d5f227366e5b5253b6b1f9ae14fdaa375aa",
+  "generated_at_utc": "2026-09-09T12:24:07.417223+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\原油\\原油2H策略\\data\\raw\\mt5_history\\usoil2h_live",
-  "bundle_sha256": "ab9bb5838bb770a23cd14e2f065e238f26ca191f14db648a8c1e768df8bac174",
+  "bundle_sha256": "d72e04b721f0078742fbaee232ff353ed99cf1941021852d4c69268784ef71ad",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\原油\\原油2H策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",

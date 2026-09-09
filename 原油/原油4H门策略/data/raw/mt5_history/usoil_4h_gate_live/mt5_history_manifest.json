@@ -9,40 +9,40 @@
     "H4"
   ],
   "date_from_utc": "2020-01-01 00:00:00+00:00",
-  "date_to_utc": "2026-09-09 00:00:00+00:00",
+  "date_to_utc": "2026-09-10 00:00:00+00:00",
   "files": [
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\原油\\原油4H门策略\\data\\raw\\mt5_history\\usoil_4h_gate_live\\USOILm_M30.csv",
-      "rows": 61692,
+      "rows": 61732,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 15:00:00+00:00",
-      "sha256": "bf2d337ac1806ecfd755d5bc62ec46745f244948a1987828854ba4a2f23c184a",
-      "size": 6184235
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "9ce7d9f0bf3199bce74539a052a33d5f227366e5b5253b6b1f9ae14fdaa375aa",
+      "size": 6188255
     },
     {
       "timeframe": "H2",
       "path": "F:\\use_code\\MTA5_l\\原油\\原油4H门策略\\data\\raw\\mt5_history\\usoil_4h_gate_live\\USOILm_H2.csv",
-      "rows": 16461,
+      "rows": 16472,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "cca7ee56dda9b68ee5ab2153b1c5321d881c17d29cfbda0f4eb931517b4ef4d2",
-      "size": 1642397
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "8c23120508de2671e763c781ce60f1beb3f772e6e6f16e29db47445965ffdbb7",
+      "size": 1643496
     },
     {
       "timeframe": "H4",
       "path": "F:\\use_code\\MTA5_l\\原油\\原油4H门策略\\data\\raw\\mt5_history\\usoil_4h_gate_live\\USOILm_H4.csv",
-      "rows": 8764,
+      "rows": 8770,
       "first_time_utc": "2020-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 12:00:00+00:00",
-      "sha256": "f555663ade75f6395b140422a8b9cf96b6eb08f5e3829be9adf55fd4c5271aa7",
-      "size": 876685
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "83f74255e9b85390fe5a0ecfa540e8809a65729666a7d5158f6ab25f5546fd84",
+      "size": 877284
     }
   ],
-  "compatibility_raw_sha256": "bf2d337ac1806ecfd755d5bc62ec46745f244948a1987828854ba4a2f23c184a",
-  "generated_at_utc": "2026-09-08T15:24:07.487263+00:00",
+  "compatibility_raw_sha256": "9ce7d9f0bf3199bce74539a052a33d5f227366e5b5253b6b1f9ae14fdaa375aa",
+  "generated_at_utc": "2026-09-09T12:24:08.331478+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\原油\\原油4H门策略\\data\\raw\\mt5_history\\usoil_4h_gate_live",
-  "bundle_sha256": "8a3a8af30abeda9a3334f8ada5b57e69d64f17a8d52a5bb765e2538af0e95b1b",
+  "bundle_sha256": "846b0fa47515493778dc018ae0748233512c22338afce969281c0c34dc92768c",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\原油\\原油4H门策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",

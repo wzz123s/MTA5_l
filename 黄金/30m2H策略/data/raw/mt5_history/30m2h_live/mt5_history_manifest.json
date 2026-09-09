@@ -9,40 +9,40 @@
     "M15"
   ],
   "date_from_utc": "2018-01-01 00:00:00+00:00",
-  "date_to_utc": "2026-09-09 00:00:00+00:00",
+  "date_to_utc": "2026-09-10 00:00:00+00:00",
   "files": [
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\黄金\\30m2H策略\\data\\raw\\mt5_history\\30m2h_live\\XAUUSDm_M30.csv",
-      "rows": 100047,
+      "rows": 100087,
       "first_time_utc": "2018-03-22 01:30:00+00:00",
-      "last_time_utc": "2026-09-08 15:00:00+00:00",
-      "sha256": "efadd9136e31e447971158342076a742fa6e860ca49fcfce9d4d969287d196ab",
-      "size": 10975345
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "1354663b1d965225eb680922526a9c4fc885207e494d69501425d1c8985fe6e8",
+      "size": 10979769
     },
     {
       "timeframe": "H2",
       "path": "F:\\use_code\\MTA5_l\\黄金\\30m2H策略\\data\\raw\\mt5_history\\30m2h_live\\XAUUSDm_H2.csv",
-      "rows": 26914,
+      "rows": 26925,
       "first_time_utc": "2018-01-02 06:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "3385bcb8eec5e46e2913bc33178c97e28383615efbb22fe6f82f6e3e245378ba",
-      "size": 2935961
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "8927edf3e1a9bbebd9ef5f85ba8c5c9d31ceb6a7259d3e501ec7bfe72ff8711f",
+      "size": 2937177
     },
     {
       "timeframe": "M15",
       "path": "F:\\use_code\\MTA5_l\\黄金\\30m2H策略\\data\\raw\\mt5_history\\30m2h_live\\XAUUSDm_M15.csv",
-      "rows": 100094,
+      "rows": 100174,
       "first_time_utc": "2022-06-14 07:00:00+00:00",
-      "last_time_utc": "2026-09-08 15:15:00+00:00",
-      "sha256": "a96b7566d87e15d06a84c506b8580451fba6e9646d639e34c99a85d4edb9c5d0",
-      "size": 11038884
+      "last_time_utc": "2026-09-09 12:15:00+00:00",
+      "sha256": "c96406f970d5d1c4dbaac99573d22407fd2aac7f84f883fa4987f87eb690d7df",
+      "size": 11047724
     }
   ],
-  "compatibility_raw_sha256": "efadd9136e31e447971158342076a742fa6e860ca49fcfce9d4d969287d196ab",
-  "generated_at_utc": "2026-09-08T15:24:05.041929+00:00",
+  "compatibility_raw_sha256": "1354663b1d965225eb680922526a9c4fc885207e494d69501425d1c8985fe6e8",
+  "generated_at_utc": "2026-09-09T12:24:05.526145+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\黄金\\30m2H策略\\data\\raw\\mt5_history\\30m2h_live",
-  "bundle_sha256": "db289f9864a588f06d3397e356c8fe8ed0c067f563f8ca3e7faa37e431a34a8f",
+  "bundle_sha256": "8ede336c4227d6ddd390766ac61c6c5ceb175d11f0d94bd11441c19ff86e47c8",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\黄金\\30m2H策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",

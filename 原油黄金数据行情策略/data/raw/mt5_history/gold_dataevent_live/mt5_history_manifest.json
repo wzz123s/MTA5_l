@@ -9,40 +9,40 @@
     "H6"
   ],
   "date_from_utc": "2019-01-01 00:00:00+00:00",
-  "date_to_utc": "2026-09-09 00:00:00+00:00",
+  "date_to_utc": "2026-09-10 00:00:00+00:00",
   "files": [
     {
       "timeframe": "M30",
       "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live\\XAUUSDm_M30.csv",
-      "rows": 90909,
+      "rows": 90949,
       "first_time_utc": "2019-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 15:00:00+00:00",
-      "sha256": "2b28dbb15a919567aaa07ab6e6c722eedfabfea3f8a195f01a6f0838fbc1556b",
-      "size": 9985833
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "721111fbad832df2aeaa7b45828c8a24bc4539cbb5119bcdc24d3f019f26aabc",
+      "size": 9990257
     },
     {
       "timeframe": "H2",
       "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live\\XAUUSDm_H2.csv",
-      "rows": 23832,
+      "rows": 23843,
       "first_time_utc": "2019-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 14:00:00+00:00",
-      "sha256": "824f334f0a7bfd7eb17b76eab0fba375138f174fa64c6324ed7c7ada5fda90db",
-      "size": 2604590
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "78de1351dffc795f5892a3e9e3476a9ae661b9514fab6fb93d33293c7cc1fdbd",
+      "size": 2605807
     },
     {
       "timeframe": "H6",
       "path": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live\\XAUUSDm_H6.csv",
-      "rows": 8467,
+      "rows": 8471,
       "first_time_utc": "2019-01-02 00:00:00+00:00",
-      "last_time_utc": "2026-09-08 12:00:00+00:00",
-      "sha256": "a99fa1d803d4eba8588ff0be00440fc5e07c9ff89409f8d56611a93ee699f274",
-      "size": 929814
+      "last_time_utc": "2026-09-09 12:00:00+00:00",
+      "sha256": "7eb2770329ef3dc7acd45a774ae13ab34ab9290e6c8c2d9dd2c9985f42af55b0",
+      "size": 930257
     }
   ],
-  "compatibility_raw_sha256": "2b28dbb15a919567aaa07ab6e6c722eedfabfea3f8a195f01a6f0838fbc1556b",
-  "generated_at_utc": "2026-09-08T15:24:08.561074+00:00",
+  "compatibility_raw_sha256": "721111fbad832df2aeaa7b45828c8a24bc4539cbb5119bcdc24d3f019f26aabc",
+  "generated_at_utc": "2026-09-09T12:24:09.598000+00:00",
   "bundle_dir": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\mt5_history\\gold_dataevent_live",
-  "bundle_sha256": "b324b7d0e2be60597347503acd6b60fe6dc919669933b005c945f9b889b82bea",
+  "bundle_sha256": "75b6bbf4366fde3e40a48c68f9f86db6c2a1f4a36e5fa7ba7565ba009d98702a",
   "compatibility_raw_file": "F:\\use_code\\MTA5_l\\原油黄金数据行情策略\\data\\raw\\XAUUSDm30.csv",
   "terminal_path_arg": "",
   "server_arg": "",
