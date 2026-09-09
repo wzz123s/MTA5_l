@@ -2,6 +2,7 @@
 //|                                         30m2H_Strategy_EA.mq5    |
 //|                                                          Codex    |
 //|                                        30m x 2H SMA5/13 Strategy |
+//|                                        v3.38: T1 regime cap gate (candidate: completed |H2 Bias_55|<=5%, default OFF until Tester acceptance) |
 //|                                        v3.37: BUG-13 merged stack absorption port (align Python filter_short_segments_causal) |
 //|                                        v3.35: M15 slot1 trigger + M30-close M15 rescue removed (Python EA-executable = signal at M30 close, entry at close price) |
 //|                                        v3.34: FindStopSMA → Python prior_segment_stop semantics (current segment since last cross; v3.28 prev-segment was 0/43 match) |
@@ -28,7 +29,7 @@
 //|                                        v3.11: InpH2Thresh 0.5->0.0     |
 //+------------------------------------------------------------------+
 #property copyright "Codex"
-#property version   "3.37"
+#property version   "3.38"
 #property strict
 #include <Trade\Trade.mqh>
 
@@ -68,6 +69,10 @@ input int     InpH2EarlyGateQ    = 2;           // H2 走完前 q 根 M30 后允
 input bool    InpUseLayer3       = true;        // 启用 Layer 3 Bias_5 top X%
 input double  InpBias5TopPct     = 34.0;        // Layer 3: Bias_5 top X% (最终主线 34%)
 input int     InpBias5Lookback   = 500;         // Layer 3 Bias_5 历史滚动计算窗口 (H2 bars)
+
+input group "=== Regime (T1 候选) ==="
+input bool    InpUseRegimeCap       = true;     // v3.38: 启用 regime gate：completed |H2 Bias_55| <= cap 才允许入场（T1 候选正式参数；验证回归时可置 false）
+input double  InpRegimeCapPct       = 5.0;      // v3.38: regime cap（%），T1 候选正式参数 5.0%（Python expected 同款口径）
 
 input ENUM_TIMEFRAMES InpM15Period = PERIOD_M15; // 小周期确认
 input bool    InpVerboseDecisionDiag = true;    // 输出逐层判定诊断日志
@@ -1065,7 +1070,7 @@ void RecoverOpenPositions()
 int OnInit()
 {
    Print("========================================");
-   Print("  30m x 2H EA v3.37 - Initializing (BUG-13 merged stack + H2 PythonSMMA alignment)");
+   Print("  30m x 2H EA v3.38 - Initializing (T1 regime |Bias_55|<=5% cap + BUG-13 merged stack + H2 PythonSMMA alignment)");
    Print("========================================");
    Print("  [Layer 1] InpBias55Threshold = ", DoubleToString(InpBias55Threshold, 1),
          "% (|H2 Bias_55| 硬门, 默认 3.0%)");
@@ -1078,6 +1083,8 @@ int OnInit()
    Print("  [Layer 3] InpBias5TopPct = ", DoubleToString(InpBias5TopPct, 1),
          "% (Bias_5 top X%, 最终主线 34%)");
    Print("  [Layer 3] InpUseLayer3 = ", InpUseLayer3 ? "TRUE" : "FALSE");
+   Print("  [Regime] InpUseRegimeCap = ", InpUseRegimeCap ? "TRUE" : "FALSE",
+         ", cap = ", DoubleToString(InpRegimeCapPct, 1), "% (T1 候选 5.0%)");
    Print("  [Diag] verbose decision log = ", InpVerboseDecisionDiag ? "TRUE" : "FALSE");
    Print("  [Spec 换算] 1 spec 点 = 1000 MQL5 points");
 
@@ -2655,6 +2662,38 @@ bool PassLayer3Gate(string tag)
 }
 
 //+------------------------------------------------------------------+
+//| Shared T1 regime cap gate (v3.38)                                 |
+//| Candidate rule: completed |H2 Bias_55| <= cap 才允许入场           |
+//| Python expected: regimeBias5 台账 = 同一 CalcBias55 口径(信号导出  |
+//| h2_comp_bias55)过滤 final candidates 后再走 MAXPOS/rolling        |
+//+------------------------------------------------------------------+
+bool PassRegimeBias55CapGate(string tag)
+{
+   if(!InpUseRegimeCap) return true;
+
+   double bias55 = CalcBias55();
+   if(bias55 > InpRegimeCapPct)
+   {
+      if(InpDebugStages)
+         Print(tag, " [REGIME SKIP] |Bias_55|=", DoubleToString(bias55, 2),
+               "% > cap ", DoubleToString(InpRegimeCapPct, 1), "% (T1 candidate)");
+      DiagLog(tag, "Regime",
+              "completed_bias55=" + DoubleToString(bias55, 5) +
+              " cap=" + DoubleToString(InpRegimeCapPct, 5) +
+              " result=FAIL");
+      return false;
+   }
+   if(InpDebugStages)
+      Print(tag, " [REGIME PASS] |Bias_55|=", DoubleToString(bias55, 2),
+            "% <= cap ", DoubleToString(InpRegimeCapPct, 1), "%");
+   DiagLog(tag, "Regime",
+           "completed_bias55=" + DoubleToString(bias55, 5) +
+           " cap=" + DoubleToString(InpRegimeCapPct, 5) +
+           " result=PASS");
+   return true;
+}
+
+//+------------------------------------------------------------------+
 //| Execute validated signal at market                                |
 //+------------------------------------------------------------------+
 bool ExecuteSignalByMarket(int signal_dir, string signal_src, double stop_price,
@@ -3435,6 +3474,11 @@ void OnTick()
       // state machine. Bypassing the gates overfires badly in full backtests.
       if(!PassLayer1Gate("[M30 CLOSE]")) return;
       if(!PassLayer3Gate("[M30 CLOSE]")) return;
+      // v3.38: T1 regime cap (candidate: completed |H2 Bias_55|<=5%).
+      // Placed after Layer1/Layer3 so it only filters final executable candidates —
+      // same position as the Python regime wrapper (filter accepted candidates
+      // by h2_comp_bias55 before MAXPOS/rolling re-cascade).
+      if(!PassRegimeBias55CapGate("[M30 CLOSE]")) return;
 
 
       // === SL 计算 ===
