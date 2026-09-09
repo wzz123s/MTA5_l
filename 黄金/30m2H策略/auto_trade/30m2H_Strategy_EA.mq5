@@ -140,6 +140,8 @@ double   g_l3_raw_samples[];
 int      g_l3_samples_handle = INVALID_HANDLE;
 string   g_l3_samples_path = "30m2H_strategy_l3_samples_export.csv";
 datetime g_l3_last_export_time = 0;
+double   g_q2_prev_sma55 = 0.0;
+double   g_q2_partial_close = 0.0;
 bool     g_bias5_history_ready = false; // 是否已计算过阈值
 
 //--- 3-stage split TP state (v3.10)
@@ -1172,6 +1174,7 @@ int OnInit()
             "m30_merged_code", "m30_merged_dir",
             "merged_post_n_counter", "merged_strict_post_n_counter",
             "pre_cross_flag", "q2_early_pass", "q2_early_bias55", "q2_elapsed_q",
+            "q2_prev_sma55", "q2_partial_close",
             "l3_valid_count", "l3_percentile_idx", "l3_window_start", "l3_window_end");
          Print("  CSV export: ", g_csv_path, " (per-bar rows, v3.14+ includes h2_cross)");
          FileFlush(g_csv_handle);
@@ -1650,6 +1653,8 @@ bool CalcBias55EarlyQ(double &est_bias55, int &elapsed_q)
 {
    est_bias55 = 0.0;
    elapsed_q = 0;
+   g_q2_prev_sma55 = 0.0;
+   g_q2_partial_close = 0.0;
 
    datetime current_h2_open = iTime(InpSymbol, InpH2Period, 0);
    datetime last_m30_open = iTime(InpSymbol, InpM30Period, 1);
@@ -1671,10 +1676,12 @@ bool CalcBias55EarlyQ(double &est_bias55, int &elapsed_q)
    double prev_sma55 = PythonSMMA(InpSymbol, InpH2Period, 55, 1);
    if(prev_sma55 == 0)
       return false;
+   g_q2_prev_sma55 = prev_sma55;
 
    double partial_close = iClose(InpSymbol, InpM30Period, 1);
    if(partial_close <= 0)
       return false;
+   g_q2_partial_close = partial_close;
 
    double est_sma55 = prev_sma55 + (partial_close - prev_sma55) / InpH2SMA55;
    if(est_sma55 == 0 || est_sma55 == EMPTY_VALUE)
@@ -3066,6 +3073,8 @@ void OnTick()
             IntegerToString(q2_early_pass),
             DoubleToString(early_bias55, 4),
             IntegerToString(q2_elapsed),
+            DoubleToString(g_q2_prev_sma55, 6),
+            DoubleToString(g_q2_partial_close, 6),
             IntegerToString(g_l3_valid_count),
             IntegerToString(g_l3_percentile_idx),
             TimeToString(g_l3_window_start, TIME_DATE|TIME_MINUTES),
