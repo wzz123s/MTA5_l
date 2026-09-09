@@ -33,11 +33,29 @@ for d in (os.path.join(R, "00_文档中心"), R):
         if len(fs) > 1:
             VIOL.append(("R7-dated-coexist", stem, "并存 " + ", ".join(sorted(fs))))
 
-# 3) R6：validation 活跃目录 >20（_archive 除外）
+def _index_exempt(dp):
+    """读取 validation 根 目录索引.md 的保留目录名集合（R6 存量豁免，00_项目规则.md R6）。"""
+    idx = os.path.join(dp, "目录索引.md")
+    if not os.path.isfile(idx):
+        return set()
+    try:
+        rows = io.open(idx, encoding="utf-8-sig").read().splitlines()
+    except Exception:
+        return set()
+    names = set()
+    for row in rows:
+        if row.startswith("|") and not row.startswith("| 目录"):
+            cells = [c.strip() for c in row.strip("|").split("|")]
+            if cells:
+                names.add(cells[0])
+    return names
+
+# 3) R6：validation 新增活跃目录 >20（_archive 与目录索引存量豁免除外）
 for dp, dns, fns in os.walk(R):
     dns[:] = [x for x in dns if x not in SKIP_DIRS]
     if os.path.basename(dp) == "validation":
-        active = [x for x in dns if x != "_archive"]
+        exempt = _index_exempt(dp)
+        active = [x for x in dns if x != "_archive" and x not in exempt]
         if len(active) > 20:
             VIOL.append(("R6-validation-flood", os.path.relpath(dp, R), f"活跃 {len(active)} 个(>20)"))
         dns[:] = []  # 不再深入 validation
