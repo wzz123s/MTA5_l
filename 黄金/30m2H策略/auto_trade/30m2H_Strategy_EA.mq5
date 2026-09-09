@@ -131,6 +131,11 @@ int      g_merged_strict_last_cross = 0;
 
 //--- v3.0 Layer 3 状态 (Bias_5 top X% 阈值缓存)
 double   g_bias5_top_threshold = 0;     // Bias_5 滚动 top X% 阈值 (H2 close 偏离 SMMA5)
+// T1 L3 window diagnostics (2026-09-09): filled by IsBias5TopPct for CSV export only
+int      g_l3_valid_count = 0;
+int      g_l3_percentile_idx = 0;
+datetime g_l3_window_start = 0;
+datetime g_l3_window_end = 0;
 bool     g_bias5_history_ready = false; // 是否已计算过阈值
 
 //--- 3-stage split TP state (v3.10)
@@ -1162,7 +1167,8 @@ int OnInit()
             "h2_comp_bias55", "h2_comp_bias5", "h2_comp_l3_threshold",
             "m30_merged_code", "m30_merged_dir",
             "merged_post_n_counter", "merged_strict_post_n_counter",
-            "pre_cross_flag", "q2_early_pass", "q2_early_bias55", "q2_elapsed_q");
+            "pre_cross_flag", "q2_early_pass", "q2_early_bias55", "q2_elapsed_q",
+            "l3_valid_count", "l3_percentile_idx", "l3_window_start", "l3_window_end");
          Print("  CSV export: ", g_csv_path, " (per-bar rows, v3.14+ includes h2_cross)");
          FileFlush(g_csv_handle);
       }
@@ -2385,10 +2391,16 @@ bool IsBias5TopPct(double current_bias5)
    if(!InpUseLayer3) return true;
 
    int n = InpBias5Lookback;
+   g_l3_valid_count = 0;
+   g_l3_percentile_idx = -1;
+   g_l3_window_start = 0;
+   g_l3_window_end = 0;
    double close_arr[], biases[];
    ArraySetAsSeries(close_arr, true);
    ArrayResize(biases, n);
    if(CopyClose(InpSymbol, InpH2Period, 1, n, close_arr) <= 0) return false;
+   g_l3_window_end   = iTime(InpSymbol, InpH2Period, 1);
+   g_l3_window_start = iTime(InpSymbol, InpH2Period, n);
 
    double s0 = PythonSMMA(InpSymbol, InpH2Period, 5, 0);
    if(s0 == 0) return false;
@@ -2401,7 +2413,11 @@ bool IsBias5TopPct(double current_bias5)
       biases[valid] = MathAbs((close_arr[i] - s) / s) * 100.0;
       valid++;
    }
-   if(valid < 10) return true;
+   if(valid < 10)
+   {
+      g_l3_valid_count = valid;
+      return true;
+   }
 
    ArrayResize(biases, valid);
    ArraySort(biases);
@@ -2409,6 +2425,8 @@ bool IsBias5TopPct(double current_bias5)
    if(idx < 0) idx = 0;
    if(idx >= valid) idx = valid - 1;
    g_bias5_top_threshold = biases[idx];
+   g_l3_valid_count = valid;
+   g_l3_percentile_idx = idx;
 
    return (current_bias5 >= g_bias5_top_threshold);
 }
@@ -2962,7 +2980,7 @@ void OnTick()
          double l3_threshold   = 0.0;
          if(InpUseLayer3)
          {
-            bool l3pass = IsBias5TopPct(h2_comp_bias5);
+         bool l3pass = IsBias5TopPct(h2_comp_bias5);
             l3_threshold = g_bias5_top_threshold;
          }
          int merged_code = M30MergedDirectionCodeLastCompleted();
@@ -3007,7 +3025,11 @@ void OnTick()
             IntegerToString(pre_cross_flag),
             IntegerToString(q2_early_pass),
             DoubleToString(early_bias55, 4),
-            IntegerToString(q2_elapsed));
+            IntegerToString(q2_elapsed),
+            IntegerToString(g_l3_valid_count),
+            IntegerToString(g_l3_percentile_idx),
+            TimeToString(g_l3_window_start, TIME_DATE|TIME_MINUTES),
+            TimeToString(g_l3_window_end, TIME_DATE|TIME_MINUTES));
 
          static int csv_row_count = 0;
          csv_row_count++;
