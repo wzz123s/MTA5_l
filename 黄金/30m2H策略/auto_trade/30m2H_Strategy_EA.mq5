@@ -136,6 +136,10 @@ int      g_l3_valid_count = 0;
 int      g_l3_percentile_idx = 0;
 datetime g_l3_window_start = 0;
 datetime g_l3_window_end = 0;
+double   g_l3_raw_samples[];
+int      g_l3_samples_handle = INVALID_HANDLE;
+string   g_l3_samples_path = "30m2H_strategy_l3_samples_export.csv";
+datetime g_l3_last_export_time = 0;
 bool     g_bias5_history_ready = false; // 是否已计算过阈值
 
 //--- 3-stage split TP state (v3.10)
@@ -1172,6 +1176,20 @@ int OnInit()
          Print("  CSV export: ", g_csv_path, " (per-bar rows, v3.14+ includes h2_cross)");
          FileFlush(g_csv_handle);
       }
+      // T1 L3 sample-vector export (one row per completed H2 window)
+      g_l3_samples_handle = FileOpen(g_l3_samples_path,
+                                      FILE_WRITE|FILE_CSV|FILE_ANSI|FILE_SHARE_READ, ',');
+      if(g_l3_samples_handle == INVALID_HANDLE)
+         Print("[WARN] Could not open L3 samples CSV: ", GetLastError());
+      else
+      {
+         string l3hdr = "sample_time,current_bias5,threshold,percentile_idx";
+         for(int li = 0; li < InpBias5Lookback; li++)
+            l3hdr += ",b" + IntegerToString(li);
+         FileWriteString(g_l3_samples_handle, l3hdr + "\r\n");
+         FileFlush(g_l3_samples_handle);
+         Print("  L3 samples CSV export: ", g_l3_samples_path);
+      }
    }
 
    if(InpExportTradeLedger)
@@ -1267,6 +1285,12 @@ void OnDeinit(const int reason)
       FileClose(g_stage_price_diag_handle);
       g_stage_price_diag_handle = INVALID_HANDLE;
       Print("Stage price diag export closed");
+   }
+   if(g_l3_samples_handle != INVALID_HANDLE)
+   {
+      FileClose(g_l3_samples_handle);
+      g_l3_samples_handle = INVALID_HANDLE;
+      Print("L3 samples export closed");
    }
    DumpRawDealHistory();
    Print("EA Deinitialized. Reason: ", reason);
@@ -2419,6 +2443,9 @@ bool IsBias5TopPct(double current_bias5)
       return true;
    }
 
+   ArrayResize(g_l3_raw_samples, valid);
+   for(int ri = 0; ri < valid; ri++)
+      g_l3_raw_samples[ri] = biases[ri];
    ArrayResize(biases, valid);
    ArraySort(biases);
    int idx = (int)MathFloor(valid * (1.0 - InpBias5TopPct / 100.0));
@@ -2427,6 +2454,19 @@ bool IsBias5TopPct(double current_bias5)
    g_bias5_top_threshold = biases[idx];
    g_l3_valid_count = valid;
    g_l3_percentile_idx = idx;
+
+   if(g_l3_samples_handle != INVALID_HANDLE && g_l3_window_end != g_l3_last_export_time)
+   {
+      g_l3_last_export_time = g_l3_window_end;
+      string row = TimeToString(g_l3_window_end, TIME_DATE|TIME_MINUTES) + "," +
+                   DoubleToString(current_bias5, 6) + "," +
+                   DoubleToString(g_bias5_top_threshold, 6) + "," +
+                   IntegerToString(idx);
+      for(int si = 0; si < valid; si++)
+         row += "," + DoubleToString(g_l3_raw_samples[si], 8);
+      FileWriteString(g_l3_samples_handle, row + "\r\n");
+      FileFlush(g_l3_samples_handle);
+   }
 
    return (current_bias5 >= g_bias5_top_threshold);
 }
