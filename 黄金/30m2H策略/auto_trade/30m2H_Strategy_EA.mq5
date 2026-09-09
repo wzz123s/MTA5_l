@@ -1152,11 +1152,17 @@ int OnInit()
       else
       {
          // Header (v3.23: added h2_sma13, h2_sma55 for Python data alignment)
+         // v3.37-T1 (2026-09-09): completed-H2 / merged / pre_cross / q2 early 快照列（仅导出，零行为）
          FileWrite(g_csv_handle,
             "bar_time", "close", "m30_sma5", "m30_sma13",
             "m30_cross", "h2_close", "h2_sma5", "h2_sma13", "h2_sma55",
             "h2_dist_pct", "h2_dir",
-            "h2_cross", "stop_sma", "stop_pts", "decision", "skip_reason");
+            "h2_cross", "stop_sma", "stop_pts", "decision", "skip_reason",
+            "h2_comp_close", "h2_comp_sma5", "h2_comp_sma13", "h2_comp_sma55",
+            "h2_comp_bias55", "h2_comp_bias5", "h2_comp_l3_threshold",
+            "m30_merged_code", "m30_merged_dir",
+            "merged_post_n_counter", "merged_strict_post_n_counter",
+            "pre_cross_flag", "q2_early_pass", "q2_early_bias55", "q2_elapsed_q");
          Print("  CSV export: ", g_csv_path, " (per-bar rows, v3.14+ includes h2_cross)");
          FileFlush(g_csv_handle);
       }
@@ -2901,6 +2907,10 @@ void OnTick()
 
    if(new_m30_bar)
    {
+      // T1 export (2026-09-09): advance merged/post_n before CSV so the exported
+      // counter matches the same-bar signal decision (originally updated after CSV).
+      UpdateMergedPostNState();
+
       Print("[STATUS] M30: SMA5=", DoubleToString(ma5_prev,3),
             " SMA13=", DoubleToString(ma13_prev,3),
             " Cross=", cross == 1 ? "GOLDEN" : (cross == -1 ? "DEAD" : "none"),
@@ -2942,6 +2952,30 @@ void OnTick()
          if(GetMALastN(g_h2_sma55, 1, h2_sma55_buf) && ArraySize(h2_sma55_buf) > 0)
             h2_sma55_str = DoubleToString(h2_sma55_buf[0], 5);
 
+         // ---- T1 completed-H2 / merged / pre_cross / q2 early snapshot columns ----
+         double h2_comp_close  = iClose(InpSymbol, InpH2Period, 1);
+         double h2_comp_sma5   = PythonSMMA(InpSymbol, InpH2Period, 5,  1);
+         double h2_comp_sma13  = PythonSMMA(InpSymbol, InpH2Period, 13, 1);
+         double h2_comp_sma55  = PythonSMMA(InpSymbol, InpH2Period, 55, 1);
+         double h2_comp_bias55 = CalcBias55();
+         double h2_comp_bias5  = CalcBias5();
+         double l3_threshold   = 0.0;
+         if(InpUseLayer3)
+         {
+            bool l3pass = IsBias5TopPct(h2_comp_bias5);
+            l3_threshold = g_bias5_top_threshold;
+         }
+         int merged_code = M30MergedDirectionCodeLastCompleted();
+         double early_bias55 = 0.0;
+         int    q2_elapsed   = 0;
+         bool   q2_ok = false;
+         if(InpUseH2EarlyGateQ2)
+            q2_ok = CalcBias55EarlyQ(early_bias55, q2_elapsed);
+         int pre_cross_flag = (DetectPreCross(rates[n_rates - 3].close,
+                                 rates[n_rates - 2].close,
+                                 ma5_prev2, ma5_prev, ma13_prev, ma13_prev2) != 0) ? 1 : 0;
+         int q2_early_pass = (q2_ok && early_bias55 > InpBias55Threshold) ? 1 : 0;
+
          int written = (int)FileWrite(g_csv_handle,
             TimeToString(cur_bar, TIME_DATE|TIME_MINUTES),
             DoubleToString(C, 5),
@@ -2958,7 +2992,22 @@ void OnTick()
             "",
             "",
             decision,
-            skip_rsn);
+            skip_rsn,
+            DoubleToString(h2_comp_close, 5),
+            DoubleToString(h2_comp_sma5, 5),
+            DoubleToString(h2_comp_sma13, 5),
+            DoubleToString(h2_comp_sma55, 5),
+            DoubleToString(h2_comp_bias55, 4),
+            DoubleToString(h2_comp_bias5, 4),
+            DoubleToString(l3_threshold, 6),
+            IntegerToString(merged_code),
+            (merged_code > 0 ? "BULL" : (merged_code < 0 ? "BEAR" : "NONE")),
+            IntegerToString(g_merged_post_n_counter),
+            IntegerToString(g_merged_strict_post_n_counter),
+            IntegerToString(pre_cross_flag),
+            IntegerToString(q2_early_pass),
+            DoubleToString(early_bias55, 4),
+            IntegerToString(q2_elapsed));
 
          static int csv_row_count = 0;
          csv_row_count++;
@@ -3210,10 +3259,8 @@ void OnTick()
    }
 
    // v3.26: post_n state must advance once per completed M30 bar, not every tick
-   if(new_m30_bar)
-   {
-      UpdateMergedPostNState();
-   }
+   // T1 (2026-09-09): moved earlier so the signals_export counter matches the
+   // same-bar signal decision; behavior otherwise unchanged.
 
    // v3.35: M15 slot1 early-entry REMOVED entirely (was independent real-time
    // signal detection on the forming M30 bar + entry at the 15-min mark price).
