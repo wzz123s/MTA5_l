@@ -2,13 +2,13 @@
 
 > 本文件是进项目的**第一份读物**（人 AI 皆同）。只指向权威文件、不复述内容（复述即漂移）。
 > 建立：2026-09-08（目录整理 Phase 1）｜维护规则见 00_项目规则.md R7
-> 数据截至：2026-09-09 01:20（本地）
+> 数据截至：2026-09-09（本地，变更明细见 §7 最新条目）
 
 ## 1. 一句话工程定义
 
-黄金/原油多策略量化研究工程：Python 研究管线 + MQL5 EA 模拟盘 + 自动监控告警；账户为 **Exness DEMO（277752085）**。
+黄金/原油多策略量化研究工程：Python 研究管线 + MQL5 EA 模拟盘 + 自动监控告警；账户为 Exness DEMO（277752085）。
 
-**交易口径（2026-09-09 实测纠偏）**：原表述"全链路只读监控不下单"**不成立**。终端 `trade_expert=True`（自动交易总闸开），**9 个挂载实例中 6 个在 DEMO 真实下单**（chart02 CurrentCandidate、chart03 1H ABC、chart04 2H ABC、chart06 主线 Strategy_EA、chart07 30m2H ABC live、chart09 乖离反转；均经 `chart*.chr` 读出 SimMode=false + AllowRealTrading=true）；窗口 2025-01-01~2026-09-09 共 **121 笔成交 / 59 个持仓**，balance 2667.61 = 入金 2089.46 + **交易净盈利 578.15**。工作区全部 `*SimDeployment*.set` 写 SimMode=true/AllowReal=false，与终端实参**不一致** → `.set` 非真相源，真相源是 `chart*.chr`（T12，可脚本化反向导出）。证据与建议见 `00_文档中心\问题记录.md` §二十三。
+**交易口径（2026-09-09 实测纠偏）**：终端 `trade_expert=True`，9 个挂载实例中 6 个在 DEMO 真下单；窗口 2025-01-01~2026-09-09 共 121 笔成交／59 个持仓，balance 2667.61 = 入金 2089.46 + 交易净盈利 578.15。`.set` 非真相源，真相源是 `chart*.chr` 终端实参（T12）。证据与逐笔还原见 `00_文档中心\问题记录.md` §二十三。
 
 ## 2. 策略状态总表
 
@@ -65,16 +65,10 @@ MT5 终端(DAD3B8) 挂 8 EA ──Files导出──> signals/ledger/gate CSV
 ```
 **单点**：DSH Web 进程关闭 = 30 分钟监测循环停。
 
-**盲区（2026-09-09 实测，§二十三⑥）**：上图"Files导出 → 监控"这条线**只对 signals/gate 成立**；成交台账有 4 个文件被 EA 独占句柄（`PermissionError`）、3 个仅有表头 → 监测报告与 dashboard 里**没有真实成交**，这正是"只读监控不下单"误判的技术根源（T14）。
-
-**实参纠正（01:40 已确证）**：原文"唯一例外 1H_M30_4H_CurrentCandidate"方向对、数量错——终端实参中 **6 个实例** SimMode=false + AllowRealTrading=true（见 §1）。CurrentCandidate 的 `AllowRealTrading` 初判"未确证"（其 init 打印不含该字段、9 天日志无 `Order skipped` 行），后经 **`chart02.chr` 读出 `InpAllowRealTrading=true`** 确证在真下单；窗口内无 magic 312026 成交只说明它尚未触发信号，不代表闸是关的。EA 参数变更需走人工决策。
-
+**盲区（2026-09-09 实测）**：Files 导出链路只对 signals/gate 成立；成交台账 4 个文件被 EA 独占句柄、3 个仅表头 → 监测报告与 dashboard 无真实成交。修复状态与细节见 §6-T14 与 `00_文档中心\问题记录.md` §二十三⑥。
 ## 6. 当前开放事项（权威登记处见括注）
 
-> **2026-09-09 02:34 F 项落地后状态**：**T12 ✅已收口**（9 个 `.chr_export_<chart>_20260909.set` 终端实参快照入各策略 `auto_trade\`）、**T17 ✅已落为代码约束**（`live_attribution.py` 模块头「口径铁律」：禁用平仓侧 `deal.magic` 与 `deal.reason`、时间统一服务器时间）、**T18 ✅已修**（`read_ea_input` 改按 EA 名定位 chart，`ea_mode` 列首次有值）、**T19 ①③已修**（补历史 magic 302025~302028 + 新增已实现盈亏/错配/下单闸/台账列；②粒度过粗按用户裁决**不拆 dashboard 行**，改在报告「真实成交归因」节按 EA 汇总 + magic 明细两层展示）、**T14 部分收口**（监控已能看见真实成交与台账状态并写进 warnings；但 `FILE_SHARE_READ` 仍需改 EA 才能让台账本身可读）。
-> **2026-09-09 02:42 追加**：**T20 ✅已修**——三个部署脚本植入前置守卫（详见 T20 行），实跑均安全中止且终端文件 mtime 未变。
-> **2026-09-09 09:13 追加（A/D 阶段一完成）**：**T11 与 T14 的代码修复已编译通过（9/9 个 EA、0 errors、.ex5 全部刷新），但 `.ex5` 未复制到终端 → 运行中的 EA 仍是旧版，需阶段二部署才生效**。用户裁决：A3 暂缓、D1 全 9 个 EA、部署方式＝我复制 ex5 + 用户逐图刷新、借窗口一并摘 chart14（T13）。阶段二步骤与事后核验清单见 `问题记录.md` §二十三「A/D 阶段一落地记录」第 5 条。
-> **未动（等拍板）**：T13（拆双挂，已排入阶段二窗口）/ T15（MCT bar 序列）/ T16（EA 退出逻辑缺陷线索）/ T21（口径，已落为代码约束）—— T15 属 E 项需在终端手工操作。用户已定顺序：**T20（已完成）→ A/D（阶段一已完成，等窗口）→ G1 并入 T1**。
+> **收口快照（2026-09-09）**：T12/T17/T18/T19①③/T20 已收口；T11 与 T14 代码已修、编译 0 errors、**未部署**（阶段二等用户打断窗口）；T13/T15/T16 未动等拍板；T1/T2/T3/T4/T5/T7 继续开放。逐项完整证据一律以括注出处为准。
 
 | # | 事项 | 出处 |
 |---|---|---|
@@ -98,8 +92,9 @@ MT5 终端(DAD3B8) 挂 8 EA ──Files导出──> signals/ledger/gate CSV
 | T18 | **P1 监控读错图表**：`monitor_all_strategies.py` L214 `read_ea_input()` 硬编码 `chart10.chr`、唯一调用点 L537 不传 chart_file → 恒读 chart10=**Gold_DataEvent_EA**，而 `ea_inputs` 只给 BiasReversal 配了 `InpLongMode` → **在 Gold_DataEvent 图表里找乖离反转参数**，必然返回 None → dashboard/报告「EA模式」列**从来没有内容**；且解析只支持数字（bool 读不出）、chart 编号会随增删重排（chart05/08/11 已空）→ 应按 EA 名扫描全部 `.chr` | §二十三 补充取证3 |
 | T19 | **P1 归因配置缺口**：`STRATEGY_CONFIGS.magics` ①缺历史 magic 302025/302026/302027/302028 → 6 月 9 个持仓（合计 −137.50）监控完全看不到；②粒度过粗：`30m2H`=[302036~302039,**352036**] 把主线与 ABC 合并一行、`1H_M30_4H`=[**312026**,312036] 把 CurrentCandidate 与 ABC 合并、`BiasReversal`=[372036,372037] 多空合并；③`read_real_positions()` 只读 `positions_get()` 不读 `history_deals_get()` → 监控设计上**没有"已实现盈亏"这个量**，只有浮盈。另 L621 报告脚注写死"只读监控不下单"= §1 错话源头 | §二十三 补充取证4·5 |
 | T20 | ✅ **已修（09-09 02:42）**：原 P1 隐患——`rebuild_and_attach_mct.py`/`attach_mct_ea_to_chart.py` 认 chart12=Oil_DataEvent、chart13=MCT；`deploy_combo_ea.py` 认 TARGET=chart10。实测 chart12=**MCT_EA**、chart13=空、chart10=**Gold_DataEvent_EA** → 重跑会顶掉 Gold_DataEvent、造成 MCT/乖离双挂并重启（`deploy_combo_ea.py` 更是 `taskkill /F` 强杀终端 + 备份两行是死代码）。**修法**：三个脚本植入前置守卫 `live_attribution.guard_deploy()`，按 EA 名动态读实际盘面，命中「目标 EA 已挂载／目标 chart 被别的 EA 占用／模板 chart 已漂移」任一条即中止，需 `--force` 才放行。**验证**：三脚本实跑均 exit 1 安全中止，`chart10.chr`/`chart13.chr`/`order.wnd` mtime 仍为 09-08 21:29（未改任何终端文件） | §二十三 补充取证二4 |
-| T22 | （本行位置排在 T21 之前系本轮编辑失误所致，编号唯一、内容独立，下次文档整理时调序）**P1 新发现（09-09 09:20 部署前置核对）：终端两个 Experts 目录致 `.ex5` 双副本版本漂移，且已造成一次"假部署"**——`MQL5\Experts\`（根）与 `MQL5\Experts\Advisors\` 各存一份同名 `.ex5`，而 `chart06`（主线）与 `chart02`（CurrentCandidate）的 `.chr` `path=` 指向**根目录**那份。主线：根目录 = 09-07 22:36/150,280B（**实盘在跑**），Advisors = 09-08 20:23/150,354B 且与工程内 `auto_trade\` 产物**时间与字节数完全一致** → §7「09-08 21:07 M15 孤儿句柄修复重编译**部署**」实际投递到了不被加载的目录，**该修复从未在实盘图表生效**（虽记载为"零行为回归"）。CurrentCandidate 同样双副本（根 08-11 19:38/63,020B ← chart02 在用；Advisors 08-21 21:46/64,712B 未使用）。**处置原则：部署必须按 `.chr` 的 `path=` 精确投递**，否则＝假部署；并应清理冗余副本、在部署脚本里加"目标路径来自 .chr"的校验 | 本轮 dir 终端两处 Experts + `.chr` path 交叉核对 |
 | T21 | **口径（重要）**：MT5 `DEAL_REASON` 字段**不可靠**——`comment='[sl 4670.599]'` 的亏损平仓被记 `reason=TP`、`comment='manual close (TP overdue)'` 的人工平仓被记 `reason=SL`；全窗口 `EXPERT` 0 笔而 magic=0 的 13 笔被记 12×SL+1×CLIENT。故归因**只用 position_id 血缘 + 开仓 magic**，禁用 `deal.magic`（平仓侧）与 `deal.reason`；平仓类型以 `comment` 前缀 + EA 台账 `local_exit_reason` 交叉判定。另 `signals_export.csv` 是**滚动窗口**（实测仅 47 行≈24h）不含历史 → 历史信号↔成交比对只能走台账 | §二十三 补充取证二1·2·6 |
+| T22 | **P1 新发现（09-09 09:20 部署前置核对）：终端两个 Experts 目录致 `.ex5` 双副本版本漂移，且已造成一次"假部署"**——`MQL5\Experts\`（根）与 `MQL5\Experts\Advisors\` 各存一份同名 `.ex5`，而 `chart06`（主线）与 `chart02`（CurrentCandidate）的 `.chr` `path=` 指向**根目录**那份。主线：根目录 = 09-07 22:36/150,280B（**实盘在跑**），Advisors = 09-08 20:23/150,354B 且与工程内 `auto_trade\` 产物**时间与字节数完全一致** → §7「09-08 21:07 M15 孤儿句柄修复重编译**部署**」实际投递到了不被加载的目录，**该修复从未在实盘图表生效**（虽记载为"零行为回归"）。CurrentCandidate 同样双副本（根 08-11 19:38/63,020B ← chart02 在用；Advisors 08-21 21:46/64,712B 未使用）。**处置原则：部署必须按 `.chr` 的 `path=` 精确投递**，否则＝假部署；并应清理冗余副本、在部署脚本里加"目标路径来自 .chr"的校验 | 本轮 dir 终端两处 Experts + `.chr` path 交叉核对 |
+| T23 | **版本号对齐（2026-09-09 登记）**：乖离反转口径代号 v8 与 EA `#property version` 1.00 未对齐；机制已生效，推荐在下次发布/认证基线统一并打 tag（当前不立即改源码） | 黄金\乖离反转策略\版本记录.md |
 
 ## 7. 最近变更日志（滚动 10 条，R7）
 
@@ -113,4 +108,3 @@ MT5 终端(DAD3B8) 挂 8 EA ──Files导出──> signals/ledger/gate CSV
 - 2026-09-08 21:30 **目录整理 Phase 0/1 完成**：根级 24 散文件收口入 00_文档中心/各策略；12 空目录+56 pycache 清出；母本《其他策略复用流程》提级；新建 00_README/00_项目规则/AGENTS.md；monitor_cycle 频率文案改"DSH tool-jobs 30 分钟"并核实 v3.37 验收已落盘（→T1）
 - 2026-09-08 21:07 30m2H M15 孤儿句柄修复重编译部署，Tester 全窗重跑成功（零行为回归）
 - 2026-09-08 20:24-20:42 Tester 面板 UI 驱动重跑尝试（ea_alignment_logs\_scratch）
-- 2026-09-07 22:45 30m2H 主线 Strategy_EA v3.37 修 8 项+同步终端
