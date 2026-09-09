@@ -41,4 +41,5 @@
 - 被迁移脚本已注入 sys.path 引导块，直接 `python <策略>/scripts/<用途>/<脚本>.py`
   即可运行；引导块会自动把 `scripts/`、`黄金/30m2H策略/参考实现工程`、所有 `*/scripts` 及其子目录加入 `sys.path`。
 - 若移动整个 `MTA5_l` 目录，需要同步修改各脚本头部 `_ROOT = _Path(...)` 中的路径。
+- 多机协作：clone 路径必须与源机一致（`F:\use_code\MTA5_l`），初始化步骤见 `00_文档中心\监控运维\多机协作初始化与同步须知.md`。
 - `monitor_all_strategies.py` 自带同款引导块，可直接从本目录运行。
