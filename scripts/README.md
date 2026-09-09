@@ -23,6 +23,12 @@
 - `monitor_all_strategies.py`：九策略横向监控 + 仪表盘（`observation_dashboard\dashboard.csv` / `dashboard_report.md`）
 - `monitor_cycle.py`：30 分钟监测循环（DSH harness tool-jobs 驱动，产出 `observation_dashboard\监测报告\`）
 - `qq_snapshot.py`、`qq_digest_push.py`、`watch_signal_alerts.py`、`notify_qq.mjs`、`event_calendar_push.py`：QQ 推送与事件门
+- `deploy_ex5_by_chr.py`：**按 `chart*.chr` 的 `path=` 精确投递 `.ex5` 到终端**（2026-09-09 新增，治 T22「假部署」）。
+  终端有 `MQL5\Experts\` 与 `MQL5\Experts\Advisors\` 两处，同名 `.ex5` 可能各存一份且版本不同，
+  图表加载哪份只由 `.chr` 的 `path=` 决定 → 硬编码目录会把修复投到不被加载的副本上
+  （2026-09-08 主线 M15 孤儿句柄修复即因此未在实盘生效）。默认 dry-run、`--apply` 才写、
+  投递前备份 `<EA>.ex5.bak_<tag>`、投递后 sha256 校验、生成 R8 清单；**不启动/不重启终端**，
+  新版需人工在终端逐图表刷新才生效。此后任何 `.ex5` 更新都应走本脚本
 - `check_project_rules.py`：工程卫生机检（R1~R9 可判定断言，只读扫描；2026-09-08 上线）
 - `inspect_tester_panel.py`：MT5 Tester 面板诊断工具
 - `_archive/<年-月>/`：一次性脚本沉底处（R4：`_tmp_` 前缀，用完当周移入，移前 grep 确认无引用）

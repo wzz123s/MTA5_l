@@ -45,6 +45,7 @@
 
 - 监控五件套：`scripts\{monitor_all_strategies, monitor_cycle, qq_snapshot, watch_signal_alerts, qq_digest_push}.py`
 - 公共库：`scripts\{strategy_research_common, replay_raw_signals_with_stops, live_attribution}.py`（`live_attribution.py` = 2026-09-09 新增：DEMO 实挂成交的 **position_id 血缘归因** + `chart*.chr` 终端实参/下单闸读取 + 台账可读性体检，被 `monitor_all_strategies.py` 与 `monitor_cycle.py` 调用；口径依据 `00_文档中心\问题记录.md` §二十三——盈亏记到开仓方 magic，禁用平仓侧 `deal.magic` 与 `deal.reason`）
+- 部署工具：`scripts\deploy_ex5_by_chr.py`（2026-09-09 新增，治 T22）——按 `.chr` 的 `path=` 精确投递 `.ex5`，**不硬编码 `Experts\` 或 `Experts\Advisors\`**；默认 dry-run、`--apply` 才写、投递前备份、投递后 sha256 校验、生成 R8 清单；不启动/不重启终端（新版需人工逐图表刷新才生效）。**此后任何 .ex5 更新都应走它**
 - 跨策略引擎与认证基准：`黄金\30m2H策略\参考实现工程\`（multi_tf_matrix + base_data + position_sizing_strict_certify_20260627）；⚠️ 其 `auto_trade\auto_trader.py` 具备**独立实盘下单能力**（两处 `mt5.order_send`，magic=302025），窗口内无 302025 成交、启用状态无文档登记（§二十三⑪）
 - 监控适配器：MCT / DataEvent 两 adapter（留在各自策略目录）
 - 事件日历：`宏观日历研究\data\calendar_export.csv`

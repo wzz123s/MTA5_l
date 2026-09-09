@@ -350,6 +350,33 @@ def guard_deploy(script: str, target_ea: str, target_chart: str,
         f"  依据：00_README T20 ／ 00_文档中心\\问题记录.md §二十三 补充取证二4。")
 
 
+def chart_ea_paths() -> dict[str, str]:
+    """{EA 名: 该 EA 在 `.chr` 里声明的终端相对路径（`path=` 行）}。
+
+    **部署 .ex5 必须用它定位目标，不得硬编码 Experts\\ 或 Experts\\Advisors\\**：
+    终端两个目录可能各存一份同名 .ex5 而版本不同，图表加载哪份只由 .chr 的 path= 决定。
+    2026-09-08 曾把主线修复版投到 Advisors\\ 而 chart06 加载根目录旧版 → 修复从未生效
+    （00_README T22）。双挂时两图通常指向同一 .ex5，故 dict 足够；不一致时保留首个。
+    """
+    out: dict[str, str] = {}
+    if not CHARTS_DIR.is_dir():
+        return out
+    for p in sorted(CHARTS_DIR.glob("*.chr")):
+        try:
+            txt = p.read_text(encoding="utf-16", errors="replace")
+        except Exception:
+            continue
+        exp = re.search(r"<expert>(.*?)</expert>", txt, re.S)
+        if not exp:
+            continue
+        block = exp.group(1)
+        nm = re.search(r"^name=([A-Za-z0-9_]+)\s*$", block, re.M)
+        pa = re.search(r"^path=([^\r\n]+)$", block, re.M)
+        if nm and pa and pa.group(1).strip():
+            out.setdefault(nm.group(1), pa.group(1).strip())
+    return out
+
+
 def check_ledgers() -> dict[str, str]:
     """台账可读性体检：ok / header_only / PermissionError / missing / n_rows。"""
     res = {}
