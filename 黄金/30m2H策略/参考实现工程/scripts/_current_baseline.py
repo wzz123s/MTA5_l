@@ -169,25 +169,11 @@ def build_final_accepted(
         pre_cov = accepted[pd.to_datetime(accepted["date"]) < m15_start].reset_index(drop=True)
         cov = accepted[pd.to_datetime(accepted["date"]) >= m15_start].reset_index(drop=True)
         if ea_executable_diag:
-            cov_mod, _ = m15t.apply_replace_variant(
-                cov,
-                m15,
-                m15t.choose_slot1_by_distance,
-                "ea_slot1_replace",
-                require_earlier=True,
-                reanchor_stop_by_distance=True,
-            )
-            rejected_runtime = raw_df[
-                (~raw_df["spec_pass"])
-                & m15t.coverage_mask(raw_df, m15_start)
-            ].copy()
-            rescued, _ = m15t.build_rescued_trades(
-                rejected_runtime,
-                m15,
-                m15t.choose_slot1_by_distance,
-                variant_name="ea_slot1_runtime_rescue",
-                reanchor_stop_by_distance=True,
-            )
+            # T1(A/B, 2026-09-09): EA v3.35+ 已无 M15 执行路径；
+            # ea_executable_diag 不再做 M15 slot1 replace / rescue，
+            # 全部候选保持 M30 close 语义（实证：stop 差 8/8 源于 M15 SLOT1 残留）。
+            cov_mod = cov.copy()
+            rescued = cov.iloc[0:0]
         else:
             cov_mod, _ = m15t.apply_replace_variant(cov, m15, m15t.choose_any, "combo")
             rejected_wide = raw_df[
@@ -306,7 +292,9 @@ def apply_layer3_ea_executable(final_acc, h2, top_pct=DEFAULT_TOP_PCT, lookback=
         start = max(0, idx - lookback)
         # v3.36: 阈值样本不含当前 H2 bar — EA IsBias5TopPct 用 CopyClose(H2, 1, n)
         # (shift 1..500, 不含刚收盘的当前 bar); 旧版含当前 bar → 阈值差 1 个样本 → 边界翻转
-        hist = h2_bias_values[start:idx]
+        # T1(A, 2026-09-09): EA IsBias5TopPct 阈值样本含当前已完成 H2
+        # （实证 2022-03-07/2025-10-21/2026-02-02 含当前样本与 EA 逐位一致）。
+        hist = h2_bias_values[start:idx + 1]
         current_bias5 = float(h2_bias_values[idx])
         threshold = _rolling_top_threshold(hist, top_pct)
         bias5_vals.append(current_bias5)
